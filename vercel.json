@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd sorority-matcher && npm install && npm run build",
+  "outputDirectory": "sorority-matcher/build",
+  "framework": "create-react-app"
+}
