@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 
-type Step = 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
+type Step = 'about' | 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
 
 interface Ranking {
   [person: string]: string[];
@@ -13,7 +13,7 @@ interface Pairing {
 }
 
 function App() {
-  const [step, setStep] = useState<Step>('input-bigs');
+  const [step, setStep] = useState<Step>('about');
   const [bigsInput, setBigsInput] = useState('');
   const [littlesInput, setLittlesInput] = useState('');
   const [bigsError, setBigsError] = useState('');
@@ -259,6 +259,71 @@ function App() {
   return (
     <div className="App">
       <h1>Sorora</h1>
+
+      {step === 'about' && (
+        <div>
+          <h2>How Our Algorithm Works</h2>
+          <div style={{ textAlign: 'left', maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+            <p>
+              Sorora uses a smart matching algorithm to create the best possible Big-Little pairings based on mutual preferences.
+            </p>
+
+            <h3>The Algorithm Process:</h3>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4>Step 1: Mutual First-Choice Matches</h4>
+              <p>
+                We start by identifying all <strong>mutual first-choice pairings</strong>. If a Big ranks a Little as their #1 choice
+                AND that Little ranks the Big as their #1 choice, we immediately create that pairing. These are the strongest possible
+                matches and are guaranteed to be included in the final results.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4>Step 2: Minimizing Total Distance</h4>
+              <p>
+                For everyone not matched in Step 1, we use a <strong>greedy optimization approach</strong> to minimize the total "distance"
+                between preferences. The distance is calculated as:
+              </p>
+              <p style={{ marginLeft: '20px', fontFamily: 'monospace', background: '#f0f0f0', padding: '10px', borderRadius: '5px' }}>
+                Distance = Big's ranking position + Little's ranking position
+              </p>
+              <p>
+                For example, if a Big ranks a Little as their 3rd choice (position 2) and that Little ranks the Big as their 2nd choice
+                (position 1), the total distance is 3.
+              </p>
+              <p>
+                The algorithm iteratively finds the pairing with the <strong>minimum distance</strong>, creates that match, and repeats
+                until everyone is matched.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4>Twin Support</h4>
+              <p>
+                Bigs who are willing to take twins (2 littles) remain in the matching pool after their first match. They can receive
+                a second little if that creates a better overall matching compared to pairing that little with a different big.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h4>Why This Works</h4>
+              <ul style={{ textAlign: 'left' }}>
+                <li>Perfect matches (mutual first choices) are always preserved</li>
+                <li>The greedy approach ensures each decision optimizes for the strongest remaining preference</li>
+                <li>By minimizing total distance, we maximize overall satisfaction across all pairings</li>
+                <li>Twin support allows flexibility without sacrificing match quality</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '30px' }}>
+            <button onClick={() => setStep('input-bigs')} style={{ fontSize: '18px', padding: '10px 20px' }}>
+              Get Started →
+            </button>
+          </div>
+        </div>
+      )}
 
       {step === 'input-bigs' && (
         <div>
