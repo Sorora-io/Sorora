@@ -2,6 +2,64 @@
   text-align: center;
 }
 
+.app-header {
+  background-color: #A8B3D7;
+  width: 1298px;
+  height: 92px;
+  border-radius: 80px;
+  margin: 40px auto 0 auto;
+  display: flex;
+  align-items: center;
+  padding-left: 40px;
+}
+
+.app-title {
+  font-family: 'Bona Nova', serif;
+  font-size: 50px;
+  color: white;
+  margin: 0;
+  font-weight: normal;
+}
+
+button {
+  background-color: #A8B3D7;
+  color: white;
+  font-family: 'Bona Nova', serif;
+  font-size: 50px;
+  width: 198px;
+  height: 92px;
+  border: none;
+  border-radius: 80px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.App > div {
+  position: relative;
+  min-height: calc(100vh - 172px);
+  padding-bottom: 120px;
+}
+
+.App button {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+}
+
+.App button.back-button {
+  position: fixed;
+  bottom: 40px;
+  left: 40px;
+  right: auto;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

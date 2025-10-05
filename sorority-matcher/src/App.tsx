@@ -327,7 +327,9 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Sorora</h1>
+      <header className="app-header">
+        <h1 className="app-title">Sorora</h1>
+      </header>
 
       {step === 'about' && (
         <div>
@@ -387,8 +389,8 @@ function App() {
           </div>
 
           <div style={{ marginTop: '30px' }}>
-            <button onClick={() => setStep('input-bigs')} style={{ fontSize: '18px', padding: '10px 20px' }}>
-              Get Started →
+            <button onClick={() => setStep('input-bigs')}>
+              ⟶
             </button>
           </div>
         </div>
@@ -408,7 +410,8 @@ function App() {
             <p style={{ color: 'red', marginTop: '10px' }}>{bigsError}</p>
           )}
           <br />
-          <button onClick={handleBigsSubmit}>Next</button>
+          <button className="back-button" onClick={() => setStep('about')}>⟵</button>
+          <button onClick={handleBigsSubmit}>⟶</button>
         </div>
       )}
 
@@ -431,8 +434,8 @@ function App() {
             ))}
           </div>
           <div style={{ marginTop: '20px' }}>
-            <button onClick={() => setStep('input-littles')}>Back</button>
-            <button onClick={handleTwinsSelectionSubmit}>Next</button>
+            <button className="back-button" onClick={() => setStep('input-littles')}>⟵</button>
+            <button onClick={handleTwinsSelectionSubmit}>⟶</button>
           </div>
         </div>
       )}
@@ -470,8 +473,8 @@ function App() {
             )}
           </div>
           <div style={{ marginTop: '20px' }}>
-            <button onClick={() => setStep('select-twins')}>Back</button>
-            <button onClick={handleMinimumsSubmit}>Next</button>
+            <button className="back-button" onClick={() => setStep('select-twins')}>⟵</button>
+            <button onClick={handleMinimumsSubmit}>⟶</button>
           </div>
         </div>
       )}
@@ -490,8 +493,8 @@ function App() {
             <p style={{ color: 'red', marginTop: '10px' }}>{littlesError}</p>
           )}
           <br />
-          <button onClick={() => setStep('input-bigs')}>Back</button>
-          <button onClick={handleLittlesSubmit}>Next</button>
+          <button className="back-button" onClick={() => setStep('input-bigs')}>⟵</button>
+          <button onClick={handleLittlesSubmit}>⟶</button>
         </div>
       )}
 
@@ -561,9 +564,9 @@ function App() {
           </div>
 
           <div style={{ marginTop: '30px' }}>
-            <button onClick={() => setStep('rank-littles')}>Back</button>
-            <button onClick={() => { runMatchingAlgorithm(); setStep('results'); }} style={{ marginLeft: '10px', fontWeight: 'bold' }}>
-              Run Matching Algorithm
+            <button className="back-button" onClick={() => setStep('rank-littles')}>⟵</button>
+            <button onClick={() => { runMatchingAlgorithm(); setStep('results'); }}>
+              ⟶
             </button>
           </div>
         </div>
@@ -684,8 +687,8 @@ function RankingInput({ person, personType, peopleToRank, peopleToRankType, minR
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        {onBack && <button onClick={onBack}>Back</button>}
-        <button onClick={handleSubmit}>Submit Rankings</button>
+        {onBack && <button className="back-button" onClick={onBack}>⟵</button>}
+        <button onClick={handleSubmit}>⟶</button>
       </div>
     </div>
   );
