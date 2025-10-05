@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 
-type Step = 'input-bigs' | 'input-littles' | 'rank-bigs' | 'rank-littles' | 'results';
+type Step = 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
 
 interface Ranking {
   [person: string]: string[];
@@ -9,32 +9,88 @@ interface Ranking {
 
 interface Pairing {
   big: string;
-  little: string;
+  littles: string[];
 }
 
 function App() {
   const [step, setStep] = useState<Step>('input-bigs');
   const [bigsInput, setBigsInput] = useState('');
   const [littlesInput, setLittlesInput] = useState('');
+  const [bigsError, setBigsError] = useState('');
+  const [littlesError, setLittlesError] = useState('');
   const [bigs, setBigs] = useState<string[]>([]);
   const [littles, setLittles] = useState<string[]>([]);
+  const [bigsWillingToTakeTwins, setBigsWillingToTakeTwins] = useState<Set<string>>(new Set());
+  const [minBigRankings, setMinBigRankings] = useState(5);
+  const [minLittleRankings, setMinLittleRankings] = useState(5);
+  const [minBigRankingsInput, setMinBigRankingsInput] = useState('5');
+  const [minLittleRankingsInput, setMinLittleRankingsInput] = useState('5');
+  const [minimumsError, setMinimumsError] = useState('');
   const [bigRankings, setBigRankings] = useState<Ranking>({});
   const [littleRankings, setLittleRankings] = useState<Ranking>({});
   const [currentBigIndex, setCurrentBigIndex] = useState(0);
   const [currentLittleIndex, setCurrentLittleIndex] = useState(0);
   const [pairings, setPairings] = useState<Pairing[]>([]);
+  const [exportMessage, setExportMessage] = useState('');
 
   const handleBigsSubmit = () => {
     const bigsList = bigsInput.split('\n').filter(name => name.trim() !== '');
+    if (bigsList.length === 0) {
+      setBigsError('Please enter at least 1 big');
+      return;
+    }
+    setBigsError('');
     setBigs(bigsList);
     setStep('input-littles');
   };
 
   const handleLittlesSubmit = () => {
     const littlesList = littlesInput.split('\n').filter(name => name.trim() !== '');
+    if (littlesList.length === 0) {
+      setLittlesError('Please enter at least 1 little');
+      return;
+    }
+    setLittlesError('');
     setLittles(littlesList);
+    setStep('select-twins');
+  };
+
+  const handleTwinsSelectionSubmit = () => {
+    setStep('set-minimums');
+  };
+
+  const handleMinimumsSubmit = () => {
+    const minBig = parseInt(minBigRankingsInput);
+    const minLittle = parseInt(minLittleRankingsInput);
+
+    if (isNaN(minBig) || minBig < 1) {
+      setMinimumsError('Minimum big rankings must be at least 1');
+      return;
+    }
+
+    if (isNaN(minLittle) || minLittle < 1) {
+      setMinimumsError('Minimum little rankings must be at least 1');
+      return;
+    }
+
+    setMinimumsError('');
+    setMinBigRankings(minBig);
+    setMinLittleRankings(minLittle);
     setStep('rank-bigs');
   };
+
+  const toggleTwinSelection = (big: string) => {
+    setBigsWillingToTakeTwins(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(big)) {
+        newSet.delete(big);
+      } else {
+        newSet.add(big);
+      }
+      return newSet;
+    });
+  };
+
 
   const handleBigRankingSubmit = (rankings: string[]) => {
     setBigRankings(prev => ({
@@ -58,9 +114,44 @@ function App() {
     if (currentLittleIndex < littles.length - 1) {
       setCurrentLittleIndex(currentLittleIndex + 1);
     } else {
-      runMatchingAlgorithm();
-      setStep('results');
+      setStep('review');
     }
+  };
+
+  const exportResults = () => {
+    // Create text format
+    let text = 'Big-Little Pairings\n';
+    text += '===================\n\n';
+
+    pairings.forEach((pairing, index) => {
+      const twinLabel = pairing.littles.length > 1 ? ' (TWINS)' : '';
+      text += `${index + 1}. ${pairing.big} ← ${pairing.littles.join(', ')}${twinLabel}\n`;
+    });
+
+    // Add summary statistics
+    const totalMatched = pairings.reduce((sum, p) => sum + p.littles.length, 0);
+    text += `\n\nSummary\n`;
+    text += `-------\n`;
+    text += `Total Bigs Matched: ${pairings.length}\n`;
+    text += `Total Littles Matched: ${totalMatched}\n`;
+    text += `Twin Pairings: ${pairings.filter(p => p.littles.length > 1).length}\n`;
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+      setExportMessage('Results copied to clipboard!');
+      setTimeout(() => setExportMessage(''), 3000);
+    }).catch(() => {
+      // Fallback: create downloadable file
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sorora-pairings.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportMessage('Results downloaded as file!');
+      setTimeout(() => setExportMessage(''), 3000);
+    });
   };
 
   const runMatchingAlgorithm = () => {
@@ -70,12 +161,14 @@ function App() {
 
     // Step 1: Find all 1:1 mutual first-choice pairings
     for (const big of bigs) {
+      if (!availableBigs.has(big)) continue;
+
       const bigFirstChoice = bigRankings[big]?.[0];
       if (bigFirstChoice && availableLittles.has(bigFirstChoice)) {
         const littleFirstChoice = littleRankings[bigFirstChoice]?.[0];
         if (littleFirstChoice === big) {
           // Mutual first choice - create pairing
-          result.push({ big, little: bigFirstChoice });
+          result.push({ big, littles: [bigFirstChoice] });
           availableBigs.delete(big);
           availableLittles.delete(bigFirstChoice);
         }
@@ -91,7 +184,8 @@ function App() {
         remainingBigs,
         remainingLittles,
         bigRankings,
-        littleRankings
+        littleRankings,
+        bigsWillingToTakeTwins
       );
       result.push(...bestPairings);
     }
@@ -103,12 +197,19 @@ function App() {
     remainingBigs: string[],
     remainingLittles: string[],
     bigRankings: Ranking,
-    littleRankings: Ranking
+    littleRankings: Ranking,
+    bigsWillingToTakeTwins: Set<string>
   ): Pairing[] => {
     // Use greedy approach: iteratively find pairing with minimum distance
     const result: Pairing[] = [];
     const availableBigs = new Set(remainingBigs);
     const availableLittles = new Set(remainingLittles);
+    const bigToLittles: { [big: string]: string[] } = {};
+
+    // Initialize each big with an empty array
+    for (const big of availableBigs) {
+      bigToLittles[big] = [];
+    }
 
     while (availableBigs.size > 0 && availableLittles.size > 0) {
       let bestBig = '';
@@ -131,11 +232,24 @@ function App() {
       }
 
       if (bestBig && bestLittle) {
-        result.push({ big: bestBig, little: bestLittle });
-        availableBigs.delete(bestBig);
+        bigToLittles[bestBig].push(bestLittle);
         availableLittles.delete(bestLittle);
+
+        // Check if this big should be removed from consideration
+        // Remove if: not willing to take twins OR already has 1 little and is willing to take twins (but has 1 now) OR already has 2 littles
+        const currentLittleCount = bigToLittles[bestBig].length;
+        if (!bigsWillingToTakeTwins.has(bestBig) || currentLittleCount >= 2) {
+          availableBigs.delete(bestBig);
+        }
       } else {
         break;
+      }
+    }
+
+    // Convert to result format
+    for (const big of Object.keys(bigToLittles)) {
+      if (bigToLittles[big].length > 0) {
+        result.push({ big, littles: bigToLittles[big] });
       }
     }
 
@@ -144,7 +258,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Sorority Big-Little Matcher</h1>
+      <h1>Sorora</h1>
 
       {step === 'input-bigs' && (
         <div>
@@ -156,8 +270,75 @@ function App() {
             cols={50}
             placeholder="Enter big names, one per line"
           />
+          {bigsError && (
+            <p style={{ color: 'red', marginTop: '10px' }}>{bigsError}</p>
+          )}
           <br />
           <button onClick={handleBigsSubmit}>Next</button>
+        </div>
+      )}
+
+      {step === 'select-twins' && (
+        <div>
+          <h2>Select Bigs Willing to Take Twins</h2>
+          <p>Check all bigs who are willing to take 2 littles:</p>
+          <div style={{ marginTop: '20px' }}>
+            {bigs.map(big => (
+              <div key={big} style={{ marginBottom: '10px' }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={bigsWillingToTakeTwins.has(big)}
+                    onChange={() => toggleTwinSelection(big)}
+                  />
+                  {' '}{big}
+                </label>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={() => setStep('input-littles')}>Back</button>
+            <button onClick={handleTwinsSelectionSubmit}>Next</button>
+          </div>
+        </div>
+      )}
+
+      {step === 'set-minimums' && (
+        <div>
+          <h2>Set Minimum Ranking Requirements</h2>
+          <div style={{ marginTop: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <label>
+                Minimum number of littles each big must rank:{' '}
+                <input
+                  type="number"
+                  min="1"
+                  value={minBigRankingsInput}
+                  onChange={(e) => setMinBigRankingsInput(e.target.value)}
+                  style={{ width: '80px' }}
+                />
+              </label>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label>
+                Minimum number of bigs each little must rank:{' '}
+                <input
+                  type="number"
+                  min="1"
+                  value={minLittleRankingsInput}
+                  onChange={(e) => setMinLittleRankingsInput(e.target.value)}
+                  style={{ width: '80px' }}
+                />
+              </label>
+            </div>
+            {minimumsError && (
+              <p style={{ color: 'red', marginTop: '10px' }}>{minimumsError}</p>
+            )}
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={() => setStep('select-twins')}>Back</button>
+            <button onClick={handleMinimumsSubmit}>Next</button>
+          </div>
         </div>
       )}
 
@@ -171,7 +352,11 @@ function App() {
             cols={50}
             placeholder="Enter little names, one per line"
           />
+          {littlesError && (
+            <p style={{ color: 'red', marginTop: '10px' }}>{littlesError}</p>
+          )}
           <br />
+          <button onClick={() => setStep('input-bigs')}>Back</button>
           <button onClick={handleLittlesSubmit}>Next</button>
         </div>
       )}
@@ -179,8 +364,12 @@ function App() {
       {step === 'rank-bigs' && (
         <RankingInput
           person={bigs[currentBigIndex]}
+          personType="Big"
           peopleToRank={littles}
+          peopleToRankType="Littles"
+          minRankings={minBigRankings}
           onSubmit={handleBigRankingSubmit}
+          onBack={currentBigIndex === 0 ? () => setStep('set-minimums') : () => setCurrentBigIndex(currentBigIndex - 1)}
           progress={`${currentBigIndex + 1} / ${bigs.length}`}
         />
       )}
@@ -188,10 +377,62 @@ function App() {
       {step === 'rank-littles' && (
         <RankingInput
           person={littles[currentLittleIndex]}
+          personType="Little"
           peopleToRank={bigs}
+          peopleToRankType="Bigs"
+          minRankings={minLittleRankings}
           onSubmit={handleLittleRankingSubmit}
+          onBack={currentLittleIndex === 0 ? () => { setStep('rank-bigs'); setCurrentBigIndex(bigs.length - 1); } : () => setCurrentLittleIndex(currentLittleIndex - 1)}
           progress={`${currentLittleIndex + 1} / ${littles.length}`}
         />
+      )}
+
+      {step === 'review' && (
+        <div>
+          <h2>Review Summary</h2>
+          <div style={{ marginTop: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Bigs ({bigs.length})</h3>
+              <p>{bigs.join(', ')}</p>
+              <button onClick={() => setStep('input-bigs')}>Edit</button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Littles ({littles.length})</h3>
+              <p>{littles.join(', ')}</p>
+              <button onClick={() => setStep('input-littles')}>Edit</button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Bigs Willing to Take Twins ({bigsWillingToTakeTwins.size})</h3>
+              <p>{bigsWillingToTakeTwins.size > 0 ? Array.from(bigsWillingToTakeTwins).join(', ') : 'None'}</p>
+              <button onClick={() => setStep('select-twins')}>Edit</button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Minimum Rankings</h3>
+              <p>Bigs must rank at least {minBigRankings} littles</p>
+              <p>Littles must rank at least {minLittleRankings} bigs</p>
+              <button onClick={() => setStep('set-minimums')}>Edit</button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Rankings Collected</h3>
+              <p>Big rankings: {Object.keys(bigRankings).length} / {bigs.length}</p>
+              <p>Little rankings: {Object.keys(littleRankings).length} / {littles.length}</p>
+              {(Object.keys(bigRankings).length < bigs.length || Object.keys(littleRankings).length < littles.length) && (
+                <button onClick={() => setStep('rank-bigs')}>Continue Rankings</button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: '30px' }}>
+            <button onClick={() => setStep('rank-littles')}>Back</button>
+            <button onClick={() => { runMatchingAlgorithm(); setStep('results'); }} style={{ marginLeft: '10px', fontWeight: 'bold' }}>
+              Run Matching Algorithm
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 'results' && (
@@ -200,13 +441,22 @@ function App() {
           {pairings.length === 0 ? (
             <p>No pairings yet</p>
           ) : (
-            <ul>
-              {pairings.map((pairing, index) => (
-                <li key={index}>
-                  {pairing.big} ← {pairing.little}
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul>
+                {pairings.map((pairing, index) => (
+                  <li key={index}>
+                    {pairing.big} ← {pairing.littles.join(', ')}
+                    {pairing.littles.length > 1 && ' (TWINS)'}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: '20px' }}>
+                <button onClick={exportResults}>Export Results</button>
+                {exportMessage && (
+                  <p style={{ color: 'red', marginTop: '10px' }}>{exportMessage}</p>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -216,103 +466,87 @@ function App() {
 
 interface RankingInputProps {
   person: string;
+  personType: 'Big' | 'Little';
   peopleToRank: string[];
+  peopleToRankType: 'Bigs' | 'Littles';
+  minRankings: number;
   onSubmit: (rankings: string[]) => void;
+  onBack?: () => void;
   progress: string;
 }
 
-function RankingInput({ person, peopleToRank, onSubmit, progress }: RankingInputProps) {
-  const [rankings, setRankings] = useState<string[]>([]);
-
-  const handleDragStart = (e: React.DragEvent, name: string) => {
-    e.dataTransfer.setData('text/plain', name);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const name = e.dataTransfer.getData('text/plain');
-    if (!rankings.includes(name)) {
-      setRankings([...rankings, name]);
-    }
-  };
-
-  const removeFromRanking = (name: string) => {
-    setRankings(rankings.filter(n => n !== name));
-  };
+function RankingInput({ person, personType, peopleToRank, peopleToRankType, minRankings, onSubmit, onBack, progress }: RankingInputProps) {
+  const [rankingInput, setRankingInput] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const handleSubmit = () => {
-    if (rankings.length === peopleToRank.length) {
-      onSubmit(rankings);
-      setRankings([]);
-    } else {
-      alert('Please rank all people before submitting');
-    }
-  };
+    const rankings = rankingInput
+      .split('\n')
+      .map(name => name.trim())
+      .filter(name => name !== '');
 
-  const availablePeople = peopleToRank.filter(name => !rankings.includes(name));
+    // Validate that we have at least minimum rankings
+    if (rankings.length < minRankings) {
+      setValidationError(`Please rank at least ${minRankings} people`);
+      return;
+    }
+
+    // Validate that all names exist in the system
+    const invalidNames: string[] = [];
+    const duplicates: string[] = [];
+    const seen = new Set<string>();
+
+    for (const name of rankings) {
+      if (!peopleToRank.includes(name)) {
+        invalidNames.push(name);
+      }
+      if (seen.has(name)) {
+        duplicates.push(name);
+      }
+      seen.add(name);
+    }
+
+    if (invalidNames.length > 0) {
+      setValidationError(`Invalid names not in system: ${invalidNames.join(', ')}`);
+      return;
+    }
+
+    if (duplicates.length > 0) {
+      setValidationError(`Duplicate names found: ${duplicates.join(', ')}`);
+      return;
+    }
+
+    // All validations passed
+    setValidationError('');
+    onSubmit(rankings);
+    setRankingInput('');
+  };
 
   return (
     <div>
-      <h2>Ranking for: {person}</h2>
+      <h2>{personType}: {person}</h2>
       <p>Progress: {progress}</p>
 
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-        <div style={{ flex: 1 }}>
-          <h3>Available</h3>
-          <div style={{ border: '1px solid #ccc', padding: '10px', minHeight: '200px' }}>
-            {availablePeople.map(name => (
-              <div
-                key={name}
-                draggable
-                onDragStart={(e) => handleDragStart(e, name)}
-                style={{
-                  padding: '8px',
-                  margin: '4px',
-                  backgroundColor: '#f0f0f0',
-                  cursor: 'move',
-                  border: '1px solid #999'
-                }}
-              >
-                {name}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <h3>Rankings (drag here in order)</h3>
-          <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            style={{ border: '1px solid #ccc', padding: '10px', minHeight: '200px' }}
-          >
-            {rankings.map((name, index) => (
-              <div
-                key={name}
-                style={{
-                  padding: '8px',
-                  margin: '4px',
-                  backgroundColor: '#d0f0d0',
-                  border: '1px solid #999',
-                  display: 'flex',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <span>#{index + 1}: {name}</span>
-                <button onClick={() => removeFromRanking(name)}>✕</button>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div style={{ marginTop: '20px' }}>
+        <h3>Rank {peopleToRankType} (one name per line, in order of preference)</h3>
+        <p>Available {peopleToRankType}: {peopleToRank.join(', ')}</p>
+        <textarea
+          value={rankingInput}
+          onChange={(e) => setRankingInput(e.target.value)}
+          rows={10}
+          cols={50}
+          placeholder="Enter names, one per line, in order of preference"
+          style={{ width: '100%', maxWidth: '500px' }}
+        />
+        {validationError && (
+          <p style={{ color: 'red', marginTop: '10px' }}>{validationError}</p>
+        )}
       </div>
 
-      <button onClick={handleSubmit} style={{ marginTop: '20px' }}>
-        Submit Rankings
-      </button>
+      <div style={{ marginTop: '20px' }}>
+        {onBack && <button onClick={onBack}>Back</button>}
+        <button onClick={handleSubmit}>Submit Rankings</button>
+      </div>
     </div>
   );
 }
