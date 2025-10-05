@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 type Step = 'about' | 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
@@ -34,6 +34,12 @@ function App() {
   const [exportMessage, setExportMessage] = useState('');
 
   const handleBigsSubmit = () => {
+    // Check for commas in input
+    if (bigsInput.includes(',')) {
+      setBigsError('Please enter one person (first and last name) per line instead of using commas');
+      return;
+    }
+
     const bigsList = bigsInput.split('\n').filter(name => name.trim() !== '');
     if (bigsList.length === 0) {
       setBigsError('Please enter at least 1 big');
@@ -45,6 +51,12 @@ function App() {
   };
 
   const handleLittlesSubmit = () => {
+    // Check for commas in input
+    if (littlesInput.includes(',')) {
+      setLittlesError('Please enter one person (first and last name) per line instead of using commas');
+      return;
+    }
+
     const littlesList = littlesInput.split('\n').filter(name => name.trim() !== '');
     if (littlesList.length === 0) {
       setLittlesError('Please enter at least 1 little');
@@ -255,6 +267,63 @@ function App() {
 
     return result;
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger when user is typing in an input/textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        // Next button logic for each step
+        if (step === 'about') {
+          setStep('input-bigs');
+        } else if (step === 'input-bigs') {
+          handleBigsSubmit();
+        } else if (step === 'input-littles') {
+          handleLittlesSubmit();
+        } else if (step === 'select-twins') {
+          handleTwinsSelectionSubmit();
+        } else if (step === 'set-minimums') {
+          handleMinimumsSubmit();
+        } else if (step === 'review') {
+          runMatchingAlgorithm();
+          setStep('results');
+        }
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        // Back button logic for each step
+        if (step === 'input-bigs') {
+          setStep('about');
+        } else if (step === 'input-littles') {
+          setStep('input-bigs');
+        } else if (step === 'select-twins') {
+          setStep('input-littles');
+        } else if (step === 'set-minimums') {
+          setStep('select-twins');
+        } else if (step === 'rank-bigs') {
+          if (currentBigIndex === 0) {
+            setStep('set-minimums');
+          } else {
+            setCurrentBigIndex(currentBigIndex - 1);
+          }
+        } else if (step === 'rank-littles') {
+          if (currentLittleIndex === 0) {
+            setStep('rank-bigs');
+            setCurrentBigIndex(bigs.length - 1);
+          } else {
+            setCurrentLittleIndex(currentLittleIndex - 1);
+          }
+        } else if (step === 'review') {
+          setStep('rank-littles');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [step, currentBigIndex, currentLittleIndex, bigs.length]);
 
   return (
     <div className="App">
@@ -545,6 +614,12 @@ function RankingInput({ person, personType, peopleToRank, peopleToRankType, minR
   const [validationError, setValidationError] = useState('');
 
   const handleSubmit = () => {
+    // Check for commas in input
+    if (rankingInput.includes(',')) {
+      setValidationError('Please enter one person (first and last name) per line instead of using commas');
+      return;
+    }
+
     const rankings = rankingInput
       .split('\n')
       .map(name => name.trim())
