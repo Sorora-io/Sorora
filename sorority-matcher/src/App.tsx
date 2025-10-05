@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-type Step = 'about' | 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
+type Step = 'welcome' | 'mission' | 'about' | 'input-bigs' | 'input-littles' | 'select-twins' | 'set-minimums' | 'rank-bigs' | 'rank-littles' | 'review' | 'results';
 
 interface Ranking {
   [person: string]: string[];
@@ -13,7 +13,7 @@ interface Pairing {
 }
 
 function App() {
-  const [step, setStep] = useState<Step>('about');
+  const [step, setStep] = useState<Step>('welcome');
   const [bigsInput, setBigsInput] = useState('');
   const [littlesInput, setLittlesInput] = useState('');
   const [bigsError, setBigsError] = useState('');
@@ -328,8 +328,46 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1 className="app-title">Sorora</h1>
+        <h1 className="app-title">
+          {step === 'mission' ? (
+            <>Sorora: <i>Our Mission</i></>
+          ) : (
+            'Sorora'
+          )}
+        </h1>
       </header>
+
+      {step === 'welcome' && (
+        <div>
+          <div className="content-box content-box-centered">
+            <h2>Welcome!</h2>
+          </div>
+          <div style={{ marginTop: '30px' }}>
+            <button onClick={() => setStep('mission')}>
+              ⟶
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'mission' && (
+        <div>
+          <div className="content-box content-box-centered">
+            <div className="mission-list">
+              <p>1. Streamline and optimize the big-little process for collegiate fraternities and sororities</p>
+              <p>2. Eliminate potential biases in the matching process</p>
+              <p>3. Standardize sorority practices nationally</p>
+            </div>
+            <p className="mission-footer">Sorora uses a smart matching algorithm to create the best possible Big-Little pairings based on mutual preferences.</p>
+          </div>
+          <div style={{ marginTop: '30px' }}>
+            <button className="back-button" onClick={() => setStep('welcome')}>⟵</button>
+            <button onClick={() => setStep('about')}>
+              ⟶
+            </button>
+          </div>
+        </div>
+      )}
 
       {step === 'about' && (
         <div>
@@ -389,6 +427,7 @@ function App() {
           </div>
 
           <div style={{ marginTop: '30px' }}>
+            <button className="back-button" onClick={() => setStep('mission')}>⟵</button>
             <button onClick={() => setStep('input-bigs')}>
               ⟶
             </button>
@@ -398,17 +437,18 @@ function App() {
 
       {step === 'input-bigs' && (
         <div>
-          <h2>Enter all Bigs (one per line)</h2>
-          <textarea
-            value={bigsInput}
-            onChange={(e) => setBigsInput(e.target.value)}
-            rows={10}
-            cols={50}
-            placeholder="Enter big names, one per line"
-          />
-          {bigsError && (
-            <p style={{ color: 'red', marginTop: '10px' }}>{bigsError}</p>
-          )}
+          <div className="content-box">
+            <h2>Enter all Bigs</h2>
+            <textarea
+              className="input-field"
+              value={bigsInput}
+              onChange={(e) => setBigsInput(e.target.value)}
+              placeholder="Enter big names, one per line"
+            />
+            {bigsError && (
+              <p className="error-message">{bigsError}</p>
+            )}
+          </div>
           <br />
           <button className="back-button" onClick={() => setStep('about')}>⟵</button>
           <button onClick={handleBigsSubmit}>⟶</button>
@@ -417,21 +457,23 @@ function App() {
 
       {step === 'select-twins' && (
         <div>
-          <h2>Select Bigs Willing to Take Twins</h2>
-          <p>Check all bigs who are willing to take 2 littles:</p>
-          <div style={{ marginTop: '20px' }}>
-            {bigs.map(big => (
-              <div key={big} style={{ marginBottom: '10px' }}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={bigsWillingToTakeTwins.has(big)}
-                    onChange={() => toggleTwinSelection(big)}
-                  />
-                  {' '}{big}
-                </label>
-              </div>
-            ))}
+          <div className="content-box">
+            <h2>Select Bigs Willing to Take Twins</h2>
+            <p>Check all bigs who are willing to take 2 littles:</p>
+            <div style={{ marginTop: '20px' }}>
+              {bigs.map(big => (
+                <div key={big} style={{ marginBottom: '10px' }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={bigsWillingToTakeTwins.has(big)}
+                      onChange={() => toggleTwinSelection(big)}
+                    />
+                    {' '}{big}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
           <div style={{ marginTop: '20px' }}>
             <button className="back-button" onClick={() => setStep('input-littles')}>⟵</button>
@@ -442,35 +484,37 @@ function App() {
 
       {step === 'set-minimums' && (
         <div>
-          <h2>Set Minimum Ranking Requirements</h2>
-          <div style={{ marginTop: '20px' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <label>
-                Minimum number of littles each big must rank:{' '}
-                <input
-                  type="number"
-                  min="1"
-                  value={minBigRankingsInput}
-                  onChange={(e) => setMinBigRankingsInput(e.target.value)}
-                  style={{ width: '80px' }}
-                />
-              </label>
+          <div className="content-box">
+            <h2>Set Minimum Ranking Requirements</h2>
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label>
+                  Minimum number of littles each big must rank:{' '}
+                  <input
+                    type="number"
+                    min="1"
+                    value={minBigRankingsInput}
+                    onChange={(e) => setMinBigRankingsInput(e.target.value)}
+                    style={{ width: '80px' }}
+                  />
+                </label>
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label>
+                  Minimum number of bigs each little must rank:{' '}
+                  <input
+                    type="number"
+                    min="1"
+                    value={minLittleRankingsInput}
+                    onChange={(e) => setMinLittleRankingsInput(e.target.value)}
+                    style={{ width: '80px' }}
+                  />
+                </label>
+              </div>
+              {minimumsError && (
+                <p style={{ color: 'red', marginTop: '10px' }}>{minimumsError}</p>
+              )}
             </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label>
-                Minimum number of bigs each little must rank:{' '}
-                <input
-                  type="number"
-                  min="1"
-                  value={minLittleRankingsInput}
-                  onChange={(e) => setMinLittleRankingsInput(e.target.value)}
-                  style={{ width: '80px' }}
-                />
-              </label>
-            </div>
-            {minimumsError && (
-              <p style={{ color: 'red', marginTop: '10px' }}>{minimumsError}</p>
-            )}
           </div>
           <div style={{ marginTop: '20px' }}>
             <button className="back-button" onClick={() => setStep('select-twins')}>⟵</button>
@@ -481,17 +525,18 @@ function App() {
 
       {step === 'input-littles' && (
         <div>
-          <h2>Enter all Littles (one per line)</h2>
-          <textarea
-            value={littlesInput}
-            onChange={(e) => setLittlesInput(e.target.value)}
-            rows={10}
-            cols={50}
-            placeholder="Enter little names, one per line"
-          />
-          {littlesError && (
-            <p style={{ color: 'red', marginTop: '10px' }}>{littlesError}</p>
-          )}
+          <div className="content-box">
+            <h2>Enter all Littles</h2>
+            <textarea
+              className="input-field"
+              value={littlesInput}
+              onChange={(e) => setLittlesInput(e.target.value)}
+              placeholder="Enter little names, one per line"
+            />
+            {littlesError && (
+              <p className="error-message">{littlesError}</p>
+            )}
+          </div>
           <br />
           <button className="back-button" onClick={() => setStep('input-bigs')}>⟵</button>
           <button onClick={handleLittlesSubmit}>⟶</button>

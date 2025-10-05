@@ -4,18 +4,19 @@
 
 .app-header {
   background-color: #A8B3D7;
-  width: 1298px;
-  height: 92px;
+  width: 1150px;
+  height: 70px;
   border-radius: 80px;
   margin: 40px auto 0 auto;
   display: flex;
   align-items: center;
   padding-left: 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .app-title {
   font-family: 'Bona Nova', serif;
-  font-size: 50px;
+  font-size: 40px;
   color: white;
   margin: 0;
   font-weight: normal;
@@ -27,7 +28,7 @@ button {
   font-family: 'Bona Nova', serif;
   font-size: 50px;
   width: 198px;
-  height: 92px;
+  height: 70px;
   border: none;
   border-radius: 80px;
   cursor: pointer;
@@ -35,6 +36,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 button:hover {
@@ -58,6 +61,93 @@ button:hover {
   bottom: 40px;
   left: 40px;
   right: auto;
+}
+
+.content-box {
+  background-color: #A8B3D7;
+  width: 1150px;
+  height: 500px;
+  border-radius: 80px;
+  margin: 40px auto;
+  padding: 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  color: white;
+  position: relative;
+}
+
+.content-box h2 {
+  font-family: 'Bona Nova', serif;
+  font-size: 50px;
+  color: white;
+  margin: 0 0 20px 0;
+  font-weight: normal;
+}
+
+.content-box-centered {
+  align-items: center;
+  justify-content: center;
+}
+
+.content-box-centered h2 {
+  margin: 0;
+}
+
+.content-box-centered p {
+  text-align: center;
+  margin: 10px 0;
+  font-family: 'Bona Nova', serif;
+  font-size: 35px;
+}
+
+.mission-list {
+  margin-top: -80px;
+}
+
+.mission-footer {
+  font-family: 'Bona Nova', serif;
+  font-weight: bold;
+  text-align: center;
+  font-size: 20px !important;
+  margin-top: 40px !important;
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+}
+
+.input-field {
+  width: 613px;
+  height: 403px;
+  background-color: #E9E9E9;
+  border-radius: 80px;
+  border: none;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: monospace;
+  resize: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 25px;
+}
+
+.error-message {
+  color: white;
+  font-family: monospace;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(201.5px + 40px));
+  margin: 0;
+  text-align: left;
+  width: 613px;
+  padding-left: 30px;
 }
 
 .App-logo {
