@@ -120,6 +120,57 @@ button:hover {
   width: 80%;
 }
 
+.step-labels-container {
+  position: fixed;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 50;
+}
+
+.step-label {
+  background-color: #A8B3D7;
+  color: white;
+  font-family: 'Bona Nova', serif;
+  font-size: 35px;
+  width: 198px;
+  height: 70px;
+  border-radius: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.step-content {
+  position: fixed;
+  left: 300px;
+  top: 50%;
+  transform: translateY(calc(-50% - 45px));
+  max-width: 1000px;
+  padding: 0 40px;
+}
+
+.step-title {
+  font-family: 'Bona Nova', serif;
+  font-size: 20px;
+  color: #636D8B;
+  margin: 0 0 15px 0;
+  text-align: left;
+}
+
+.step-description {
+  font-family: 'Bona Nova', serif;
+  font-size: 20px;
+  color: #636D8B;
+  line-height: 1.6;
+  text-align: left;
+}
+
 .input-field {
   width: 613px;
   height: 403px;
