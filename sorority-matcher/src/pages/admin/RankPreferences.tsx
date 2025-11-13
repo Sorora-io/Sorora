@@ -40,13 +40,14 @@ const RankPreferences = () => {
     const seen = new Set<string>();
 
     for (const name of rankings) {
-      if (!littles.includes(name)) {
+      if (!littles.some(little => little.toLowerCase() === name.toLowerCase())) {
         invalidNames.push(name);
       }
-      if (seen.has(name)) {
+      const lowerName = name.toLowerCase();
+      if (seen.has(lowerName)) {
         duplicates.push(name);
       }
-      seen.add(name);
+      seen.add(lowerName);
     }
 
     if (invalidNames.length > 0) {

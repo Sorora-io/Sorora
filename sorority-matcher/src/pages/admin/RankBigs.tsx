@@ -41,13 +41,14 @@ const RankBigs = () => {
     const seen = new Set<string>();
 
     for (const name of rankings) {
-      if (!bigs.includes(name)) {
+      if (!bigs.some(big => big.toLowerCase() === name.toLowerCase())) {
         invalidNames.push(name);
       }
-      if (seen.has(name)) {
+      const lowerName = name.toLowerCase();
+      if (seen.has(lowerName)) {
         duplicates.push(name);
       }
-      seen.add(name);
+      seen.add(lowerName);
     }
 
     if (invalidNames.length > 0) {
