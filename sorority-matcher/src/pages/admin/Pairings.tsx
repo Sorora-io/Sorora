@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
+import * as XLSX from 'xlsx';
 
 const Pairings = () => {
   const navigate = useNavigate();
@@ -39,6 +40,56 @@ const Pairings = () => {
     });
   };
 
+  const exportToExcel = () => {
+    // Create worksheet data
+    const worksheetData = [
+      ['Big-Little Pairings'],
+      [],
+      ['#', 'Big', 'Little(s)', 'Notes'],
+    ];
+
+    pairings.forEach((pairing, index) => {
+      const twinLabel = pairing.littles.length > 1 ? 'TWINS' : '';
+      worksheetData.push([
+        String(index + 1),
+        pairing.big,
+        pairing.littles.join(', '),
+        twinLabel
+      ]);
+    });
+
+    // Add summary section
+    const totalMatched = pairings.reduce((sum, p) => sum + p.littles.length, 0);
+    worksheetData.push(
+      [],
+      ['Summary'],
+      ['Total Bigs Matched:', String(pairings.length)],
+      ['Total Littles Matched:', String(totalMatched)],
+      ['Twin Pairings:', String(pairings.filter(p => p.littles.length > 1).length)]
+    );
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 5 },  // # column
+      { wch: 25 }, // Big column
+      { wch: 30 }, // Little(s) column
+      { wch: 10 }  // Notes column
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Pairings');
+
+    // Generate and download file
+    XLSX.writeFile(wb, 'sorora-pairings.xlsx');
+
+    setExportMessage('Excel file downloaded!');
+    setTimeout(() => setExportMessage(''), 3000);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12">
@@ -62,12 +113,20 @@ const Pairings = () => {
             </ul>
 
             <div className="flex flex-col items-center gap-4">
-              <button
-                onClick={exportResults}
-                className="px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
-              >
-                Export Results
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={exportResults}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Export as Text
+                </button>
+                <button
+                  onClick={exportToExcel}
+                  className="px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  Export to Excel
+                </button>
+              </div>
               {exportMessage && (
                 <p className="text-green-600 font-semibold">{exportMessage}</p>
               )}
