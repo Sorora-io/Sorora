@@ -15,7 +15,7 @@ const Mission = () => {
         <div className="space-y-6 text-lg">
           <p>1. Streamline and optimize the big-little process for collegiate fraternities and sororities</p>
           <p>2. Eliminate potential biases in the matching process</p>
-          <p>3. Standardize sorority practices nationally</p>
+          <p>3. Standardize sorority practices</p>
         </div>
         <p className="mt-8 text-base text-gray-700">
           Sorora uses a smart matching algorithm to create the best possible Big-Little pairings based on mutual preferences.
