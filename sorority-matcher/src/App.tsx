@@ -7,6 +7,9 @@ import { MatchingProvider } from "./contexts/MatchingContext";
 import Index from "./pages/Index";
 import Mission from "./pages/Mission";
 import HowItWorks from "./pages/HowItWorks";
+import Step1 from "./pages/how-it-works/Step1";                                                       
+import Step2 from "./pages/how-it-works/Step2";                                                       
+import HowItWorksTwins from "./pages/how-it-works/Twins";    
 import WhyItWorks from "./pages/WhyItWorks";
 import EnterBigs from "./pages/admin/EnterBigs";
 import EnterLittles from "./pages/admin/EnterLittles";
@@ -31,6 +34,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/mission" element={<Mission />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/how-it-works/step-1" element={<Step1 />} />                                             
+            <Route path="/how-it-works/step-2" element={<Step2 />} />                                             
+            <Route path="/how-it-works/twins" element={<HowItWorksTwins />} />         
             <Route path="/why-it-works" element={<WhyItWorks />} />
             <Route path="/admin/enter-bigs" element={<EnterBigs />} />
             <Route path="/admin/enter-littles" element={<EnterLittles />} />

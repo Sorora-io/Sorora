@@ -30,7 +30,7 @@ const Mission = () => {
           ⟵
         </button>
         <button
-          onClick={() => navigate('/how-it-works')}
+          onClick={() => navigate('/how-it-works/step-1')}
           className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
         >
           ⟶
