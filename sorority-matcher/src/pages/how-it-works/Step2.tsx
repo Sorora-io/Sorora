@@ -16,7 +16,7 @@ const Step2 = () => {
             <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">                            
           <h3 className="text-2xl font-semibold mb-6">Step 2: Greedy Algorithm</h3>                         
           <p className="text-lg leading-relaxed">                                                       
-            We calculate the distance between all rankings as BigRanking - LittleRanking, and then we use a greedy algorithm to minimize the distances for all matches. If a big or a little does not rank another big, the distance is "infinite."                                                                        
+            We calculate the distance between all rankings as BigRanking - LittleRanking, and then we use a greedy algorithm to minimize the distances for all matches. If a big or a little does not rank another member, the distance is "infinite."                                                                        
           </p>                                                                                          
         </div>                                                                                          
                                                                                                         
