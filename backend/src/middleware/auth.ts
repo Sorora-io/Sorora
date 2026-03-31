@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { supabase } from "../supabase";
 
 export interface AuthRequest extends Request {
   userId?: string;
 }
 
-export const requireAuth = (
+export const requireAuth = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -16,34 +16,18 @@ export const requireAuth = (
     return res.status(401).json({ error: "Missing authorization header" });
   }
 
-  // Expect: "Bearer <token>"
   const token = authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ error: "Invalid authorization format" });
   }
 
-  try {
-    const payload = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as { userId: string };
+  const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    req.userId = payload.userId;
-    next();
-  } catch {
+  if (error || !user) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
+
+  req.userId = user.id;
+  next();
 };
-
-/*Reads the Authorization header
-
-Extracts the token
-
-Verifies it using JWT_SECRET
-
-Pulls out userId
-
-Attaches userId to the request
-
-Lets the request continue*/
