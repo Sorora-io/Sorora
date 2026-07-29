@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
 import { Link } from 'react-router-dom';
+import Progressbar from '../../components/Progressbar';
 
 const RankPreferences = () => {
   const navigate = useNavigate();
@@ -90,6 +91,8 @@ const RankPreferences = () => {
         <h1 className="text-4xl font-bold text-center">Sorora</h1>
         </Link>
       </header>
+
+      <Progressbar currentStep={5} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-semibold mb-2">Big: {currentBig}</h2>

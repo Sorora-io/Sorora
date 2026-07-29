@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
 import { Link } from 'react-router-dom';
+import Progressbar from '../../components/Progressbar';
 
 const ReviewSummary = () => {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ const ReviewSummary = () => {
         <h1 className="text-4xl font-bold text-center">Sorora</h1>
         </Link>
       </header>
+
+      <Progressbar currentStep={7} className="max-w-4xl" />
 
       <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-3xl font-semibold mb-8">Review Summary</h2>

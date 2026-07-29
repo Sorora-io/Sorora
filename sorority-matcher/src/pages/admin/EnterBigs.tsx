@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
 import { Link } from 'react-router-dom';
+import Progressbar from '../../components/Progressbar';
 
 const EnterBigs = () => {
   const navigate = useNavigate();
@@ -36,6 +37,8 @@ const EnterBigs = () => {
           <h1 className="text-4xl font-bold text-center">Sorora</h1>
         </Link>
       </header>
+
+      <Progressbar currentStep={1} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-semibold mb-6">Enter all Bigs</h2>

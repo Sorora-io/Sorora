@@ -85,96 +85,102 @@ export const MatchingProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
-  const findOptimalPairings = (
-    remainingBigs: string[],
-    remainingLittles: string[],
-    bigRankings: Ranking,
-    littleRankings: Ranking,
-    bigsWillingToTakeTwins: Set<string>
-  ): Pairing[] => {
-    const result: Pairing[] = [];
-    const availableBigs = new Set(remainingBigs);
-    const availableLittles = new Set(remainingLittles);
-    const bigToLittles: { [big: string]: string[] } = {};
+  // Deferred-acceptance (Gale-Shapley) stable matching, generalized to
+  // multi-slot "programs" — the same algorithm family the NRMP uses to
+  // match residency applicants to programs. Littles play the role of
+  // applicants and propose; bigs play the role of programs and hold their
+  // best offers, replacing a held offer only when a better one arrives.
+  // This produces the little-optimal stable matching (every little ends up
+  // with the best big it could get in any stable matching).
+  const runMatchingAlgorithm = () => {
+    // Complete each person's preference list: explicit rankings first, in
+    // order, followed by everyone unranked (so a partial ranking doesn't
+    // leave that person with no one to propose to / accept).
+    const completeList = (ranked: string[], universe: string[]): string[] => {
+      const rankedValid = ranked.filter(name => universe.includes(name));
+      const rankedSet = new Set(rankedValid);
+      const unranked = universe.filter(name => !rankedSet.has(name));
+      return [...rankedValid, ...unranked];
+    };
 
-    for (const big of availableBigs) {
+    const littlePrefs: Ranking = {};
+    for (const little of littles) {
+      littlePrefs[little] = completeList(littleRankings[little] ?? [], bigs);
+    }
+
+    const bigPrefs: Ranking = {};
+    const bigRankOf: { [big: string]: { [little: string]: number } } = {};
+    for (const big of bigs) {
+      bigPrefs[big] = completeList(bigRankings[big] ?? [], littles);
+      bigRankOf[big] = {};
+      bigPrefs[big].forEach((little, idx) => {
+        bigRankOf[big][little] = idx;
+      });
+    }
+
+    const capacity: { [big: string]: number } = {};
+    for (const big of bigs) {
+      capacity[big] = bigsWillingToTakeTwins.has(big) ? 2 : 1;
+    }
+
+    const nextProposalIndex: { [little: string]: number } = {};
+    for (const little of littles) {
+      nextProposalIndex[little] = 0;
+    }
+
+    const bigToLittles: { [big: string]: string[] } = {};
+    for (const big of bigs) {
       bigToLittles[big] = [];
     }
 
-    while (availableBigs.size > 0 && availableLittles.size > 0) {
-      let bestBig = '';
-      let bestLittle = '';
-      let minDistance = Infinity;
+    const freeLittles: string[] = [...littles];
 
-      for (const big of availableBigs) {
-        for (const little of availableLittles) {
-          const bigRank = bigRankings[big]?.indexOf(little) ?? Infinity;
-          const littleRank = littleRankings[little]?.indexOf(big) ?? Infinity;
-          const distance = bigRank + littleRank;
+    while (freeLittles.length > 0) {
+      const little = freeLittles.shift()!;
+      const prefs = littlePrefs[little];
 
-          if (distance < minDistance) {
-            minDistance = distance;
-            bestBig = big;
-            bestLittle = little;
-          }
-        }
+      if (nextProposalIndex[little] >= prefs.length) {
+        // Exhausted every big without being accepted; stays unmatched.
+        continue;
       }
 
-      if (bestBig && bestLittle) {
-        bigToLittles[bestBig].push(bestLittle);
-        availableLittles.delete(bestLittle);
+      const big = prefs[nextProposalIndex[little]];
+      nextProposalIndex[little] += 1;
 
-        const currentLittleCount = bigToLittles[bestBig].length;
-        if (!bigsWillingToTakeTwins.has(bestBig) || currentLittleCount >= 2) {
-          availableBigs.delete(bestBig);
-        }
+      const held = bigToLittles[big];
+      const littleRank = bigRankOf[big][little];
+
+      if (held.length < capacity[big]) {
+        held.push(little);
       } else {
-        break;
-      }
-    }
+        let worstIdx = 0;
+        let worstRank = -1;
+        held.forEach((heldLittle, idx) => {
+          const rank = bigRankOf[big][heldLittle];
+          if (rank > worstRank) {
+            worstRank = rank;
+            worstIdx = idx;
+          }
+        });
 
-    for (const big of Object.keys(bigToLittles)) {
-      if (bigToLittles[big].length > 0) {
-        result.push({ big, littles: bigToLittles[big] });
-      }
-    }
-
-    return result;
-  };
-
-  const runMatchingAlgorithm = () => {
-    const result: Pairing[] = [];
-    const availableBigs = new Set(bigs);
-    const availableLittles = new Set(littles);
-
-    // Step 1: Find all 1:1 mutual first-choice pairings
-    for (const big of bigs) {
-      if (!availableBigs.has(big)) continue;
-
-      const bigFirstChoice = bigRankings[big]?.[0];
-      if (bigFirstChoice && availableLittles.has(bigFirstChoice)) {
-        const littleFirstChoice = littleRankings[bigFirstChoice]?.[0];
-        if (littleFirstChoice === big) {
-          result.push({ big, littles: [bigFirstChoice] });
-          availableBigs.delete(big);
-          availableLittles.delete(bigFirstChoice);
+        if (littleRank < worstRank) {
+          const rejected = held[worstIdx];
+          held[worstIdx] = little;
+          freeLittles.push(rejected);
+        } else {
+          freeLittles.push(little);
         }
       }
     }
 
-    // Step 2: For remaining people, minimize total distance
-    const remainingBigs = Array.from(availableBigs);
-    const remainingLittles = Array.from(availableLittles);
-
-    if (remainingBigs.length > 0 && remainingLittles.length > 0) {
-      const bestPairings = findOptimalPairings(
-        remainingBigs,
-        remainingLittles,
-        bigRankings,
-        littleRankings,
-        bigsWillingToTakeTwins
-      );
-      result.push(...bestPairings);
+    const result: Pairing[] = [];
+    for (const big of bigs) {
+      if (bigToLittles[big].length > 0) {
+        const sortedLittles = [...bigToLittles[big]].sort(
+          (a, b) => bigRankOf[big][a] - bigRankOf[big][b]
+        );
+        result.push({ big, littles: sortedLittles });
+      }
     }
 
     setPairings(result);
