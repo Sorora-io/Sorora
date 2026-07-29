@@ -9,7 +9,6 @@ const RankBigs = () => {
   const {
     bigs,
     littles,
-    littleRankings,
     setLittleRankings,
     currentLittleIndex,
     setCurrentLittleIndex,

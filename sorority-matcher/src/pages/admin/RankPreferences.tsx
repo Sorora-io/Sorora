@@ -9,7 +9,6 @@ const RankPreferences = () => {
   const {
     bigs,
     littles,
-    bigRankings,
     setBigRankings,
     currentBigIndex,
     setCurrentBigIndex,
