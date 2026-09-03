@@ -15,8 +15,9 @@ const WhyItWorks = () => {
         <h2 className="text-2xl font-semibold mb-6">Why Our Algorithm Works</h2>
         <ul className="space-y-4 text-lg leading-relaxed list-disc list-inside">
           <li>Perfect matches (mutual first choices) are always preserved</li>
-          <li>The greedy approach ensures each decision optimizes for the strongest remaining preference</li>
-          <li>By minimizing total distance, we maximize overall satisfaction across all pairings</li>
+          <li>Deferred acceptance — the same algorithm the NRMP uses to match medical residents — guarantees a stable outcome</li>
+          <li>No Big and Little who'd both rather be paired with each other are ever left unmatched with someone else</li>
+          <li>Every Little gets the best Big they could get in any stable matching</li>
           <li>Twin support allows flexibility without sacrificing match quality</li>
         </ul>
       </div>

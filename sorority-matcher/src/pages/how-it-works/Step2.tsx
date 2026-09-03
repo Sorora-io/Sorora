@@ -13,14 +13,14 @@ const Step2 = () => {
                 </h1>
             </header>
 
-            <Progressbar currentStep={2} totalSteps={3} stepLabel="Greedy Algorithm" className="max-w-4xl" />
+            <Progressbar currentStep={2} totalSteps={3} stepLabel="Deferred Acceptance" className="max-w-4xl" />
 
             <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
-          <h3 className="text-2xl font-semibold mb-6">Step 2: Greedy Algorithm</h3>                         
-          <p className="text-lg leading-relaxed">                                                       
-            We calculate the distance between all rankings as BigRanking - LittleRanking, and then we use a greedy algorithm to minimize the distances for all matches. If a big or a little does not rank another member, the distance is "infinite."                                                                        
-          </p>                                                                                          
-        </div>                                                                                          
+          <h3 className="text-2xl font-semibold mb-6">Step 2: Deferred Acceptance (the NRMP Algorithm)</h3>
+          <p className="text-lg leading-relaxed">
+            For everyone else, we run deferred acceptance — the same stable-matching algorithm the National Resident Matching Program (NRMP) uses to place medical residents. Littles propose to their top-ranked remaining Big; each Big holds onto their best offer(s) so far and only lets go of a held Little if a better-ranked one proposes later. This repeats until every Little is matched, guaranteeing a stable result: no unmatched Big/Little pair would both rather be with each other than who they ended up with.
+          </p>
+        </div>                                                                                        
                                                                                                         
         <div className="mt-8 flex gap-4">                                                               
           <button                                                                                       
