@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import Progressbar from '../../components/Progressbar';
 
 
 const Twins = () => {
@@ -11,8 +12,10 @@ const Twins = () => {
                     Sorora: <i>How It Works</i>
                 </h1>
             </header>
-        
-            <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">                            
+
+            <Progressbar currentStep={3} totalSteps={3} stepLabel="Twins" className="max-w-4xl" />
+
+            <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
           <h3 className="text-2xl font-semibold mb-6">Twins</h3>                         
           <p className="text-lg leading-relaxed">                                                       
             If a big indicates they are willing to take twins, after their first match, they will remain in the matching pool. They are removed after their second match.                                                                       
