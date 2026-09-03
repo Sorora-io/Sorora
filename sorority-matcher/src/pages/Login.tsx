@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, continueAsGuest } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
@@ -13,6 +13,12 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showGuestWarning, setShowGuestWarning] = useState(false);
+
+  const handleContinueAsGuest = () => {
+    continueAsGuest();
+    navigate('/admin/enter-bigs');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +126,37 @@ const Login = () => {
             {mode === 'signin' ? 'Sign up' : 'Sign in'}
           </button>
         </p>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          {!showGuestWarning ? (
+            <button
+              onClick={() => setShowGuestWarning(true)}
+              className="w-full text-center text-sm text-gray-600 underline hover:text-black"
+            >
+              Continue without signing in
+            </button>
+          ) : (
+            <div className="text-sm">
+              <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
+                ⚠️ Without an account, your data will not be saved. If you leave or refresh the page, you'll have to start over.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowGuestWarning(false)}
+                  className="flex-1 py-2 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleContinueAsGuest}
+                  className="flex-1 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  Continue anyway
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
