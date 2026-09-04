@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
 import { Link } from 'react-router-dom';
 import Progressbar from '../../components/Progressbar';
+import CsvUploadButton from '../../components/CsvUploadButton';
 
 const EnterBigs = () => {
   const navigate = useNavigate();
@@ -41,7 +42,14 @@ const EnterBigs = () => {
       <Progressbar currentStep={1} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-semibold mb-6">Enter all Bigs</h2>
+        <div className="flex items-start justify-between mb-6">
+          <h2 className="text-2xl font-semibold">Enter all Bigs</h2>
+          <CsvUploadButton
+            entityLabel="big"
+            onNames={(names) => { setBigsInput(names.join('\n')); setError(''); }}
+            onError={setError}
+          />
+        </div>
         <textarea
           className="w-full h-64 p-4 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
           value={bigsInput}
