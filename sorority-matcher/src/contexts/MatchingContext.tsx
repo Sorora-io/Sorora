@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface Ranking {
   [person: string]: string[];
@@ -8,6 +8,32 @@ export interface Pairing {
   big: string;
   littles: string[];
 }
+
+const STORAGE_KEY = 'sorora-matching-state';
+
+interface PersistedMatchingState {
+  bigsInput: string;
+  littlesInput: string;
+  bigs: string[];
+  littles: string[];
+  bigsWillingToTakeTwins: string[];
+  minBigRankings: number;
+  minLittleRankings: number;
+  bigRankings: Ranking;
+  littleRankings: Ranking;
+  currentBigIndex: number;
+  currentLittleIndex: number;
+  pairings: Pairing[];
+}
+
+const loadPersistedState = (): Partial<PersistedMatchingState> => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
 
 interface MatchingContextType {
   // Bigs and Littles data
@@ -60,18 +86,48 @@ export const useMatching = () => {
 };
 
 export const MatchingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [bigsInput, setBigsInput] = useState('');
-  const [littlesInput, setLittlesInput] = useState('');
-  const [bigs, setBigs] = useState<string[]>([]);
-  const [littles, setLittles] = useState<string[]>([]);
-  const [bigsWillingToTakeTwins, setBigsWillingToTakeTwins] = useState<Set<string>>(new Set());
-  const [minBigRankings, setMinBigRankings] = useState(5);
-  const [minLittleRankings, setMinLittleRankings] = useState(5);
-  const [bigRankings, setBigRankings] = useState<Ranking>({});
-  const [littleRankings, setLittleRankings] = useState<Ranking>({});
-  const [currentBigIndex, setCurrentBigIndex] = useState(0);
-  const [currentLittleIndex, setCurrentLittleIndex] = useState(0);
-  const [pairings, setPairings] = useState<Pairing[]>([]);
+  const [persisted] = useState<Partial<PersistedMatchingState>>(loadPersistedState);
+
+  const [bigsInput, setBigsInput] = useState(persisted.bigsInput ?? '');
+  const [littlesInput, setLittlesInput] = useState(persisted.littlesInput ?? '');
+  const [bigs, setBigs] = useState<string[]>(persisted.bigs ?? []);
+  const [littles, setLittles] = useState<string[]>(persisted.littles ?? []);
+  const [bigsWillingToTakeTwins, setBigsWillingToTakeTwins] = useState<Set<string>>(
+    new Set(persisted.bigsWillingToTakeTwins ?? [])
+  );
+  const [minBigRankings, setMinBigRankings] = useState(persisted.minBigRankings ?? 5);
+  const [minLittleRankings, setMinLittleRankings] = useState(persisted.minLittleRankings ?? 5);
+  const [bigRankings, setBigRankings] = useState<Ranking>(persisted.bigRankings ?? {});
+  const [littleRankings, setLittleRankings] = useState<Ranking>(persisted.littleRankings ?? {});
+  const [currentBigIndex, setCurrentBigIndex] = useState(persisted.currentBigIndex ?? 0);
+  const [currentLittleIndex, setCurrentLittleIndex] = useState(persisted.currentLittleIndex ?? 0);
+  const [pairings, setPairings] = useState<Pairing[]>(persisted.pairings ?? []);
+
+  useEffect(() => {
+    const toPersist: PersistedMatchingState = {
+      bigsInput,
+      littlesInput,
+      bigs,
+      littles,
+      bigsWillingToTakeTwins: Array.from(bigsWillingToTakeTwins),
+      minBigRankings,
+      minLittleRankings,
+      bigRankings,
+      littleRankings,
+      currentBigIndex,
+      currentLittleIndex,
+      pairings,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+    } catch {
+      // localStorage unavailable (private browsing, quota) — data just won't survive a refresh
+    }
+  }, [
+    bigsInput, littlesInput, bigs, littles, bigsWillingToTakeTwins,
+    minBigRankings, minLittleRankings, bigRankings, littleRankings,
+    currentBigIndex, currentLittleIndex, pairings,
+  ]);
 
   const toggleTwinSelection = (big: string) => {
     setBigsWillingToTakeTwins(prev => {

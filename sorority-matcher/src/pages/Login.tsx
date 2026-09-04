@@ -138,7 +138,7 @@ const Login = () => {
           ) : (
             <div className="text-sm">
               <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
-                ⚠️ Without an account, your data will not be saved. If you leave or refresh the page, you'll have to start over.
+                ⚠️ Without an account, your entries are only saved in this browser — not tied to you. If you switch devices, use a different browser, or clear your browser data, everything will be lost.
               </p>
               <div className="flex gap-3">
                 <button
