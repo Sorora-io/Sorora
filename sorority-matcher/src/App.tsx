@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MatchingProvider } from "./contexts/MatchingContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SidePanel from "./components/SidePanel";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Mission from "./pages/Mission";
@@ -34,6 +35,7 @@ const App = () => (
       <AuthProvider>
         <MatchingProvider>
           <BrowserRouter>
+            <SidePanel />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
