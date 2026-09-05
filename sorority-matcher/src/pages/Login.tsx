@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { stashPendingGroupAction } from '../contexts/GroupContext';
+import { findGroupByJoinCode, MembershipRole } from '../lib/groups';
 
 const Login = () => {
   const navigate = useNavigate();
   const { signIn, signUp, continueAsGuest } = useAuth();
+  const [searchParams] = useSearchParams();
+  const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(joinCodeFromLink ? 'signup' : 'signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +18,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showGuestWarning, setShowGuestWarning] = useState(false);
+
+  const [groupMode, setGroupMode] = useState<'create' | 'join'>(joinCodeFromLink ? 'join' : 'create');
+  const [groupName, setGroupName] = useState('');
+  const [joinCode, setJoinCode] = useState(joinCodeFromLink);
+  const [role, setRole] = useState<MembershipRole>('big');
 
   const handleContinueAsGuest = () => {
     continueAsGuest();
@@ -27,11 +36,44 @@ const Login = () => {
     setLoading(true);
 
     if (mode === 'signup') {
+      if (groupMode === 'create' && groupName.trim() === '') {
+        setError('Please enter a name for your sorority group.');
+        setLoading(false);
+        return;
+      }
+
+      let resolvedGroupId: string | undefined;
+      let resolvedGroupName: string | undefined;
+      if (groupMode === 'join') {
+        if (joinCode.trim() === '') {
+          setError('Please enter your group\'s join code.');
+          setLoading(false);
+          return;
+        }
+        const { group, error: codeError } = await findGroupByJoinCode(joinCode);
+        if (codeError || !group) {
+          setError(codeError ?? 'No group found with that code.');
+          setLoading(false);
+          return;
+        }
+        resolvedGroupId = group.id;
+        resolvedGroupName = group.name;
+      }
+
       const { error } = await signUp(email, password, name);
       if (error) {
         setError(error.message);
       } else {
-        setSuccessMessage('Check your email to confirm your account, then sign in.');
+        stashPendingGroupAction(
+          groupMode === 'create'
+            ? { mode: 'create', groupName: groupName.trim() }
+            : { mode: 'join', groupId: resolvedGroupId, role }
+        );
+        setSuccessMessage(
+          groupMode === 'create'
+            ? 'Check your email to confirm your account. Once confirmed, your group will be created automatically.'
+            : `Check your email to confirm your account. Once confirmed, your request to join ${resolvedGroupName} will be submitted automatically.`
+        );
         setMode('signin');
       }
     } else {
@@ -39,7 +81,9 @@ const Login = () => {
       if (error) {
         setError(error.message);
       } else {
-        navigate('/admin/enter-bigs');
+        // Onboarding redirects onward to /group/pending or the right
+        // dashboard once membership status is known.
+        navigate('/group/onboarding');
       }
     }
 
@@ -76,6 +120,75 @@ const Login = () => {
                 placeholder="Your name"
                 className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
               />
+            </div>
+          )}
+
+          {mode === 'signup' && (
+            <div className="border-2 border-gray-200 rounded-md p-4">
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setGroupMode('create')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
+                    groupMode === 'create' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  Create a group
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGroupMode('join')}
+                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
+                    groupMode === 'join' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  Join a group
+                </button>
+              </div>
+
+              {groupMode === 'create' ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Sorority group name</label>
+                  <input
+                    type="text"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder="e.g. Alpha Beta Chapter"
+                    className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    You'll become this group's admin and get a join code to share.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Join code</label>
+                    <input
+                      type="text"
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. XK7P2QRT"
+                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">I am a</label>
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as MembershipRole)}
+                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                    >
+                      <option value="big">Big</option>
+                      <option value="little">Little</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    The group's admin will need to approve your request before you can rank.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

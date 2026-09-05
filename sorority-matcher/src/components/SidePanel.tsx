@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 
 interface NavItem {
   label: string;
   path: string;
 }
+
+const ADMIN_GROUP_LINKS: NavItem[] = [
+  { label: 'Approvals', path: '/group/approvals' },
+  { label: 'Submission Status', path: '/group/status' },
+  { label: 'Group Settings', path: '/group/settings' },
+  { label: 'Pairings', path: '/group/pairings' },
+];
 
 const SITE_LINKS: NavItem[] = [
   { label: 'Home', path: '/' },
@@ -32,6 +40,7 @@ const SidePanel = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
+  const { membership } = useGroup();
 
   const close = () => setOpen(false);
 
@@ -94,7 +103,7 @@ const SidePanel = () => {
 
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-              Matching Wizard
+              Matching Wizard (Guest)
             </p>
             <div className="flex flex-col gap-1">
               {WIZARD_LINKS.map(({ label, path }) => (
@@ -104,12 +113,42 @@ const SidePanel = () => {
               ))}
             </div>
           </div>
+
+          {user && !isGuest && membership?.status === 'approved' && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                {membership.group.name}
+              </p>
+              <div className="flex flex-col gap-1">
+                {membership.role === 'admin' ? (
+                  ADMIN_GROUP_LINKS.map(({ label, path }) => (
+                    <Link key={path} to={path} onClick={close} className={linkClasses(path)}>
+                      {label}
+                    </Link>
+                  ))
+                ) : (
+                  <Link to="/group/submit-ranking" onClick={close} className={linkClasses('/group/submit-ranking')}>
+                    Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-gray-200 mt-auto text-sm">
           {user ? (
             <div className="flex flex-col gap-2">
               <p className="text-gray-600 truncate">Signed in as {user.email}</p>
+              {membership && (
+                <p className="text-gray-500 text-xs">
+                  {membership.group.name} · {membership.role}
+                  {membership.status !== 'approved' && ` (${membership.status})`}
+                </p>
+              )}
+              <Link to="/profile" onClick={close} className="underline text-gray-600 hover:text-black">
+                Profile
+              </Link>
               <button
                 type="button"
                 onClick={() => { signOut(); close(); navigate('/login'); }}
