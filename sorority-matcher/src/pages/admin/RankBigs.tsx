@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMatching } from '../../contexts/MatchingContext';
 import { Link } from 'react-router-dom';
@@ -19,7 +19,23 @@ const RankBigs = () => {
   const [rankingInput, setRankingInput] = useState('');
   const [validationError, setValidationError] = useState('');
 
+  // Reachable directly from the side panel without ever visiting Enter
+  // Bigs/Littles — without this, currentLittleIndex/littles.length math
+  // below goes negative/0 and renders "Little: undefined". handleBack also
+  // sets currentBigIndex to bigs.length - 1, which is -1 when bigs is empty.
+  useEffect(() => {
+    if (bigs.length === 0) {
+      navigate('/admin/enter-bigs', { replace: true });
+    } else if (littles.length === 0) {
+      navigate('/admin/enter-littles', { replace: true });
+    }
+  }, [bigs, littles, navigate]);
+
   const currentLittle = littles[currentLittleIndex];
+
+  if (bigs.length === 0 || littles.length === 0) {
+    return null;
+  }
 
   const handleSubmit = () => {
     if (rankingInput.includes(',')) {
@@ -86,7 +102,7 @@ const RankBigs = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
         <h1 className="text-4xl font-bold text-center">Sorora</h1>

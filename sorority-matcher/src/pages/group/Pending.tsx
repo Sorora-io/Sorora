@@ -35,7 +35,11 @@ const Pending = () => {
           <>
             <h2 className="text-2xl font-semibold mb-4">Request not approved</h2>
             <p className="text-gray-600 mb-6">
-              Your request to join <span className="font-medium">{membership?.group.name}</span> as{' '}
+              Your request to join{' '}
+              <span className="font-medium">
+                {membership?.group.name} ({membership?.group.school})
+              </span>{' '}
+              as{' '}
               {roleLabel[membership?.role ?? '']} was not approved. Contact your chapter's admin if you
               think this is a mistake.
             </p>
@@ -44,7 +48,11 @@ const Pending = () => {
           <>
             <h2 className="text-2xl font-semibold mb-4">Waiting on approval</h2>
             <p className="text-gray-600 mb-6">
-              Your request to join <span className="font-medium">{membership?.group.name}</span> as{' '}
+              Your request to join{' '}
+              <span className="font-medium">
+                {membership?.group.name} ({membership?.group.school})
+              </span>{' '}
+              as{' '}
               {roleLabel[membership?.role ?? '']} is waiting on your chapter admin to approve it. Check
               back soon.
             </p>

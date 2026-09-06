@@ -94,7 +94,7 @@ const Pairings = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
         <h1 className="text-4xl font-bold text-center">Sorora</h1>
@@ -110,11 +110,22 @@ const Pairings = () => {
           <p className="text-gray-700 text-lg">No pairings yet</p>
         ) : (
           <>
+            <div className="flex justify-between px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              <span>Big</span>
+              <span>Little(s)</span>
+            </div>
             <ul className="space-y-3 mb-8">
               {pairings.map((pairing, index) => (
-                <li key={index} className="text-lg p-3 bg-gray-50 rounded-md">
-                  {pairing.big} ← {pairing.littles.join(', ')}
-                  {pairing.littles.length > 1 && ' (TWINS)'}
+                <li key={index} className="flex justify-between items-center text-lg p-3 bg-gray-50 rounded-md">
+                  <span className="font-medium">{pairing.big}</span>
+                  <span className="flex items-center gap-2 text-gray-700">
+                    {pairing.littles.join(', ')}
+                    {pairing.littles.length > 1 && (
+                      <span className="text-xs font-semibold px-2 py-0.5 bg-black text-white rounded-full">
+                        TWINS
+                      </span>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

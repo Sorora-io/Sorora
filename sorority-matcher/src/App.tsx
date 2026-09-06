@@ -13,6 +13,7 @@ import SidePanel from "./components/SidePanel";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import EnterBigs from "./pages/admin/EnterBigs";
 import EnterLittles from "./pages/admin/EnterLittles";
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
                 <Route path="/about" element={<About />} />
                 <Route path="/admin/enter-bigs" element={<ProtectedRoute><EnterBigs /></ProtectedRoute>} />
                 <Route path="/admin/enter-littles" element={<ProtectedRoute><EnterLittles /></ProtectedRoute>} />

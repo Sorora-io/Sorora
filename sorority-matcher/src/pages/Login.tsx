@@ -21,6 +21,7 @@ const Login = () => {
 
   const [groupMode, setGroupMode] = useState<'create' | 'join'>(joinCodeFromLink ? 'join' : 'create');
   const [groupName, setGroupName] = useState('');
+  const [school, setSchool] = useState('');
   const [joinCode, setJoinCode] = useState(joinCodeFromLink);
   const [role, setRole] = useState<MembershipRole>('big');
 
@@ -41,9 +42,14 @@ const Login = () => {
         setLoading(false);
         return;
       }
+      if (groupMode === 'create' && school.trim() === '') {
+        setError('Please enter the school this chapter is at.');
+        setLoading(false);
+        return;
+      }
 
       let resolvedGroupId: string | undefined;
-      let resolvedGroupName: string | undefined;
+      let resolvedGroupLabel: string | undefined;
       if (groupMode === 'join') {
         if (joinCode.trim() === '') {
           setError('Please enter your group\'s join code.');
@@ -57,7 +63,7 @@ const Login = () => {
           return;
         }
         resolvedGroupId = group.id;
-        resolvedGroupName = group.name;
+        resolvedGroupLabel = `${group.name} (${group.school})`;
       }
 
       const { error } = await signUp(email, password, name);
@@ -66,13 +72,13 @@ const Login = () => {
       } else {
         stashPendingGroupAction(
           groupMode === 'create'
-            ? { mode: 'create', groupName: groupName.trim() }
+            ? { mode: 'create', groupName: groupName.trim(), school: school.trim() }
             : { mode: 'join', groupId: resolvedGroupId, role }
         );
         setSuccessMessage(
           groupMode === 'create'
             ? 'Check your email to confirm your account. Once confirmed, your group will be created automatically.'
-            : `Check your email to confirm your account. Once confirmed, your request to join ${resolvedGroupName} will be submitted automatically.`
+            : `Check your email to confirm your account. Once confirmed, your request to join ${resolvedGroupLabel} will be submitted automatically.`
         );
         setMode('signin');
       }
@@ -147,16 +153,28 @@ const Login = () => {
               </div>
 
               {groupMode === 'create' ? (
-                <div>
-                  <label className="block text-sm font-medium mb-1">Sorority group name</label>
-                  <input
-                    type="text"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    placeholder="e.g. Alpha Beta Chapter"
-                    className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
-                  />
-                  <p className="mt-2 text-xs text-gray-500">
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Sorority group name</label>
+                    <input
+                      type="text"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="e.g. Alpha Beta Chapter"
+                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">School</label>
+                    <input
+                      type="text"
+                      value={school}
+                      onChange={(e) => setSchool(e.target.value)}
+                      placeholder="e.g. New York University"
+                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
                     You'll become this group's admin and get a join code to share.
                   </p>
                 </div>

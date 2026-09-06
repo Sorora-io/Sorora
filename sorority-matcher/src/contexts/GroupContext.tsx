@@ -8,6 +8,7 @@ const ACTIVE_GROUP_KEY = 'sorora-active-group-id';
 export interface PendingGroupAction {
   mode: 'create' | 'join';
   groupName?: string; // mode: create
+  school?: string; // mode: create
   groupId?: string; // mode: join
   role?: MembershipRole; // mode: join
 }
@@ -135,7 +136,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     autoSubmitAttempted.current = true;
     (async () => {
       if (action.mode === 'create' && action.groupName) {
-        await createGroup(action.groupName);
+        await createGroup(action.groupName, action.school ?? '');
       } else if (action.mode === 'join' && action.groupId && action.role) {
         await requestToJoinGroup(action.groupId, action.role);
       }

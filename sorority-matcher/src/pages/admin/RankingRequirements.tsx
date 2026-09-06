@@ -32,7 +32,7 @@ const RankingRequirements = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
         <h1 className="text-4xl font-bold text-center">Sorora</h1>

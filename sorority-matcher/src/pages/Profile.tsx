@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
+import { getMyProfile, updateMyProfile, uploadAvatar } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -22,6 +23,68 @@ const Profile = () => {
   const [roleError, setRoleError] = useState('');
   const [roleRequestSent, setRoleRequestSent] = useState(false);
   const [roleSaving, setRoleSaving] = useState(false);
+
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState('');
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isGuest) {
+      setProfileLoading(false);
+      return;
+    }
+    (async () => {
+      const { profile } = await getMyProfile();
+      if (profile) {
+        setName(profile.name ?? '');
+        setBio(profile.bio ?? '');
+        setAvatarUrl(profile.avatar_url);
+      }
+      setProfileLoading(false);
+    })();
+  }, [isGuest]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setAvatarUploading(true);
+    setAvatarError('');
+    const { url, error } = await uploadAvatar(file);
+    if (error || !url) {
+      setAvatarError(error ?? 'Could not upload image.');
+      setAvatarUploading(false);
+      return;
+    }
+    const { error: saveError } = await updateMyProfile(name, bio, url);
+    if (saveError) {
+      setAvatarError(saveError);
+    } else {
+      setAvatarUrl(url);
+    }
+    setAvatarUploading(false);
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    setProfileError('');
+    setProfileSaved(false);
+    const { error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl);
+    if (error) {
+      setProfileError(error);
+    } else {
+      setProfileSaved(true);
+    }
+    setProfileSaving(false);
+  };
 
   const handleChangePassword = async () => {
     if (newPassword.length < 6) {
@@ -79,7 +142,67 @@ const Profile = () => {
               </p>
             </div>
 
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-300 bg-gray-100 flex items-center justify-center hover:border-black transition-colors disabled:opacity-50"
+                aria-label="Change profile picture"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-semibold text-gray-400">
+                    {(name || user?.email || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center text-white text-xs font-medium opacity-0 hover:opacity-100">
+                  {avatarUploading ? '...' : 'Change'}
+                </span>
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              {avatarError && <p className="text-red-600 text-sm text-center">{avatarError}</p>}
+            </div>
+
             <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-semibold mb-2">Name &amp; bio</h3>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  disabled={profileLoading}
+                  className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none disabled:opacity-50"
+                />
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="A little about you"
+                  rows={3}
+                  disabled={profileLoading}
+                  className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none disabled:opacity-50 resize-none"
+                />
+                {profileError && <p className="text-red-600 text-sm">{profileError}</p>}
+                {profileSaved && <p className="text-green-700 text-sm">Profile updated.</p>}
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={profileSaving || profileLoading}
+                  className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {profileSaving ? '...' : 'Save Profile'}
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4 mt-4">
               <h3 className="text-sm font-semibold mb-2">Change password</h3>
               <div className="flex flex-col gap-2">
                 <input
@@ -116,7 +239,7 @@ const Profile = () => {
                       }`}
                     >
                       <div>
-                        <p className="text-sm font-medium">{m.group.name}</p>
+                        <p className="text-sm font-medium">{m.group.name} · {m.group.school}</p>
                         <p className="text-xs text-gray-500">
                           {roleLabel[m.role]}
                           {m.status !== 'approved' && ` (${m.status})`}
@@ -159,7 +282,7 @@ const Profile = () => {
             {membership && membership.status === 'approved' && (
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <h3 className="text-sm font-semibold mb-2">
-                  Request a role change ({membership.group.name})
+                  Request a role change ({membership.group.name} · {membership.group.school})
                 </h3>
                 {membership.requested_role ? (
                   <p className="text-sm text-gray-600">

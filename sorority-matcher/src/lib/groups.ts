@@ -7,6 +7,7 @@ export type MembershipStatus = 'pending' | 'approved' | 'rejected';
 export interface Group {
   id: string;
   name: string;
+  school: string;
   join_code: string;
   min_big_rankings: number;
   min_little_rankings: number;
@@ -40,10 +41,17 @@ export interface PendingMembership extends Membership {
 
 const MAX_JOIN_CODE_ATTEMPTS = 5;
 
-export async function createGroup(name: string): Promise<{ group: Group | null; error: string | null }> {
+export async function createGroup(
+  name: string,
+  school: string
+): Promise<{ group: Group | null; error: string | null }> {
   for (let attempt = 0; attempt < MAX_JOIN_CODE_ATTEMPTS; attempt++) {
     const joinCode = generateJoinCode();
-    const { data, error } = await supabase.rpc('create_group', { p_name: name, p_join_code: joinCode });
+    const { data, error } = await supabase.rpc('create_group', {
+      p_name: name,
+      p_school: school,
+      p_join_code: joinCode,
+    });
     if (!error) {
       return { group: data as Group, error: null };
     }
@@ -55,7 +63,7 @@ export async function createGroup(name: string): Promise<{ group: Group | null; 
 
 export async function findGroupByJoinCode(
   code: string
-): Promise<{ group: { id: string; name: string } | null; error: string | null }> {
+): Promise<{ group: { id: string; name: string; school: string } | null; error: string | null }> {
   const { data, error } = await supabase.rpc('find_group_by_code', { p_code: code.trim().toUpperCase() });
   if (error) return { group: null, error: error.message };
   const match = Array.isArray(data) ? data[0] : null;

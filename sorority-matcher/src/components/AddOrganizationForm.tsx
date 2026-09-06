@@ -12,6 +12,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
   const { refresh } = useGroup();
   const [groupMode, setGroupMode] = useState<'create' | 'join'>('create');
   const [groupName, setGroupName] = useState('');
+  const [school, setSchool] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [role, setRole] = useState<MembershipRole>('big');
   const [error, setError] = useState('');
@@ -22,9 +23,13 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
       setError('Please enter a name for your sorority group.');
       return;
     }
+    if (school.trim() === '') {
+      setError('Please enter the school this chapter is at.');
+      return;
+    }
     setLoading(true);
     setError('');
-    const { group, error: createError } = await createGroup(groupName.trim());
+    const { group, error: createError } = await createGroup(groupName.trim(), school.trim());
     if (createError || !group) {
       setError(createError ?? 'Could not create the group.');
       setLoading(false);
@@ -91,6 +96,16 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g. Alpha Beta Chapter"
+              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">School</label>
+            <input
+              type="text"
+              value={school}
+              onChange={(e) => setSchool(e.target.value)}
+              placeholder="e.g. New York University"
               className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
             />
           </div>

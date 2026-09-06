@@ -99,7 +99,7 @@ const SidePanel = () => {
 
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-              Matching Wizard (Guest)
+              Matching Wizard (No Org)
             </p>
             <div className="flex flex-col gap-1">
               {WIZARD_LINKS.map(({ label, path }) => (
@@ -113,7 +113,7 @@ const SidePanel = () => {
           {user && !isGuest && membership?.status === 'approved' && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                {membership.group.name}
+                {membership.group.name} · {membership.group.school}
               </p>
               <div className="flex flex-col gap-1">
                 {membership.role === 'admin' ? (
@@ -138,9 +138,14 @@ const SidePanel = () => {
               <p className="text-gray-600 truncate">Signed in as {user.email}</p>
               {membership && (
                 <p className="text-gray-500 text-xs">
-                  {membership.group.name} · {membership.role}
+                  {membership.group.name} ({membership.group.school}) · {membership.role}
                   {membership.status !== 'approved' && ` (${membership.status})`}
                 </p>
+              )}
+              {!isGuest && (
+                <Link to="/dashboard" onClick={close} className="underline text-gray-600 hover:text-black">
+                  Dashboard
+                </Link>
               )}
               <Link to="/profile" onClick={close} className="underline text-gray-600 hover:text-black">
                 Profile
