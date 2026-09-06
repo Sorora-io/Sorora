@@ -6,6 +6,10 @@ export interface MyProfile {
   name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  major: string | null;
+  college: string | null;
+  year: string | null;
+  hometown: string | null;
 }
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
@@ -19,7 +23,7 @@ export async function getMyProfile(): Promise<{ profile: MyProfile | null; error
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, name, bio, avatar_url')
+    .select('id, email, name, bio, avatar_url, major, college, year, hometown')
     .eq('id', user.id)
     .single();
 
@@ -30,12 +34,20 @@ export async function getMyProfile(): Promise<{ profile: MyProfile | null; error
 export async function updateMyProfile(
   name: string,
   bio: string,
-  avatarUrl: string | null
+  avatarUrl: string | null,
+  major: string,
+  college: string,
+  year: string,
+  hometown: string
 ): Promise<{ profile: MyProfile | null; error: string | null }> {
   const { data, error } = await supabase.rpc('update_my_profile', {
     p_name: name,
     p_bio: bio,
     p_avatar_url: avatarUrl,
+    p_major: major,
+    p_college: college,
+    p_year: year,
+    p_hometown: hometown,
   });
   if (error) return { profile: null, error: error.message };
   return { profile: data as MyProfile, error: null };

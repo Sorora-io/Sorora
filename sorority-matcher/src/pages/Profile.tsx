@@ -27,6 +27,10 @@ const Profile = () => {
   const [profileLoading, setProfileLoading] = useState(true);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [major, setMajor] = useState('');
+  const [college, setCollege] = useState('');
+  const [year, setYear] = useState('');
+  const [hometown, setHometown] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileError, setProfileError] = useState('');
   const [profileSaved, setProfileSaved] = useState(false);
@@ -45,6 +49,10 @@ const Profile = () => {
       if (profile) {
         setName(profile.name ?? '');
         setBio(profile.bio ?? '');
+        setMajor(profile.major ?? '');
+        setCollege(profile.college ?? '');
+        setYear(profile.year ?? '');
+        setHometown(profile.hometown ?? '');
         setAvatarUrl(profile.avatar_url);
       }
       setProfileLoading(false);
@@ -64,7 +72,7 @@ const Profile = () => {
       setAvatarUploading(false);
       return;
     }
-    const { error: saveError } = await updateMyProfile(name, bio, url);
+    const { error: saveError } = await updateMyProfile(name, bio, url, major, college, year, hometown);
     if (saveError) {
       setAvatarError(saveError);
     } else {
@@ -77,7 +85,15 @@ const Profile = () => {
     setProfileSaving(true);
     setProfileError('');
     setProfileSaved(false);
-    const { error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl);
+    const { error } = await updateMyProfile(
+      name.trim(),
+      bio.trim(),
+      avatarUrl,
+      major.trim(),
+      college.trim(),
+      year.trim(),
+      hometown.trim()
+    );
     if (error) {
       setProfileError(error);
     } else {
@@ -122,7 +138,7 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-8">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -147,7 +163,7 @@ const Profile = () => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-300 bg-gray-100 flex items-center justify-center hover:border-black transition-colors disabled:opacity-50"
+                className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-jade-300 bg-gray-100 flex items-center justify-center hover:border-jade-600 transition-colors disabled:opacity-50"
                 aria-label="Change profile picture"
               >
                 {avatarUrl ? (
@@ -168,7 +184,7 @@ const Profile = () => {
                 onChange={handleAvatarChange}
                 className="hidden"
               />
-              {avatarError && <p className="text-red-600 text-sm text-center">{avatarError}</p>}
+              {avatarError && <p className="text-brick text-sm text-center">{avatarError}</p>}
             </div>
 
             <div className="border-t border-gray-200 pt-4">
@@ -180,7 +196,7 @@ const Profile = () => {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   disabled={profileLoading}
-                  className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none disabled:opacity-50"
+                  className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
                 />
                 <textarea
                   value={bio}
@@ -188,14 +204,48 @@ const Profile = () => {
                   placeholder="A little about you"
                   rows={3}
                   disabled={profileLoading}
-                  className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none disabled:opacity-50 resize-none"
+                  className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50 resize-none"
                 />
-                {profileError && <p className="text-red-600 text-sm">{profileError}</p>}
-                {profileSaved && <p className="text-green-700 text-sm">Profile updated.</p>}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={major}
+                    onChange={(e) => setMajor(e.target.value)}
+                    placeholder="Major"
+                    disabled={profileLoading}
+                    className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={college}
+                    onChange={(e) => setCollege(e.target.value)}
+                    placeholder="College"
+                    disabled={profileLoading}
+                    className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    placeholder="Year"
+                    disabled={profileLoading}
+                    className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
+                  />
+                  <input
+                    type="text"
+                    value={hometown}
+                    onChange={(e) => setHometown(e.target.value)}
+                    placeholder="Hometown"
+                    disabled={profileLoading}
+                    className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
+                  />
+                </div>
+                {profileError && <p className="text-brick text-sm">{profileError}</p>}
+                {profileSaved && <p className="text-jade-700 text-sm">Profile updated.</p>}
                 <button
                   onClick={handleSaveProfile}
                   disabled={profileSaving || profileLoading}
-                  className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
                 >
                   {profileSaving ? '...' : 'Save Profile'}
                 </button>
@@ -211,14 +261,14 @@ const Profile = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="New password"
                   minLength={6}
-                  className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                  className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
-                {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
-                {passwordSaved && <p className="text-green-700 text-sm">Password updated.</p>}
+                {passwordError && <p className="text-brick text-sm">{passwordError}</p>}
+                {passwordSaved && <p className="text-jade-700 text-sm">Password updated.</p>}
                 <button
                   onClick={handleChangePassword}
                   disabled={passwordSaving}
-                  className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
                 >
                   {passwordSaving ? '...' : 'Update Password'}
                 </button>
@@ -235,7 +285,7 @@ const Profile = () => {
                     <div
                       key={m.id}
                       className={`flex items-center justify-between px-3 py-2 rounded-md border-2 ${
-                        active ? 'border-black' : 'border-gray-200'
+                        active ? 'border-jade-600' : 'border-gray-200'
                       }`}
                     >
                       <div>
@@ -272,7 +322,7 @@ const Profile = () => {
               ) : (
                 <button
                   onClick={() => setShowAddOrg(true)}
-                  className="w-full py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                  className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
                 >
                   + Add Organization
                 </button>
@@ -294,20 +344,20 @@ const Profile = () => {
                     <select
                       value={requestedRole}
                       onChange={(e) => setRequestedRole(e.target.value as MembershipRole)}
-                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     >
                       <option value="admin">Admin</option>
                       <option value="big">Big</option>
                       <option value="little">Little</option>
                     </select>
-                    {roleError && <p className="text-red-600 text-sm">{roleError}</p>}
+                    {roleError && <p className="text-brick text-sm">{roleError}</p>}
                     {roleRequestSent && (
-                      <p className="text-green-700 text-sm">Request sent to your admin.</p>
+                      <p className="text-jade-700 text-sm">Request sent to your admin.</p>
                     )}
                     <button
                       onClick={handleRequestRoleChange}
                       disabled={roleSaving || requestedRole === membership.role}
-                      className="w-full py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors disabled:opacity-50"
                     >
                       {roleSaving ? '...' : `Request to become ${roleLabel[requestedRole]}`}
                     </button>
@@ -318,7 +368,7 @@ const Profile = () => {
 
             <button
               onClick={signOut}
-              className="w-full mt-6 py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              className="w-full mt-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
             >
               Sign out
             </button>
