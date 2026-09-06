@@ -32,12 +32,24 @@ const Profile = () => {
   const [year, setYear] = useState('');
   const [hometown, setHometown] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [profileError, setProfileError] = useState('');
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [profileSaving, setProfileSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Name, bio, and school info save independently of each other — each
+  // section gets its own status so editing one never implies (or requires)
+  // touching the others.
+  const [nameError, setNameError] = useState('');
+  const [nameSaved, setNameSaved] = useState(false);
+  const [nameSaving, setNameSaving] = useState(false);
+
+  const [bioError, setBioError] = useState('');
+  const [bioSaved, setBioSaved] = useState(false);
+  const [bioSaving, setBioSaving] = useState(false);
+
+  const [schoolError, setSchoolError] = useState('');
+  const [schoolSaved, setSchoolSaved] = useState(false);
+  const [schoolSaving, setSchoolSaving] = useState(false);
 
   useEffect(() => {
     if (isGuest) {
@@ -81,25 +93,42 @@ const Profile = () => {
     setAvatarUploading(false);
   };
 
-  const handleSaveProfile = async () => {
-    setProfileSaving(true);
-    setProfileError('');
-    setProfileSaved(false);
+  const handleSaveName = async () => {
+    setNameSaving(true);
+    setNameError('');
+    setNameSaved(false);
+    const { error } = await updateMyProfile(name.trim(), bio, avatarUrl, major, college, year, hometown);
+    if (error) setNameError(error);
+    else setNameSaved(true);
+    setNameSaving(false);
+  };
+
+  const handleSaveBio = async () => {
+    setBioSaving(true);
+    setBioError('');
+    setBioSaved(false);
+    const { error } = await updateMyProfile(name, bio.trim(), avatarUrl, major, college, year, hometown);
+    if (error) setBioError(error);
+    else setBioSaved(true);
+    setBioSaving(false);
+  };
+
+  const handleSaveSchool = async () => {
+    setSchoolSaving(true);
+    setSchoolError('');
+    setSchoolSaved(false);
     const { error } = await updateMyProfile(
-      name.trim(),
-      bio.trim(),
+      name,
+      bio,
       avatarUrl,
       major.trim(),
       college.trim(),
       year.trim(),
       hometown.trim()
     );
-    if (error) {
-      setProfileError(error);
-    } else {
-      setProfileSaved(true);
-    }
-    setProfileSaving(false);
+    if (error) setSchoolError(error);
+    else setSchoolSaved(true);
+    setSchoolSaving(false);
   };
 
   const handleChangePassword = async () => {
@@ -188,7 +217,7 @@ const Profile = () => {
             </div>
 
             <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-semibold mb-2">Name &amp; bio</h3>
+              <h3 className="text-sm font-semibold mb-2">Name</h3>
               <div className="flex flex-col gap-2">
                 <input
                   type="text"
@@ -198,6 +227,21 @@ const Profile = () => {
                   disabled={profileLoading}
                   className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
                 />
+                {nameError && <p className="text-brick text-sm">{nameError}</p>}
+                {nameSaved && <p className="text-jade-700 text-sm">Name updated.</p>}
+                <button
+                  onClick={handleSaveName}
+                  disabled={nameSaving || profileLoading}
+                  className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+                >
+                  {nameSaving ? '...' : 'Save Name'}
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="text-sm font-semibold mb-2">Bio</h3>
+              <div className="flex flex-col gap-2">
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
@@ -206,6 +250,21 @@ const Profile = () => {
                   disabled={profileLoading}
                   className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50 resize-none"
                 />
+                {bioError && <p className="text-brick text-sm">{bioError}</p>}
+                {bioSaved && <p className="text-jade-700 text-sm">Bio updated.</p>}
+                <button
+                  onClick={handleSaveBio}
+                  disabled={bioSaving || profileLoading}
+                  className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+                >
+                  {bioSaving ? '...' : 'Save Bio'}
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="text-sm font-semibold mb-2">School info</h3>
+              <div className="flex flex-col gap-2">
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
@@ -240,14 +299,14 @@ const Profile = () => {
                     className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
                   />
                 </div>
-                {profileError && <p className="text-brick text-sm">{profileError}</p>}
-                {profileSaved && <p className="text-jade-700 text-sm">Profile updated.</p>}
+                {schoolError && <p className="text-brick text-sm">{schoolError}</p>}
+                {schoolSaved && <p className="text-jade-700 text-sm">School info updated.</p>}
                 <button
-                  onClick={handleSaveProfile}
-                  disabled={profileSaving || profileLoading}
+                  onClick={handleSaveSchool}
+                  disabled={schoolSaving || profileLoading}
                   className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
                 >
-                  {profileSaving ? '...' : 'Save Profile'}
+                  {schoolSaving ? '...' : 'Save School Info'}
                 </button>
               </div>
             </div>
