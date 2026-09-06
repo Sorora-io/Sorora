@@ -52,7 +52,7 @@ const Dashboard = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">{m.group.name}</h3>
-                  <p className="text-sm text-gray-500">{m.group.school}</p>
+                  {m.group.school && <p className="text-sm text-gray-500">{m.group.school}</p>}
                 </div>
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {roleLabel[m.role]}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
-import { findGroupByJoinCode, MembershipRole } from '../lib/groups';
+import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ const Login = () => {
           return;
         }
         resolvedGroupId = group.id;
-        resolvedGroupLabel = `${group.name} (${group.school})`;
+        resolvedGroupLabel = groupLabel(group);
       }
 
       const { error } = await signUp(email, password, name);

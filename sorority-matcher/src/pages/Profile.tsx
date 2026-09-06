@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
-import { requestRoleChange, MembershipRole } from '../lib/groups';
+import { requestRoleChange, groupLabel, MembershipRole } from '../lib/groups';
 import { getMyProfile, updateMyProfile, uploadAvatar } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
@@ -239,7 +239,7 @@ const Profile = () => {
                       }`}
                     >
                       <div>
-                        <p className="text-sm font-medium">{m.group.name} · {m.group.school}</p>
+                        <p className="text-sm font-medium">{groupLabel(m.group)}</p>
                         <p className="text-xs text-gray-500">
                           {roleLabel[m.role]}
                           {m.status !== 'approved' && ` (${m.status})`}
@@ -282,7 +282,7 @@ const Profile = () => {
             {membership && membership.status === 'approved' && (
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <h3 className="text-sm font-semibold mb-2">
-                  Request a role change ({membership.group.name} · {membership.group.school})
+                  Request a role change ({groupLabel(membership.group)})
                 </h3>
                 {membership.requested_role ? (
                   <p className="text-sm text-gray-600">

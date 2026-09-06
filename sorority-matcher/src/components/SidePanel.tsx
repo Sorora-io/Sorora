@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
+import { groupLabel } from '../lib/groups';
 
 interface NavItem {
   label: string;
@@ -113,7 +114,7 @@ const SidePanel = () => {
           {user && !isGuest && membership?.status === 'approved' && (
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                {membership.group.name} · {membership.group.school}
+                {groupLabel(membership.group)}
               </p>
               <div className="flex flex-col gap-1">
                 {membership.role === 'admin' ? (
@@ -138,7 +139,7 @@ const SidePanel = () => {
               <p className="text-gray-600 truncate">Signed in as {user.email}</p>
               {membership && (
                 <p className="text-gray-500 text-xs">
-                  {membership.group.name} ({membership.group.school}) · {membership.role}
+                  {groupLabel(membership.group)} · {membership.role}
                   {membership.status !== 'approved' && ` (${membership.status})`}
                 </p>
               )}

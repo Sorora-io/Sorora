@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGroup } from '../../contexts/GroupContext';
 import { homeForRole } from '../../components/RequireGroupRole';
+import { groupLabel } from '../../lib/groups';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -37,7 +38,7 @@ const Pending = () => {
             <p className="text-gray-600 mb-6">
               Your request to join{' '}
               <span className="font-medium">
-                {membership?.group.name} ({membership?.group.school})
+                {membership && groupLabel(membership.group)}
               </span>{' '}
               as{' '}
               {roleLabel[membership?.role ?? '']} was not approved. Contact your chapter's admin if you
@@ -50,7 +51,7 @@ const Pending = () => {
             <p className="text-gray-600 mb-6">
               Your request to join{' '}
               <span className="font-medium">
-                {membership?.group.name} ({membership?.group.school})
+                {membership && groupLabel(membership.group)}
               </span>{' '}
               as{' '}
               {roleLabel[membership?.role ?? '']} is waiting on your chapter admin to approve it. Check

@@ -39,6 +39,13 @@ export interface PendingMembership extends Membership {
   profile: Profile | null;
 }
 
+// Groups created before the school column existed default to an empty
+// string there, so blindly interpolating "(school)" everywhere would show
+// empty parens for them.
+export function groupLabel(group: { name: string; school: string }): string {
+  return group.school ? `${group.name} (${group.school})` : group.name;
+}
+
 const MAX_JOIN_CODE_ATTEMPTS = 5;
 
 export async function createGroup(

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
-import { setMyTwinWillingness } from '../../lib/groups';
+import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
 import { getRoster, getMyRanking, submitRanking, RosterMember } from '../../lib/rankings';
 
 const SubmitRanking = () => {
@@ -99,7 +99,7 @@ const SubmitRanking = () => {
       <div className="max-w-3xl w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-semibold mb-1">Rank your {oppositeLabel}</h2>
         <p className="text-gray-500 text-sm mb-6">
-          {group.name} ({group.school}) · rank at least {minRequired}, most preferred first
+          {groupLabel(group)} · rank at least {minRequired}, most preferred first
         </p>
 
         {loading ? (
