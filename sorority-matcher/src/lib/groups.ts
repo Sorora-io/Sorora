@@ -137,6 +137,15 @@ export async function updateMembershipStatus(
   return { error: error ? error.message : null };
 }
 
+export async function updateGroupProfile(
+  groupId: string,
+  name: string,
+  school: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('groups').update({ name, school }).eq('id', groupId);
+  return { error: error ? error.message : null };
+}
+
 export async function updateGroupSettings(
   groupId: string,
   minBigRankings: number,

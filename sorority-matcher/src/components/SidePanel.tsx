@@ -37,9 +37,17 @@ const SidePanel = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
-  const { membership } = useGroup();
+  const { membership, memberships, setActiveGroupId } = useGroup();
 
   const close = () => setOpen(false);
+
+  const goTo = (groupId: string, path: string) => {
+    setActiveGroupId(groupId);
+    navigate(path);
+    close();
+  };
+
+  const approvedMemberships = memberships.filter(m => m.status === 'approved');
 
   const linkClasses = (path: string) =>
     `block px-3 py-2 rounded-md text-sm transition-colors ${
@@ -111,26 +119,38 @@ const SidePanel = () => {
             </div>
           </div>
 
-          {user && !isGuest && membership?.status === 'approved' && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                {groupLabel(membership.group)}
+          {user && !isGuest && approvedMemberships.map(m => (
+            <div key={m.group_id} className="border-t border-gray-200 pt-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <span>{groupLabel(m.group)}</span>
+                {m.group_id === membership?.group_id && (
+                  <span className="text-[10px] normal-case font-medium text-gray-300">Active</span>
+                )}
               </p>
               <div className="flex flex-col gap-1">
-                {membership.role === 'admin' ? (
+                {m.role === 'admin' ? (
                   ADMIN_GROUP_LINKS.map(({ label, path }) => (
-                    <Link key={path} to={path} onClick={close} className={linkClasses(path)}>
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => goTo(m.group_id, path)}
+                      className={`text-left ${linkClasses(path)}`}
+                    >
                       {label}
-                    </Link>
+                    </button>
                   ))
                 ) : (
-                  <Link to="/group/submit-ranking" onClick={close} className={linkClasses('/group/submit-ranking')}>
-                    Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => goTo(m.group_id, '/group/submit-ranking')}
+                    className={`text-left ${linkClasses('/group/submit-ranking')}`}
+                  >
+                    Rank {m.role === 'big' ? 'Littles' : 'Bigs'}
+                  </button>
                 )}
               </div>
             </div>
-          )}
+          ))}
         </nav>
 
         <div className="p-4 border-t border-gray-200 mt-auto text-sm">
