@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
@@ -24,6 +24,14 @@ const Login = () => {
   const [school, setSchool] = useState('');
   const [joinCode, setJoinCode] = useState(joinCodeFromLink);
   const [role, setRole] = useState<MembershipRole>('big');
+  const [invitedGroupLabel, setInvitedGroupLabel] = useState('');
+
+  useEffect(() => {
+    if (!joinCodeFromLink) return;
+    findGroupByJoinCode(joinCodeFromLink).then(({ group }) => {
+      if (group) setInvitedGroupLabel(groupLabel(group));
+    });
+  }, [joinCodeFromLink]);
 
   const handleContinueAsGuest = () => {
     continueAsGuest();
@@ -108,6 +116,12 @@ const Login = () => {
         <h2 className="text-2xl font-semibold mb-6">
           {mode === 'signin' ? 'Sign In' : 'Create Account'}
         </h2>
+
+        {invitedGroupLabel && (
+          <p className="mb-4 text-blue-700 bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
+            You've been invited to join <strong>{invitedGroupLabel}</strong>! Create an account below to request to join.
+          </p>
+        )}
 
         {successMessage && (
           <p className="mb-4 text-green-700 bg-green-50 border border-green-200 rounded-md p-3 text-sm">
