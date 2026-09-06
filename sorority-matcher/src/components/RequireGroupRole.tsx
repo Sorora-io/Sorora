@@ -17,9 +17,9 @@ export const homeForRole = (role: MembershipRole) =>
 // short of that redirects to wherever they actually belong.
 const RequireGroupRole = ({ allow, children }: Props) => {
   const { user, loading: authLoading, isGuest } = useAuth();
-  const { membership, loading: groupLoading } = useGroup();
+  const { membership, initialized } = useGroup();
 
-  if (authLoading || groupLoading) {
+  if (authLoading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-500">Loading...</p>

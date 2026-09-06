@@ -39,6 +39,7 @@ function clearPendingGroupAction() {
 interface GroupContextType {
   membership: MembershipWithGroup | null;
   loading: boolean;
+  initialized: boolean;
   refresh: () => Promise<void>;
 }
 
@@ -53,26 +54,42 @@ export const useGroup = () => {
 };
 
 export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, loading: authLoading } = useAuth();
   const [membership, setMembership] = useState<MembershipWithGroup | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [autoSubmitAttempted, setAutoSubmitAttempted] = useState(false);
 
+  // `loading` reflects any in-flight fetch (including a refresh() called
+  // after a save, to pick up new data) — pages should feel free to ignore it
+  // and keep their own content mounted. `initialized` only ever flips once,
+  // from false to true, the first time membership status becomes known;
+  // that's the one route-gating components should block on, so an action
+  // like "save my ranking" -> refresh() doesn't unmount the page underneath
+  // a "Loading..." screen and wipe local success/error state.
   const refresh = useCallback(async () => {
     if (!user) {
       setMembership(null);
       setLoading(false);
+      setInitialized(true);
       return;
     }
     setLoading(true);
     const { membership: m } = await getMyMembership();
     setMembership(m);
     setLoading(false);
+    setInitialized(true);
   }, [user]);
 
   useEffect(() => {
+    // Wait for AuthContext's own session check to resolve first — otherwise
+    // this fires once with `user` still null (before the real session is
+    // known), which would mark `initialized` true with no membership and
+    // briefly bounce a genuinely-signed-in admin/big/little through
+    // Onboarding before the real membership loads.
+    if (authLoading) return;
     refresh();
-  }, [refresh]);
+  }, [authLoading, refresh]);
 
   // Runs a create/join action stashed at signup time, the first time this
   // user is seen with no membership yet (i.e. right after email
@@ -95,7 +112,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     })();
   }, [isGuest, user, loading, membership, autoSubmitAttempted, refresh]);
 
-  const value: GroupContextType = { membership, loading, refresh };
+  const value: GroupContextType = { membership, loading, initialized, refresh };
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>;
 };
