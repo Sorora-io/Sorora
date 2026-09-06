@@ -9,6 +9,8 @@ interface NavItem {
   path: string;
 }
 
+const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
+
 const ADMIN_GROUP_LINKS: NavItem[] = [
   { label: 'Approvals', path: '/group/approvals' },
   { label: 'Submission Status', path: '/group/status' },
@@ -33,24 +35,29 @@ const WIZARD_LINKS: NavItem[] = [
 ];
 
 const SidePanel = () => {
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
   const { membership, memberships, setActiveGroupId } = useGroup();
 
-  const close = () => setOpen(false);
+  const closeMobile = () => setMobileOpen(false);
 
-  const goTo = (groupId: string, path: string) => {
-    setActiveGroupId(groupId);
+  const goTo = (path: string) => {
     navigate(path);
-    close();
+    closeMobile();
   };
 
-  const approvedMemberships = memberships.filter(m => m.status === 'approved');
+  const switchTo = (groupId: string) => {
+    setActiveGroupId(groupId);
+    setSwitcherOpen(false);
+  };
+
+  const otherMemberships = memberships.filter(m => m.group_id !== membership?.group_id);
 
   const linkClasses = (path: string) =>
-    `block px-3 py-2 rounded-md text-sm transition-colors ${
+    `block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
       location.pathname === path
         ? 'bg-jade-600 text-white'
         : 'text-gray-700 hover:bg-jade-50'
@@ -58,122 +65,152 @@ const SidePanel = () => {
 
   return (
     <>
+      {/* Mobile-only toggle — the desktop sidebar is always visible, so this
+          (and the drawer/backdrop below) only matters below md. */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setMobileOpen(true)}
         aria-label="Open navigation"
-        className="fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-md bg-white border border-jade-300 shadow-sm hover:bg-gray-50"
+        className="md:hidden fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-md bg-white border border-jade-300 shadow-sm hover:bg-gray-50"
       >
         <span className="block w-5 h-0.5 bg-black" />
         <span className="block w-5 h-0.5 bg-black" />
         <span className="block w-5 h-0.5 bg-black" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 bg-black/40 z-40" onClick={close} />
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/40 z-40" onClick={closeMobile} />
       )}
 
-      <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto ${
-          open ? 'translate-x-0' : '-translate-x-full'
+      <aside
+        className={`fixed md:sticky top-0 left-0 h-screen w-72 flex-shrink-0 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <Link to="/" onClick={close} className="text-xl font-display font-semibold text-jade-800">
+          <Link to="/" onClick={closeMobile} className="text-xl font-display font-semibold text-jade-800">
             Sorora
           </Link>
           <button
             type="button"
-            onClick={close}
+            onClick={closeMobile}
             aria-label="Close navigation"
-            className="text-gray-500 hover:text-black text-2xl leading-none"
+            className="md:hidden text-gray-500 hover:text-black text-2xl leading-none"
           >
             &times;
           </button>
         </div>
 
-        <nav className="p-4 flex flex-col gap-6">
-          <div>
+        <div className="p-4 flex flex-col gap-6">
+          {user && !isGuest && membership && (
+            <div>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSwitcherOpen(o => !o)}
+                  className="w-full flex items-center justify-between gap-2 text-left bg-jade-50 border border-jade-100 rounded-md px-3 py-2 hover:bg-jade-100 transition-colors"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-jade-800 truncate">
+                      {groupLabel(membership.group)}
+                    </span>
+                    <span className="block text-xs font-medium text-jade-600">
+                      {roleLabel[membership.role]}
+                      {membership.status !== 'approved' && ` · ${membership.status}`}
+                    </span>
+                  </span>
+                  {otherMemberships.length > 0 && (
+                    <svg
+                      width="12" height="8" viewBox="0 0 12 8" fill="none"
+                      className={`flex-shrink-0 text-jade-700 transition-transform ${switcherOpen ? 'rotate-180' : ''}`}
+                    >
+                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </button>
+
+                {switcherOpen && otherMemberships.length > 0 && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-lg p-1 z-10">
+                    {otherMemberships.map(m => (
+                      <button
+                        key={m.group_id}
+                        type="button"
+                        onClick={() => switchTo(m.group_id)}
+                        className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-jade-50 transition-colors"
+                      >
+                        <span className="block font-medium truncate">{groupLabel(m.group)}</span>
+                        <span className="block text-xs text-gray-500">
+                          {roleLabel[m.role]}
+                          {m.status !== 'approved' && ` · ${m.status}`}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1 mt-3">
+                {membership.status !== 'approved' ? (
+                  <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
+                    {membership.status === 'pending' ? 'View request status' : 'View details'}
+                  </button>
+                ) : membership.role === 'admin' ? (
+                  ADMIN_GROUP_LINKS.map(({ label, path }) => (
+                    <button key={path} type="button" onClick={() => goTo(path)} className={linkClasses(path)}>
+                      {label}
+                    </button>
+                  ))
+                ) : (
+                  <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
+                    Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className={user && !isGuest && membership ? 'pt-2 border-t border-gray-200' : ''}>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               Explore
             </p>
             <div className="flex flex-col gap-1">
               {SITE_LINKS.map(({ label, path }) => (
-                <Link key={path} to={path} onClick={close} className={linkClasses(path)}>
+                <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
                   {label}
                 </Link>
               ))}
             </div>
           </div>
 
-          <div>
+          <div className="pt-2 border-t border-gray-200">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               Matching Wizard (No Org)
             </p>
             <div className="flex flex-col gap-1">
               {WIZARD_LINKS.map(({ label, path }) => (
-                <Link key={path} to={path} onClick={close} className={linkClasses(path)}>
+                <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
                   {label}
                 </Link>
               ))}
             </div>
           </div>
+        </div>
 
-          {user && !isGuest && approvedMemberships.map(m => (
-            <div key={m.group_id} className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-2">
-                <span>{groupLabel(m.group)}</span>
-                {m.group_id === membership?.group_id && (
-                  <span className="text-[10px] normal-case font-medium text-gray-300">Active</span>
-                )}
-              </p>
-              <div className="flex flex-col gap-1">
-                {m.role === 'admin' ? (
-                  ADMIN_GROUP_LINKS.map(({ label, path }) => (
-                    <button
-                      key={path}
-                      type="button"
-                      onClick={() => goTo(m.group_id, path)}
-                      className={`text-left ${linkClasses(path)}`}
-                    >
-                      {label}
-                    </button>
-                  ))
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => goTo(m.group_id, '/group/submit-ranking')}
-                    className={`text-left ${linkClasses('/group/submit-ranking')}`}
-                  >
-                    Rank {m.role === 'big' ? 'Littles' : 'Bigs'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-gray-200 mt-auto text-sm">
+        <div className="p-4 border-t border-gray-200 text-sm">
           {user ? (
             <div className="flex flex-col gap-2">
               <p className="text-gray-600 truncate">Signed in as {user.email}</p>
-              {membership && (
-                <p className="text-gray-500 text-xs">
-                  {groupLabel(membership.group)} · {membership.role}
-                  {membership.status !== 'approved' && ` (${membership.status})`}
-                </p>
-              )}
               {!isGuest && (
-                <Link to="/dashboard" onClick={close} className="underline text-gray-600 hover:text-black">
+                <Link to="/dashboard" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
                   Dashboard
                 </Link>
               )}
-              <Link to="/profile" onClick={close} className="underline text-gray-600 hover:text-black">
+              <Link to="/profile" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
                 Profile
               </Link>
               <button
                 type="button"
-                onClick={() => { signOut(); close(); navigate('/login'); }}
+                onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
                 className="text-left underline text-gray-600 hover:text-black"
               >
                 Sign out
@@ -182,17 +219,17 @@ const SidePanel = () => {
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
               <p className="text-gold-700">Browsing as guest — data won't be saved</p>
-              <Link to="/login" onClick={close} className="underline text-gray-600 hover:text-black">
+              <Link to="/login" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
                 Sign in
               </Link>
             </div>
           ) : (
-            <Link to="/login" onClick={close} className={linkClasses('/login')}>
+            <Link to="/login" onClick={closeMobile} className={linkClasses('/login')}>
               Sign In / Sign Up
             </Link>
           )}
         </div>
-      </div>
+      </aside>
     </>
   );
 };
