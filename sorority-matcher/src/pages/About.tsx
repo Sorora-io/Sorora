@@ -7,7 +7,7 @@ const About = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-12">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -83,7 +83,7 @@ const About = () => {
         </button>
         <button
           onClick={() => navigate('/admin/enter-bigs')}
-          className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
+          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
         >
           ⟶
         </button>

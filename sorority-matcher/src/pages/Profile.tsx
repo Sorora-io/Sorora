@@ -227,7 +227,7 @@ const Profile = () => {
                     type="text"
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
-                    placeholder="Year"
+                    placeholder="Graduating Year"
                     disabled={profileLoading}
                     className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
                   />

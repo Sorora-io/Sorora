@@ -52,8 +52,8 @@ const SidePanel = () => {
   const linkClasses = (path: string) =>
     `block px-3 py-2 rounded-md text-sm transition-colors ${
       location.pathname === path
-        ? 'bg-black text-white'
-        : 'text-gray-700 hover:bg-gray-100'
+        ? 'bg-jade-600 text-white'
+        : 'text-gray-700 hover:bg-jade-50'
     }`;
 
   return (
@@ -62,7 +62,7 @@ const SidePanel = () => {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open navigation"
-        className="fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-md bg-white border border-gray-300 shadow-sm hover:bg-gray-50"
+        className="fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-md bg-white border border-jade-300 shadow-sm hover:bg-gray-50"
       >
         <span className="block w-5 h-0.5 bg-black" />
         <span className="block w-5 h-0.5 bg-black" />
@@ -79,7 +79,7 @@ const SidePanel = () => {
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <Link to="/" onClick={close} className="text-xl font-bold">
+          <Link to="/" onClick={close} className="text-xl font-display font-semibold text-jade-800">
             Sorora
           </Link>
           <button
@@ -181,7 +181,7 @@ const SidePanel = () => {
             </div>
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
-              <p className="text-amber-700">Browsing as guest — data won't be saved</p>
+              <p className="text-gold-700">Browsing as guest — data won't be saved</p>
               <Link to="/login" onClick={close} className="underline text-gray-600 hover:text-black">
                 Sign in
               </Link>

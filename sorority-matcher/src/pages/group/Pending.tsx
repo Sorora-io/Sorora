@@ -27,7 +27,7 @@ const Pending = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -62,13 +62,13 @@ const Pending = () => {
         <div className="flex flex-col gap-3">
           <button
             onClick={refresh}
-            className="w-full py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+            className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
           >
             Check again
           </button>
           <button
             onClick={signOut}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
           >
             Sign out
           </button>

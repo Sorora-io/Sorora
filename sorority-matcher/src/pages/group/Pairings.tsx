@@ -36,14 +36,14 @@ const Pairings = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-8">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-semibold mb-6">Pairings</h2>
 
-        {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+        {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {loading ? (
           <p className="text-gray-500">Loading...</p>

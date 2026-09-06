@@ -57,7 +57,7 @@ const Settings = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -72,7 +72,7 @@ const Settings = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alpha Beta Chapter"
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           <div>
@@ -82,17 +82,17 @@ const Settings = () => {
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. New York University"
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
-          {profileError && <p className="text-red-600 text-sm">{profileError}</p>}
-          {profileSaved && <p className="text-green-700 text-sm">Saved.</p>}
+          {profileError && <p className="text-brick text-sm">{profileError}</p>}
+          {profileSaved && <p className="text-jade-700 text-sm">Saved.</p>}
 
           <button
             onClick={handleSaveProfile}
             disabled={profileSaving}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {profileSaving ? '...' : 'Save Name & School'}
           </button>
@@ -108,7 +108,7 @@ const Settings = () => {
               min={1}
               value={minLittle}
               onChange={(e) => setMinLittle(Number(e.target.value))}
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           <div>
@@ -120,17 +120,17 @@ const Settings = () => {
               min={1}
               value={minBig}
               onChange={(e) => setMinBig(Number(e.target.value))}
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {saved && <p className="text-green-700 text-sm">Saved.</p>}
+          {error && <p className="text-brick text-sm">{error}</p>}
+          {saved && <p className="text-jade-700 text-sm">Saved.</p>}
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {saving ? '...' : 'Save Settings'}
           </button>

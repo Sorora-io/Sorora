@@ -35,7 +35,7 @@ const RankingRequirements = () => {
     <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
-        <h1 className="text-4xl font-bold text-center">Sorora</h1>
+        <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -54,7 +54,7 @@ const RankingRequirements = () => {
               min="1"
               value={minBigInput}
               onChange={(e) => setMinBigInput(e.target.value)}
-              className="w-32 p-2 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-32 p-2 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -67,12 +67,12 @@ const RankingRequirements = () => {
               min="1"
               value={minLittleInput}
               onChange={(e) => setMinLittleInput(e.target.value)}
-              className="w-32 p-2 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-32 p-2 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
           {error && (
-            <p className="text-red-600">{error}</p>
+            <p className="text-brick">{error}</p>
           )}
         </div>
       </div>
@@ -86,7 +86,7 @@ const RankingRequirements = () => {
         </button>
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
+          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
         >
           ⟶
         </button>

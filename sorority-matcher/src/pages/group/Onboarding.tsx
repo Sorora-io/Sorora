@@ -20,7 +20,7 @@ const Onboarding = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 

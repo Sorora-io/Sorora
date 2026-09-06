@@ -97,7 +97,7 @@ const Pairings = () => {
     <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
-        <h1 className="text-4xl font-bold text-center">Sorora</h1>
+        <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -121,7 +121,7 @@ const Pairings = () => {
                   <span className="flex items-center gap-2 text-gray-700">
                     {pairing.littles.join(', ')}
                     {pairing.littles.length > 1 && (
-                      <span className="text-xs font-semibold px-2 py-0.5 bg-black text-white rounded-full">
+                      <span className="text-xs font-semibold px-2 py-0.5 bg-jade-600 text-white rounded-full">
                         TWINS
                       </span>
                     )}
@@ -140,13 +140,13 @@ const Pairings = () => {
                 </button>
                 <button
                   onClick={exportToExcel}
-                  className="px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                  className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
                 >
                   Export to Excel
                 </button>
               </div>
               {exportMessage && (
-                <p className="text-green-600 font-semibold">{exportMessage}</p>
+                <p className="text-jade-700 font-semibold">{exportMessage}</p>
               )}
             </div>
           </>

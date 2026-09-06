@@ -105,7 +105,7 @@ const RankBigs = () => {
     <div className="min-h-screen flex flex-col items-center p-8 pt-16">
       <header className="mb-12">
         <Link to="/">
-        <h1 className="text-4xl font-bold text-center">Sorora</h1>
+        <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -124,11 +124,11 @@ const RankBigs = () => {
             value={rankingInput}
             onChange={(e) => setRankingInput(e.target.value)}
             rows={10}
-            className="w-full p-4 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+            className="w-full p-4 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             placeholder="Enter names, one per line, in order of preference"
           />
           {validationError && (
-            <p className="text-red-600 mt-2">{validationError}</p>
+            <p className="text-brick mt-2">{validationError}</p>
           )}
         </div>
       </div>
@@ -142,7 +142,7 @@ const RankBigs = () => {
         </button>
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
+          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
         >
           ⟶
         </button>

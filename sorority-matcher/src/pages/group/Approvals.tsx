@@ -76,7 +76,7 @@ const Approvals = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-8">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -93,7 +93,7 @@ const Approvals = () => {
             </code>
             <button
               onClick={() => copy(group.join_code, 'code')}
-              className="px-3 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+              className="px-3 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
             >
               {copied === 'code' ? 'Copied' : 'Copy'}
             </button>
@@ -103,7 +103,7 @@ const Approvals = () => {
             <code className="flex-1 bg-gray-100 rounded-md px-3 py-2 text-sm truncate">{joinLink}</code>
             <button
               onClick={() => copy(joinLink, 'link')}
-              className="px-3 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+              className="px-3 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
             >
               {copied === 'link' ? 'Copied' : 'Copy'}
             </button>
@@ -114,7 +114,7 @@ const Approvals = () => {
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <h3 className="text-xl font-semibold mb-4">Pending requests</h3>
 
-        {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+        {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {loading ? (
           <p className="text-gray-500">Loading...</p>
@@ -133,13 +133,13 @@ const Approvals = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDecision(m.id, 'rejected')}
-                    className="px-4 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleDecision(m.id, 'approved')}
-                    className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800 transition-colors"
+                    className="px-4 py-2 bg-jade-600 text-white rounded-md text-sm hover:bg-jade-700 transition-colors"
                   >
                     Approve
                   </button>
@@ -165,13 +165,13 @@ const Approvals = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleRoleDecision(r, false)}
-                    className="px-4 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
                   >
                     Reject
                   </button>
                   <button
                     onClick={() => handleRoleDecision(r, true)}
-                    className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800 transition-colors"
+                    className="px-4 py-2 bg-jade-600 text-white rounded-md text-sm hover:bg-jade-700 transition-colors"
                   >
                     Approve
                   </button>

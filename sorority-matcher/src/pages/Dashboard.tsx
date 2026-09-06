@@ -23,7 +23,7 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-8">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -46,7 +46,7 @@ const Dashboard = () => {
             <div
               key={m.id}
               className={`bg-white rounded-lg shadow-lg p-6 border-2 ${
-                active ? 'border-black' : 'border-transparent'
+                active ? 'border-jade-600' : 'border-transparent'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
@@ -67,7 +67,7 @@ const Dashboard = () => {
                       <button
                         key={a.path}
                         onClick={() => goTo(m.group_id, a.path)}
-                        className="px-3 py-2 text-sm border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                        className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                       >
                         {a.label}
                       </button>
@@ -75,7 +75,7 @@ const Dashboard = () => {
                   ) : (
                     <button
                       onClick={() => goTo(m.group_id, '/group/submit-ranking')}
-                      className="px-3 py-2 text-sm border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                      className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                     >
                       Rank {m.role === 'big' ? 'Littles' : 'Bigs'}
                     </button>
@@ -84,7 +84,7 @@ const Dashboard = () => {
               ) : (
                 <button
                   onClick={() => goTo(m.group_id, '/group/pending')}
-                  className="px-3 py-2 text-sm border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                 >
                   {m.status === 'pending' ? 'View request status' : 'View details'}
                 </button>

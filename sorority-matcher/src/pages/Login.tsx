@@ -108,7 +108,7 @@ const Login = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -124,7 +124,7 @@ const Login = () => {
         )}
 
         {successMessage && (
-          <p className="mb-4 text-green-700 bg-green-50 border border-green-200 rounded-md p-3 text-sm">
+          <p className="mb-4 text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
             {successMessage}
           </p>
         )}
@@ -138,7 +138,7 @@ const Login = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               />
             </div>
           )}
@@ -150,7 +150,7 @@ const Login = () => {
                   type="button"
                   onClick={() => setGroupMode('create')}
                   className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                    groupMode === 'create' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                    groupMode === 'create' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
                   }`}
                 >
                   Create a group
@@ -159,7 +159,7 @@ const Login = () => {
                   type="button"
                   onClick={() => setGroupMode('join')}
                   className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                    groupMode === 'join' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+                    groupMode === 'join' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
                   }`}
                 >
                   Join a group
@@ -175,7 +175,7 @@ const Login = () => {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder="e.g. Alpha Beta Chapter"
-                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     />
                   </div>
                   <div>
@@ -185,7 +185,7 @@ const Login = () => {
                       value={school}
                       onChange={(e) => setSchool(e.target.value)}
                       placeholder="e.g. New York University"
-                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     />
                   </div>
                   <p className="text-xs text-gray-500">
@@ -201,7 +201,7 @@ const Login = () => {
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="e.g. XK7P2QRT"
-                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none uppercase"
+                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
                     />
                   </div>
                   <div>
@@ -209,7 +209,7 @@ const Login = () => {
                     <select
                       value={role}
                       onChange={(e) => setRole(e.target.value as MembershipRole)}
-                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     >
                       <option value="big">Big</option>
                       <option value="little">Little</option>
@@ -232,7 +232,7 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -245,18 +245,18 @@ const Login = () => {
               placeholder="••••••••"
               required
               minLength={6}
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-brick text-sm">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
@@ -282,19 +282,19 @@ const Login = () => {
             </button>
           ) : (
             <div className="text-sm">
-              <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
+              <p className="text-gold-700 bg-gold-50 border border-gold-200 rounded-md p-3 mb-3">
                 ⚠️ Without an account, your entries are only saved in this browser — not tied to you. If you switch devices, use a different browser, or clear your browser data, everything will be lost.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowGuestWarning(false)}
-                  className="flex-1 py-2 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-2 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleContinueAsGuest}
-                  className="flex-1 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                  className="flex-1 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
                 >
                   Continue anyway
                 </button>

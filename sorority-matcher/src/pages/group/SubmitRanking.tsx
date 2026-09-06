@@ -92,7 +92,7 @@ const SubmitRanking = () => {
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-8">
         <Link to="/">
-          <h1 className="text-4xl font-bold text-center">Sorora</h1>
+          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
 
@@ -152,7 +152,7 @@ const SubmitRanking = () => {
                       >
                         ↓
                       </button>
-                      <button onClick={() => removeFromRanking(id)} className="px-2 text-red-600">
+                      <button onClick={() => removeFromRanking(id)} className="px-2 text-brick">
                         ×
                       </button>
                     </span>
@@ -169,18 +169,19 @@ const SubmitRanking = () => {
               type="checkbox"
               checked={willingToTakeTwins}
               onChange={(e) => setWillingToTakeTwins(e.target.checked)}
+              className="accent-jade-600 w-4 h-4"
             />
             I'm willing to take two Littles (twins)
           </label>
         )}
 
-        {error && <p className="text-red-600 text-sm mt-4">{error}</p>}
-        {saved && <p className="text-green-700 text-sm mt-4">Ranking saved.</p>}
+        {error && <p className="text-brick text-sm mt-4">{error}</p>}
+        {saved && <p className="text-jade-700 text-sm mt-4">Ranking saved.</p>}
 
         <button
           onClick={handleSave}
           disabled={saving || loading}
-          className="w-full mt-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+          className="w-full mt-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
         >
           {saving ? '...' : 'Save Ranking'}
         </button>

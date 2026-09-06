@@ -8,13 +8,13 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <header className="mb-12 w-full max-w-2xl flex items-center justify-between">
-        <h1 className="text-4xl font-bold">Sorora</h1>
+        <h1 className="text-4xl font-display font-semibold text-jade-800">Sorora</h1>
         {user ? (
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.email}</span>
             <button
               onClick={() => signOut()}
-              className="px-4 py-2 border border-black rounded-md hover:bg-gray-100 transition-colors text-sm"
+              className="px-4 py-2 border border-jade-600 rounded-md hover:bg-jade-50 transition-colors text-sm"
             >
               Sign out
             </button>
@@ -22,7 +22,7 @@ const Index = () => {
         ) : (
           <button
             onClick={() => navigate('/login')}
-            className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-sm"
+            className="px-4 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-sm"
           >
             Sign in
           </button>
@@ -36,7 +36,7 @@ const Index = () => {
       <div className="mt-8">
         <button
           onClick={() => navigate('/about')}
-          className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
+          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
         >
           ⟶
         </button>

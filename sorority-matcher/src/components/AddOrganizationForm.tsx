@@ -71,7 +71,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
           type="button"
           onClick={() => { setGroupMode('create'); setError(''); }}
           className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-            groupMode === 'create' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+            groupMode === 'create' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
           }`}
         >
           Create a group
@@ -80,7 +80,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
           type="button"
           onClick={() => { setGroupMode('join'); setError(''); }}
           className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-            groupMode === 'join' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
+            groupMode === 'join' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
           }`}
         >
           Join a group
@@ -96,7 +96,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g. Alpha Beta Chapter"
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           <div>
@@ -106,14 +106,14 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. New York University"
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-brick text-sm">{error}</p>}
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : 'Create Group'}
           </button>
@@ -127,7 +127,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="e.g. XK7P2QRT"
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none uppercase"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
             />
           </div>
           <div>
@@ -135,18 +135,18 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as MembershipRole)}
-              className="w-full p-3 border-2 border-gray-300 rounded-md focus:border-black focus:outline-none"
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             >
               <option value="big">Big</option>
               <option value="little">Little</option>
               <option value="admin">Admin</option>
             </select>
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-brick text-sm">{error}</p>}
           <button
             onClick={handleJoin}
             disabled={loading}
-            className="w-full py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : 'Request to Join'}
           </button>
