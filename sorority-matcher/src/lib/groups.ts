@@ -81,24 +81,23 @@ export async function requestToJoinGroup(
   return { error: error ? error.message : null };
 }
 
-export async function getMyMembership(): Promise<{
-  membership: MembershipWithGroup | null;
+export async function getMyMemberships(): Promise<{
+  memberships: MembershipWithGroup[];
   error: string | null;
 }> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { membership: null, error: null };
+  if (!user) return { memberships: [], error: null };
 
   const { data, error } = await supabase
     .from('memberships')
     .select('*, group:groups(*)')
     .eq('user_id', user.id)
-    .limit(1)
-    .maybeSingle();
+    .order('created_at', { ascending: true });
 
-  if (error) return { membership: null, error: error.message };
-  return { membership: data as unknown as MembershipWithGroup | null, error: null };
+  if (error) return { memberships: [], error: error.message };
+  return { memberships: (data ?? []) as unknown as MembershipWithGroup[], error: null };
 }
 
 export async function getPendingMemberships(

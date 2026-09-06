@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
+import AddOrganizationForm from '../components/AddOrganizationForm';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Profile = () => {
   const { user, isGuest, signOut, updatePassword } = useAuth();
-  const { membership, refresh } = useGroup();
+  const { membership, memberships, setActiveGroupId, refresh } = useGroup();
 
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const [showAddOrg, setShowAddOrg] = useState(false);
 
   const [requestedRole, setRequestedRole] = useState<MembershipRole>('big');
   const [roleError, setRoleError] = useState('');
@@ -74,13 +77,6 @@ const Profile = () => {
               <p>
                 <span className="font-medium text-black">Email:</span> {user?.email}
               </p>
-              {membership && (
-                <p className="mt-1">
-                  <span className="font-medium text-black">Group:</span> {membership.group.name} ·{' '}
-                  {roleLabel[membership.role]}
-                  {membership.status !== 'approved' && ` (${membership.status})`}
-                </p>
-              )}
             </div>
 
             <div className="border-t border-gray-200 pt-4">
@@ -106,9 +102,65 @@ const Profile = () => {
               </div>
             </div>
 
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="text-sm font-semibold mb-2">Your Organizations</h3>
+
+              <div className="flex flex-col gap-2 mb-3">
+                {memberships.map(m => {
+                  const active = m.group_id === membership?.group_id;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-center justify-between px-3 py-2 rounded-md border-2 ${
+                        active ? 'border-black' : 'border-gray-200'
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{m.group.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {roleLabel[m.role]}
+                          {m.status !== 'approved' && ` (${m.status})`}
+                        </p>
+                      </div>
+                      {active ? (
+                        <span className="text-xs text-gray-400">Active</span>
+                      ) : (
+                        <button
+                          onClick={() => setActiveGroupId(m.group_id)}
+                          className="text-sm underline text-gray-600 hover:text-black"
+                        >
+                          Switch
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                {memberships.length === 0 && (
+                  <p className="text-sm text-gray-500">You're not part of any organization yet.</p>
+                )}
+              </div>
+
+              {showAddOrg ? (
+                <AddOrganizationForm
+                  onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+                  onJoined={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+                  onCancel={() => setShowAddOrg(false)}
+                />
+              ) : (
+                <button
+                  onClick={() => setShowAddOrg(true)}
+                  className="w-full py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                >
+                  + Add Organization
+                </button>
+              )}
+            </div>
+
             {membership && membership.status === 'approved' && (
               <div className="border-t border-gray-200 pt-4 mt-4">
-                <h3 className="text-sm font-semibold mb-2">Request a role change</h3>
+                <h3 className="text-sm font-semibold mb-2">
+                  Request a role change ({membership.group.name})
+                </h3>
                 {membership.requested_role ? (
                   <p className="text-sm text-gray-600">
                     Your request to become {roleLabel[membership.requested_role]} is waiting on your
