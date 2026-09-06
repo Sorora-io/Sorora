@@ -17,11 +17,7 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
 
 const SITE_LINKS: NavItem[] = [
   { label: 'Home', path: '/' },
-  { label: 'Mission', path: '/mission' },
-  { label: 'How It Works: Step 1', path: '/how-it-works/step-1' },
-  { label: 'How It Works: Step 2', path: '/how-it-works/step-2' },
-  { label: 'How It Works: Twins', path: '/how-it-works/twins' },
-  { label: 'Why It Works', path: '/why-it-works' },
+  { label: 'About', path: '/about' },
 ];
 
 const WIZARD_LINKS: NavItem[] = [

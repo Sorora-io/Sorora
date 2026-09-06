@@ -63,7 +63,7 @@ const EnterBigs = () => {
 
       <div className="mt-8 flex gap-4">
         <button
-          onClick={() => navigate('/why-it-works')}
+          onClick={() => navigate('/about')}
           className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
         >
           ⟵

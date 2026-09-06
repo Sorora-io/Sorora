@@ -35,7 +35,7 @@ const Index = () => {
 
       <div className="mt-8">
         <button
-          onClick={() => navigate('/mission')}
+          onClick={() => navigate('/about')}
           className="px-8 py-3 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xl"
         >
           ⟶
