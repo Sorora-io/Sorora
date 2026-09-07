@@ -51,6 +51,10 @@ const SECTIONS: FaqSection[] = [
         q: 'A member wants to change roles (e.g. Big to Admin) — how do I handle that?',
         a: "Role change requests show up under \"Role change requests\" on your Approvals page, separate from new-member requests, with their own approve/reject buttons.",
       },
+      {
+        q: "How do I hand off my chapter to someone else (graduating, stepping down, etc.)?",
+        a: "Every chapter has one owner, separate from its (possibly several) admins — admins can approve members and edit settings day to day, but only the owner can transfer ownership. If you're the owner, Group Settings has an \"Ownership\" section where you can pick any other approved admin and transfer it to them, with a confirmation step before it goes through. You'll remain an admin afterward, just no longer the owner. If there's no other admin yet, approve one first — ownership can only transfer to an existing admin of your chapter.",
+      },
     ],
   },
   {
