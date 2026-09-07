@@ -177,9 +177,14 @@ const SidePanel = () => {
                   ) : (
                     <>
                       {(membership.role === 'big' || membership.role === 'little') && (
-                        <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
-                          Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
-                        </button>
+                        <>
+                          <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
+                            Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                          </button>
+                          <button type="button" onClick={() => goTo('/group/notes')} className={linkClasses('/group/notes')}>
+                            Notes
+                          </button>
+                        </>
                       )}
                       {isEffectiveAdmin(membership) &&
                         ADMIN_GROUP_LINKS.map(({ label, path }) => (

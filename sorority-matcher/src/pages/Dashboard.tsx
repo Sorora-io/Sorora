@@ -77,12 +77,20 @@ const Dashboard = () => {
               {m.status === 'approved' ? (
                 <div className="flex flex-wrap gap-2">
                   {(m.role === 'big' || m.role === 'little') && (
-                    <button
-                      onClick={() => goTo(m.group_id, '/group/submit-ranking')}
-                      className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-                    >
-                      Rank {m.role === 'big' ? 'Littles' : 'Bigs'}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => goTo(m.group_id, '/group/submit-ranking')}
+                        className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                      >
+                        Rank {m.role === 'big' ? 'Littles' : 'Bigs'}
+                      </button>
+                      <button
+                        onClick={() => goTo(m.group_id, '/group/notes')}
+                        className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                      >
+                        Notes
+                      </button>
+                    </>
                   )}
                   {isEffectiveAdmin(m) &&
                     ADMIN_ACTIONS.map(a => (
