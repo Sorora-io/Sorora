@@ -19,10 +19,15 @@ const Profile = () => {
 
   const [showAddOrg, setShowAddOrg] = useState(false);
 
-  const [requestedRole, setRequestedRole] = useState<MembershipRole>('big');
-  const [roleError, setRoleError] = useState('');
-  const [roleRequestSent, setRoleRequestSent] = useState(false);
-  const [roleSaving, setRoleSaving] = useState(false);
+  // Requesting a role change is a per-org action — each org's own row in
+  // "Your Organizations" tracks its own open/selected/saving/error state
+  // rather than sharing one global control tied to whichever org happens to
+  // be active.
+  const [roleChangeOpenId, setRoleChangeOpenId] = useState<string | null>(null);
+  const [requestedRoleByOrg, setRequestedRoleByOrg] = useState<Record<string, MembershipRole>>({});
+  const [roleErrorByOrg, setRoleErrorByOrg] = useState<Record<string, string>>({});
+  const [roleSentByOrg, setRoleSentByOrg] = useState<Record<string, boolean>>({});
+  const [roleSavingId, setRoleSavingId] = useState<string | null>(null);
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [name, setName] = useState('');
@@ -149,18 +154,17 @@ const Profile = () => {
     setPasswordSaving(false);
   };
 
-  const handleRequestRoleChange = async () => {
-    if (!membership) return;
-    setRoleSaving(true);
-    setRoleError('');
-    const { error } = await requestRoleChange(membership.group_id, requestedRole);
+  const handleRequestRoleChange = async (membershipId: string, groupId: string, role: MembershipRole) => {
+    setRoleSavingId(membershipId);
+    setRoleErrorByOrg(prev => ({ ...prev, [membershipId]: '' }));
+    const { error } = await requestRoleChange(groupId, role);
     if (error) {
-      setRoleError(error);
+      setRoleErrorByOrg(prev => ({ ...prev, [membershipId]: error }));
     } else {
-      setRoleRequestSent(true);
+      setRoleSentByOrg(prev => ({ ...prev, [membershipId]: true }));
       await refresh();
     }
-    setRoleSaving(false);
+    setRoleSavingId(null);
   };
 
   return (
@@ -340,29 +344,75 @@ const Profile = () => {
               <div className="flex flex-col gap-2 mb-3">
                 {memberships.map(m => {
                   const active = m.group_id === membership?.group_id;
+                  const roleChangeOpen = roleChangeOpenId === m.id;
+                  const requestedRole = requestedRoleByOrg[m.id] ?? 'big';
                   return (
                     <div
                       key={m.id}
-                      className={`flex items-center justify-between px-3 py-2 rounded-md border-2 ${
+                      className={`px-3 py-2 rounded-md border-2 ${
                         active ? 'border-jade-600' : 'border-gray-200'
                       }`}
                     >
-                      <div>
-                        <p className="text-sm font-medium">{groupLabel(m.group)}</p>
-                        <p className="text-xs text-gray-500">
-                          {roleLabel[m.role]}
-                          {m.status !== 'approved' && ` (${m.status})`}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{groupLabel(m.group)}</p>
+                          <p className="text-xs text-gray-500">
+                            {roleLabel[m.role]}
+                            {m.status !== 'approved' && ` (${m.status})`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {m.status === 'approved' && !m.requested_role && (
+                            <button
+                              onClick={() => setRoleChangeOpenId(roleChangeOpen ? null : m.id)}
+                              className="text-sm underline text-gray-600 hover:text-black"
+                            >
+                              {roleChangeOpen ? 'Cancel' : 'Change role'}
+                            </button>
+                          )}
+                          {active ? (
+                            <span className="text-xs text-gray-400">Active</span>
+                          ) : (
+                            <button
+                              onClick={() => setActiveGroupId(m.group_id)}
+                              className="text-sm underline text-gray-600 hover:text-black"
+                            >
+                              Switch
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {active ? (
-                        <span className="text-xs text-gray-400">Active</span>
-                      ) : (
-                        <button
-                          onClick={() => setActiveGroupId(m.group_id)}
-                          className="text-sm underline text-gray-600 hover:text-black"
-                        >
-                          Switch
-                        </button>
+
+                      {m.status === 'approved' && m.requested_role && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Your request to become {roleLabel[m.requested_role]} is waiting on your
+                          admin's approval.
+                        </p>
+                      )}
+
+                      {roleChangeOpen && (
+                        <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-100">
+                          <select
+                            value={requestedRole}
+                            onChange={(e) =>
+                              setRequestedRoleByOrg(prev => ({ ...prev, [m.id]: e.target.value as MembershipRole }))
+                            }
+                            className="w-full p-2 text-sm border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="big">Big</option>
+                            <option value="little">Little</option>
+                          </select>
+                          {roleErrorByOrg[m.id] && <p className="text-brick text-xs">{roleErrorByOrg[m.id]}</p>}
+                          {roleSentByOrg[m.id] && <p className="text-jade-700 text-xs">Request sent to your admin.</p>}
+                          <button
+                            onClick={() => handleRequestRoleChange(m.id, m.group_id, requestedRole)}
+                            disabled={roleSavingId === m.id || requestedRole === m.role}
+                            className="w-full py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors disabled:opacity-50"
+                          >
+                            {roleSavingId === m.id ? '...' : `Request to become ${roleLabel[requestedRole]}`}
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
@@ -387,43 +437,6 @@ const Profile = () => {
                 </button>
               )}
             </div>
-
-            {membership && membership.status === 'approved' && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="text-sm font-semibold mb-2">
-                  Request a role change ({groupLabel(membership.group)})
-                </h3>
-                {membership.requested_role ? (
-                  <p className="text-sm text-gray-600">
-                    Your request to become {roleLabel[membership.requested_role]} is waiting on your
-                    admin's approval.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <select
-                      value={requestedRole}
-                      onChange={(e) => setRequestedRole(e.target.value as MembershipRole)}
-                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="big">Big</option>
-                      <option value="little">Little</option>
-                    </select>
-                    {roleError && <p className="text-brick text-sm">{roleError}</p>}
-                    {roleRequestSent && (
-                      <p className="text-jade-700 text-sm">Request sent to your admin.</p>
-                    )}
-                    <button
-                      onClick={handleRequestRoleChange}
-                      disabled={roleSaving || requestedRole === membership.role}
-                      className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors disabled:opacity-50"
-                    >
-                      {roleSaving ? '...' : `Request to become ${roleLabel[requestedRole]}`}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
 
             <div className="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between">
               <div>
