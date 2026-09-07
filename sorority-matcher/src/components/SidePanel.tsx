@@ -184,18 +184,20 @@ const SidePanel = () => {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-gray-200">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-              Matching Wizard (No Org)
-            </p>
-            <div className="flex flex-col gap-1">
-              {WIZARD_LINKS.map(({ label, path }) => (
-                <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
-                  {label}
-                </Link>
-              ))}
+          {(!user || memberships.length === 0) && (
+            <div className="pt-2 border-t border-gray-200">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Matching Wizard (No Org)
+              </p>
+              <div className="flex flex-col gap-1">
+                {WIZARD_LINKS.map(({ label, path }) => (
+                  <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
+                    {label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-gray-200 text-sm">
