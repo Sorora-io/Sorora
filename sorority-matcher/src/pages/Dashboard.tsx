@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGroup } from '../contexts/GroupContext';
+import AddOrganizationForm from '../components/AddOrganizationForm';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -13,6 +15,7 @@ const ADMIN_ACTIONS = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const { memberships, membership, setActiveGroupId } = useGroup();
+  const [showAddOrg, setShowAddOrg] = useState(false);
 
   const goTo = (groupId: string, path: string) => {
     setActiveGroupId(groupId);
@@ -92,6 +95,23 @@ const Dashboard = () => {
             </div>
           );
         })}
+
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          {showAddOrg ? (
+            <AddOrganizationForm
+              onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+              onJoined={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+              onCancel={() => setShowAddOrg(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowAddOrg(true)}
+              className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
+            >
+              + Add Organization
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
