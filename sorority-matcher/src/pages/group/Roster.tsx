@@ -64,6 +64,7 @@ const Roster = () => {
           </div>
           <span className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClasses[r.role]}`}>
             {roleLabel[r.role]}
+            {r.isAdmin && r.role !== 'admin' && ' + Admin'}
           </span>
         </div>
 

@@ -6,8 +6,11 @@ import {
   updateMembershipStatus,
   getPendingRoleChanges,
   resolveRoleChange,
+  getGroupMembers,
+  setMemberAdmin,
   PendingMembership,
   RoleChangeRequest,
+  GroupMember,
 } from '../../lib/groups';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
@@ -18,23 +21,33 @@ const Approvals = () => {
 
   const [pending, setPending] = useState<PendingMembership[]>([]);
   const [roleChanges, setRoleChanges] = useState<RoleChangeRequest[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+  const [adminSavingId, setAdminSavingId] = useState<string | null>(null);
+  const [adminError, setAdminError] = useState('');
 
   const joinLink = group ? `${window.location.origin}/login?join=${group.join_code}` : '';
 
   const load = useCallback(async () => {
     if (!group) return;
     setLoading(true);
-    const [{ memberships, error: loadError }, { requests, error: roleError }] = await Promise.all([
+    const [
+      { memberships, error: loadError },
+      { requests, error: roleError },
+      { members: memberList, error: membersError },
+    ] = await Promise.all([
       getPendingMemberships(group.id),
       getPendingRoleChanges(group.id),
+      getGroupMembers(group.id),
     ]);
     if (loadError) setError(loadError);
     else if (roleError) setError(roleError);
+    else if (membersError) setError(membersError);
     setPending(memberships);
     setRoleChanges(requests);
+    setMembers(memberList);
     setLoading(false);
   }, [group]);
 
@@ -58,6 +71,18 @@ const Approvals = () => {
       return;
     }
     setRoleChanges(prev => prev.filter(req => req.id !== r.id));
+  };
+
+  const handleToggleAdmin = async (m: GroupMember) => {
+    setAdminSavingId(m.id);
+    setAdminError('');
+    const { error: toggleError } = await setMemberAdmin(m.id, !m.is_admin);
+    if (toggleError) {
+      setAdminError(toggleError);
+    } else {
+      setMembers(prev => prev.map(row => (row.id === m.id ? { ...row, is_admin: !row.is_admin } : row)));
+    }
+    setAdminSavingId(null);
   };
 
   const copy = async (text: string, which: 'code' | 'link') => {
@@ -181,6 +206,50 @@ const Approvals = () => {
           </div>
         </div>
       )}
+
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mt-6">
+        <h3 className="text-xl font-semibold mb-1">Admin access</h3>
+        <p className="text-gray-500 text-sm mb-4">
+          Grant admin access to a Big or Little without changing their role — they'll keep ranking as
+          normal and also get admin pages.
+        </p>
+
+        {adminError && <p className="text-brick text-sm mb-3">{adminError}</p>}
+
+        {loading ? (
+          <p className="text-gray-500">Loading...</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {members
+              .filter(m => m.role === 'big' || m.role === 'little')
+              .map(m => (
+                <div key={m.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+                  <div>
+                    <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
+                    <p className="text-sm text-gray-500">
+                      {roleLabel[m.role]}
+                      {m.is_admin && ' + Admin'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleAdmin(m)}
+                    disabled={adminSavingId === m.id}
+                    className={`px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50 ${
+                      m.is_admin
+                        ? 'border-2 border-brick text-brick hover:bg-brick-50'
+                        : 'bg-jade-600 text-white hover:bg-jade-700'
+                    }`}
+                  >
+                    {adminSavingId === m.id ? '...' : m.is_admin ? 'Revoke Admin' : 'Make Admin'}
+                  </button>
+                </div>
+              ))}
+            {members.filter(m => m.role === 'big' || m.role === 'little').length === 0 && (
+              <p className="text-gray-500 text-sm">No Bigs or Littles yet.</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

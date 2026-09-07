@@ -17,7 +17,7 @@ const Pending = () => {
     if (!membership) {
       navigate('/group/onboarding', { replace: true });
     } else if (membership.status === 'approved') {
-      navigate(homeForRole(membership.role), { replace: true });
+      navigate(homeForRole(membership), { replace: true });
     }
   }, [loading, membership, navigate]);
 

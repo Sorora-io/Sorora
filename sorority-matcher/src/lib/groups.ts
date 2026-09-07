@@ -24,6 +24,7 @@ export interface Membership {
   status: MembershipStatus;
   willing_to_take_twins: boolean;
   requested_role: MembershipRole | null;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -38,6 +39,13 @@ export interface Profile {
 
 export interface PendingMembership extends Membership {
   profile: Profile | null;
+}
+
+// Admin access is a flag independent of role now — role='admin' (legacy,
+// admin-only membership) always carries it, but a big/little can be granted
+// it too without giving up their big/little role.
+export function isEffectiveAdmin(membership: { role: MembershipRole; is_admin: boolean }): boolean {
+  return membership.role === 'admin' || membership.is_admin;
 }
 
 // Groups created before the school column existed default to an empty
@@ -147,6 +155,22 @@ export async function updateGroupProfile(
   return { error: error ? error.message : null };
 }
 
+export async function getApprovedRoleCounts(
+  groupId: string
+): Promise<{ bigs: number; littles: number; error: string | null }> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('status', 'approved')
+    .in('role', ['big', 'little']);
+
+  if (error) return { bigs: 0, littles: 0, error: error.message };
+  const bigs = (data ?? []).filter(r => r.role === 'big').length;
+  const littles = (data ?? []).filter(r => r.role === 'little').length;
+  return { bigs, littles, error: null };
+}
+
 export async function updateGroupSettings(
   groupId: string,
   minBigRankings: number,
@@ -207,19 +231,45 @@ export async function resolveRoleChange(
 
 export interface GroupAdmin {
   user_id: string;
+  role: MembershipRole;
   profile: Profile | null;
 }
 
 export async function getGroupAdmins(groupId: string): Promise<{ admins: GroupAdmin[]; error: string | null }> {
   const { data, error } = await supabase
     .from('memberships')
-    .select('user_id, profile:profiles(email, name)')
+    .select('user_id, role, profile:profiles(email, name)')
     .eq('group_id', groupId)
-    .eq('role', 'admin')
+    .eq('is_admin', true)
     .eq('status', 'approved');
 
   if (error) return { admins: [], error: error.message };
   return { admins: (data ?? []) as unknown as GroupAdmin[], error: null };
+}
+
+export interface GroupMember extends Membership {
+  profile: Profile | null;
+}
+
+// Every approved member of a group, any role — used to grant/revoke admin
+// access on someone without touching their big/little role.
+export async function getGroupMembers(groupId: string): Promise<{ members: GroupMember[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('*, profile:profiles(email, name)')
+    .eq('group_id', groupId)
+    .eq('status', 'approved');
+
+  if (error) return { members: [], error: error.message };
+  return { members: (data ?? []) as unknown as GroupMember[], error: null };
+}
+
+export async function setMemberAdmin(membershipId: string, isAdmin: boolean): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('set_member_admin', {
+    p_membership_id: membershipId,
+    p_is_admin: isAdmin,
+  });
+  return { error: error ? error.message : null };
 }
 
 export async function transferGroupOwnership(

@@ -1,7 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
-import { updateGroupProfile, updateGroupSettings, getGroupAdmins, transferGroupOwnership, GroupAdmin } from '../../lib/groups';
+import {
+  updateGroupProfile,
+  updateGroupSettings,
+  getGroupAdmins,
+  transferGroupOwnership,
+  getApprovedRoleCounts,
+  GroupAdmin,
+} from '../../lib/groups';
+
+const clamp = (value: number, min: number, max: number | undefined) => {
+  if (Number.isNaN(value)) return min;
+  let clamped = Math.max(value, min);
+  if (max !== undefined) clamped = Math.min(clamped, max);
+  return clamped;
+};
 
 const Settings = () => {
   const { membership, refresh } = useGroup();
@@ -18,6 +32,15 @@ const Settings = () => {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [bigCount, setBigCount] = useState<number | null>(null);
+  const [littleCount, setLittleCount] = useState<number | null>(null);
+  // min_big_rankings ("Littles a Big must rank") can't exceed how many
+  // littles actually exist to rank, and vice versa — otherwise no one can
+  // ever hit the requirement. 0 means "no one's joined that role yet",
+  // which shouldn't block setting a starting number.
+  const maxBig = littleCount && littleCount > 0 ? littleCount : undefined;
+  const maxLittle = bigCount && bigCount > 0 ? bigCount : undefined;
 
   const [admins, setAdmins] = useState<GroupAdmin[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(true);
@@ -38,6 +61,14 @@ const Settings = () => {
   useEffect(() => {
     loadAdmins();
   }, [loadAdmins]);
+
+  useEffect(() => {
+    if (!group) return;
+    getApprovedRoleCounts(group.id).then(({ bigs, littles }) => {
+      setBigCount(bigs);
+      setLittleCount(littles);
+    });
+  }, [group]);
 
   if (!group) return null;
 
@@ -84,7 +115,11 @@ const Settings = () => {
     setSaving(true);
     setError('');
     setSaved(false);
-    const { error: saveError } = await updateGroupSettings(group.id, minBig, minLittle);
+    const clampedMinBig = clamp(minBig, 1, maxBig);
+    const clampedMinLittle = clamp(minLittle, 1, maxLittle);
+    setMinBig(clampedMinBig);
+    setMinLittle(clampedMinLittle);
+    const { error: saveError } = await updateGroupSettings(group.id, clampedMinBig, clampedMinLittle);
     if (saveError) {
       setError(saveError);
     } else {
@@ -147,10 +182,14 @@ const Settings = () => {
             <input
               type="number"
               min={1}
+              max={maxLittle}
               value={minLittle}
-              onChange={(e) => setMinLittle(Number(e.target.value))}
+              onChange={(e) => setMinLittle(clamp(Number(e.target.value), 1, maxLittle))}
               className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {bigCount === null ? ' ' : `You have ${bigCount} approved big${bigCount === 1 ? '' : 's'}.`}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -159,10 +198,14 @@ const Settings = () => {
             <input
               type="number"
               min={1}
+              max={maxBig}
               value={minBig}
-              onChange={(e) => setMinBig(Number(e.target.value))}
+              onChange={(e) => setMinBig(clamp(Number(e.target.value), 1, maxBig))}
               className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {littleCount === null ? ' ' : `You have ${littleCount} approved little${littleCount === 1 ? '' : 's'}.`}
+            </p>
           </div>
 
           {error && <p className="text-brick text-sm">{error}</p>}

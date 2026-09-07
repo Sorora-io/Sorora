@@ -13,7 +13,7 @@ const Onboarding = () => {
   // already ran) — send them to wherever they actually belong.
   useEffect(() => {
     if (groupLoading || !membership) return;
-    navigate(membership.status === 'approved' ? homeForRole(membership.role) : '/group/pending', { replace: true });
+    navigate(membership.status === 'approved' ? homeForRole(membership) : '/group/pending', { replace: true });
   }, [groupLoading, membership, navigate]);
 
   return (

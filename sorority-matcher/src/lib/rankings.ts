@@ -80,6 +80,7 @@ export async function submitRanking(
 
 export interface RosterEntry extends RosterMember {
   role: MembershipRole;
+  isAdmin: boolean;
   avatarUrl: string | null;
   major: string | null;
   college: string | null;
@@ -101,7 +102,7 @@ interface RosterProfile extends Profile {
 export async function getFullRoster(groupId: string): Promise<{ roster: RosterEntry[]; error: string | null }> {
   const { data, error } = await supabase
     .from('memberships')
-    .select('user_id, role, profile:profiles(email, name, avatar_url, major, college, year, hometown)')
+    .select('user_id, role, is_admin, profile:profiles(email, name, avatar_url, major, college, year, hometown)')
     .eq('group_id', groupId)
     .eq('status', 'approved');
 
@@ -112,6 +113,7 @@ export async function getFullRoster(groupId: string): Promise<{ roster: RosterEn
     return {
       userId: row.user_id as string,
       role: row.role as MembershipRole,
+      isAdmin: row.is_admin as boolean,
       name: profile?.name ?? null,
       email: profile?.email ?? '',
       avatarUrl: profile?.avatar_url ?? null,

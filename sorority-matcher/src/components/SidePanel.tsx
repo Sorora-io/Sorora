@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import { groupLabel } from '../lib/groups';
+import { groupLabel, isEffectiveAdmin, Membership } from '../lib/groups';
 
 interface NavItem {
   label: string;
@@ -12,12 +12,14 @@ interface NavItem {
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
+const membershipLabel = (m: Membership) =>
+  roleLabel[m.role] + (m.is_admin && m.role !== 'admin' ? ' + Admin' : '');
+
 const ADMIN_GROUP_LINKS: NavItem[] = [
   { label: 'Approvals', path: '/group/approvals' },
   { label: 'Submission Status', path: '/group/status' },
   { label: 'Group Settings', path: '/group/settings' },
   { label: 'Pairings', path: '/group/pairings' },
-  { label: 'Roster', path: '/group/roster' },
 ];
 
 const SITE_LINKS: NavItem[] = [
@@ -118,7 +120,7 @@ const SidePanel = () => {
                       {groupLabel(membership.group)}
                     </span>
                     <span className="block text-xs font-medium text-jade-600">
-                      {roleLabel[membership.role]}
+                      {membershipLabel(membership)}
                       {membership.status !== 'approved' && ` · ${membership.status}`}
                     </span>
                   </span>
@@ -143,7 +145,7 @@ const SidePanel = () => {
                       >
                         <span className="block font-medium truncate">{groupLabel(m.group)}</span>
                         <span className="block text-xs text-gray-500">
-                          {roleLabel[m.role]}
+                          {membershipLabel(m)}
                           {m.status !== 'approved' && ` · ${m.status}`}
                         </span>
                       </button>
@@ -172,17 +174,19 @@ const SidePanel = () => {
                     <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
                       {membership.status === 'pending' ? 'View request status' : 'View details'}
                     </button>
-                  ) : membership.role === 'admin' ? (
-                    ADMIN_GROUP_LINKS.map(({ label, path }) => (
-                      <button key={path} type="button" onClick={() => goTo(path)} className={linkClasses(path)}>
-                        {label}
-                      </button>
-                    ))
                   ) : (
                     <>
-                      <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
-                        Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
-                      </button>
+                      {(membership.role === 'big' || membership.role === 'little') && (
+                        <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
+                          Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                        </button>
+                      )}
+                      {isEffectiveAdmin(membership) &&
+                        ADMIN_GROUP_LINKS.map(({ label, path }) => (
+                          <button key={path} type="button" onClick={() => goTo(path)} className={linkClasses(path)}>
+                            {label}
+                          </button>
+                        ))}
                       <button type="button" onClick={() => goTo('/group/roster')} className={linkClasses('/group/roster')}>
                         Roster
                       </button>
