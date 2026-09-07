@@ -38,22 +38,54 @@ const Roster = () => {
   const bigs = roster.filter(r => r.role === 'big');
   const littles = roster.filter(r => r.role === 'little');
 
-  const renderList = (label: string, list: RosterEntry[]) => (
+  const renderCard = (r: RosterEntry) => {
+    const details = [
+      r.major && `${r.major}`,
+      r.college,
+      r.year && `Class of ${r.year}`,
+      r.hometown,
+    ].filter(Boolean) as string[];
+
+    return (
+      <div key={r.userId} className="bg-white rounded-lg shadow-lg p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
+            {r.avatarUrl ? (
+              <img src={r.avatarUrl} alt={r.name ?? r.email} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-lg font-display font-semibold text-jade-700">
+                {(r.name || r.email || '?').charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold truncate">{r.name || r.email}</p>
+            <p className="text-xs text-gray-500 truncate">{r.email}</p>
+          </div>
+          <span className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClasses[r.role]}`}>
+            {roleLabel[r.role]}
+          </span>
+        </div>
+
+        {details.length > 0 ? (
+          <p className="text-sm text-gray-600">{details.join(' · ')}</p>
+        ) : (
+          <p className="text-sm text-gray-400">No details added yet.</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderSection = (label: string, list: RosterEntry[]) => (
     <div>
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
         {label} ({list.length})
       </h3>
-      <div className="flex flex-col gap-1">
-        {list.map(r => (
-          <div key={r.userId} className="flex items-center justify-between px-3 py-2 border-2 border-gray-100 rounded-md">
-            <span>{r.name || r.email}</span>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClasses[r.role]}`}>
-              {roleLabel[r.role]}
-            </span>
-          </div>
-        ))}
-        {list.length === 0 && <p className="text-gray-400 text-sm">No one here yet.</p>}
-      </div>
+      {list.length === 0 ? (
+        <p className="text-gray-400 text-sm">No one here yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{list.map(renderCard)}</div>
+      )}
     </div>
   );
 
@@ -65,7 +97,7 @@ const Roster = () => {
         </Link>
       </header>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-4xl w-full">
         <h2 className="text-2xl font-semibold mb-1">Roster</h2>
         <p className="text-gray-500 text-sm mb-6">{groupLabel(group)}</p>
 
@@ -74,10 +106,10 @@ const Roster = () => {
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : (
-          <div className="flex flex-col gap-6">
-            {renderList('Bigs', bigs)}
-            {renderList('Littles', littles)}
-            {renderList('Admins', admins)}
+          <div className="flex flex-col gap-8">
+            {renderSection('Bigs', bigs)}
+            {renderSection('Littles', littles)}
+            {renderSection('Admins', admins)}
           </div>
         )}
       </div>

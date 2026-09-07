@@ -80,6 +80,19 @@ export async function submitRanking(
 
 export interface RosterEntry extends RosterMember {
   role: MembershipRole;
+  avatarUrl: string | null;
+  major: string | null;
+  college: string | null;
+  year: string | null;
+  hometown: string | null;
+}
+
+interface RosterProfile extends Profile {
+  avatar_url: string | null;
+  major: string | null;
+  college: string | null;
+  year: string | null;
+  hometown: string | null;
 }
 
 // All approved members of a group, any role — used for the roster page any
@@ -88,18 +101,26 @@ export interface RosterEntry extends RosterMember {
 export async function getFullRoster(groupId: string): Promise<{ roster: RosterEntry[]; error: string | null }> {
   const { data, error } = await supabase
     .from('memberships')
-    .select('user_id, role, profile:profiles(email, name)')
+    .select('user_id, role, profile:profiles(email, name, avatar_url, major, college, year, hometown)')
     .eq('group_id', groupId)
     .eq('status', 'approved');
 
   if (error) return { roster: [], error: error.message };
 
-  const roster = (data ?? []).map((row: any) => ({
-    userId: row.user_id as string,
-    role: row.role as MembershipRole,
-    name: (row.profile as Profile | null)?.name ?? null,
-    email: (row.profile as Profile | null)?.email ?? '',
-  }));
+  const roster = (data ?? []).map((row: any) => {
+    const profile = row.profile as RosterProfile | null;
+    return {
+      userId: row.user_id as string,
+      role: row.role as MembershipRole,
+      name: profile?.name ?? null,
+      email: profile?.email ?? '',
+      avatarUrl: profile?.avatar_url ?? null,
+      major: profile?.major ?? null,
+      college: profile?.college ?? null,
+      year: profile?.year ?? null,
+      hometown: profile?.hometown ?? null,
+    };
+  });
   return { roster, error: null };
 }
 
