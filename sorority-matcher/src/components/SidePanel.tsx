@@ -21,6 +21,7 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
 const SITE_LINKS: NavItem[] = [
   { label: 'Home', path: '/' },
   { label: 'About', path: '/about' },
+  { label: 'FAQ', path: '/faq' },
 ];
 
 const WIZARD_LINKS: NavItem[] = [

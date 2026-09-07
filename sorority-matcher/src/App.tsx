@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
+import FAQ from "./pages/FAQ";
 import EnterBigs from "./pages/admin/EnterBigs";
 import EnterLittles from "./pages/admin/EnterLittles";
 import Twins from "./pages/admin/Twins";
@@ -52,6 +53,7 @@ const App = () => (
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
                     <Route path="/about" element={<About />} />
+                    <Route path="/faq" element={<FAQ />} />
                     <Route path="/admin/enter-bigs" element={<ProtectedRoute><EnterBigs /></ProtectedRoute>} />
                     <Route path="/admin/enter-littles" element={<ProtectedRoute><EnterLittles /></ProtectedRoute>} />
                     <Route path="/admin/twins" element={<ProtectedRoute><Twins /></ProtectedRoute>} />
