@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { groupLabel } from '../lib/groups';
@@ -202,19 +203,19 @@ const SidePanel = () => {
             <div className="flex flex-col gap-2">
               <p className="text-gray-600 truncate">Signed in as {user.email}</p>
               {!isGuest && (
-                <Link to="/dashboard" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
-                  Dashboard
+                <Link to="/dashboard" onClick={closeMobile} className="flex items-center gap-2 text-gray-600 hover:text-black">
+                  <LayoutDashboard size={15} /> Dashboard
                 </Link>
               )}
-              <Link to="/profile" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
-                Profile
+              <Link to="/profile" onClick={closeMobile} className="flex items-center gap-2 text-gray-600 hover:text-black">
+                <User size={15} /> Profile
               </Link>
               <button
                 type="button"
                 onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
-                className="text-left underline text-gray-600 hover:text-black"
+                className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
               >
-                Sign out
+                <LogOut size={15} /> Sign out
               </button>
             </div>
           ) : isGuest ? (
