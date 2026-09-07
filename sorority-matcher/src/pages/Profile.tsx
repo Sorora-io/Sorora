@@ -171,52 +171,52 @@ const Profile = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Profile</h2>
-
-        {isGuest ? (
+      {isGuest ? (
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-semibold mb-4">Profile</h2>
           <p className="text-gray-600">
             You're browsing as a guest, so there's no account to manage here. Sign in or create an
             account to set a password or join a sorority group.
           </p>
-        ) : (
-          <>
-            <div className="mb-6 text-sm text-gray-600">
-              <p>
-                <span className="font-medium text-black">Email:</span> {user?.email}
-              </p>
-            </div>
+        </div>
+      ) : (
+        <div className="max-w-5xl w-full">
+          <h2 className="text-2xl font-semibold mb-6">Profile</h2>
 
-            <div className="flex flex-col items-center gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-jade-300 bg-gray-100 flex items-center justify-center hover:border-jade-600 transition-colors disabled:opacity-50"
-                aria-label="Change profile picture"
-              >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-semibold text-gray-400">
-                    {(name || user?.email || '?').charAt(0).toUpperCase()}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center gap-4 mb-5">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="relative w-20 h-20 flex-shrink-0 rounded-full overflow-hidden border-2 border-jade-300 bg-gray-100 flex items-center justify-center hover:border-jade-600 transition-colors disabled:opacity-50"
+                  aria-label="Change profile picture"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-semibold text-gray-400">
+                      {(name || user?.email || '?').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center text-white text-[10px] font-medium opacity-0 hover:opacity-100">
+                    {avatarUploading ? '...' : 'Change'}
                   </span>
-                )}
-                <span className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center text-white text-xs font-medium opacity-0 hover:opacity-100">
-                  {avatarUploading ? '...' : 'Change'}
-                </span>
-              </button>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-              {avatarError && <p className="text-brick text-sm text-center">{avatarError}</p>}
-            </div>
+                </button>
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-600 truncate">{user?.email}</p>
+                  {avatarError && <p className="text-brick text-sm mt-1">{avatarError}</p>}
+                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
 
-            <div className="border-t border-gray-200 pt-4">
               <h3 className="text-sm font-semibold mb-2">Name</h3>
               <div className="flex flex-col gap-2">
                 <input
@@ -239,7 +239,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-sm font-semibold mb-2">Bio</h3>
               <div className="flex flex-col gap-2">
                 <textarea
@@ -262,7 +262,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-sm font-semibold mb-2">School info</h3>
               <div className="flex flex-col gap-2">
                 <div className="grid grid-cols-2 gap-2">
@@ -311,7 +311,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-sm font-semibold mb-2">Change password</h3>
               <div className="flex flex-col gap-2">
                 <input
@@ -334,7 +334,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mt-4">
+            <div className="bg-white rounded-lg shadow-lg p-6 md:col-span-2">
               <h3 className="text-sm font-semibold mb-2">Your Organizations</h3>
 
               <div className="flex flex-col gap-2 mb-3">
@@ -389,7 +389,7 @@ const Profile = () => {
             </div>
 
             {membership && membership.status === 'approved' && (
-              <div className="border-t border-gray-200 pt-4 mt-4">
+              <div className="bg-white rounded-lg shadow-lg p-6">
                 <h3 className="text-sm font-semibold mb-2">
                   Request a role change ({groupLabel(membership.group)})
                 </h3>
@@ -425,15 +425,21 @@ const Profile = () => {
               </div>
             )}
 
-            <button
-              onClick={signOut}
-              className="w-full mt-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-            >
-              Sign out
-            </button>
-          </>
-        )}
-      </div>
+            <div className="bg-white rounded-lg shadow-lg p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold">Sign out</h3>
+                <p className="text-xs text-gray-500">You can always sign back in later.</p>
+              </div>
+              <button
+                onClick={signOut}
+                className="py-3 px-6 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
