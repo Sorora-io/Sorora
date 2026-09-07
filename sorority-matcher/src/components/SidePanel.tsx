@@ -17,6 +17,7 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
   { label: 'Submission Status', path: '/group/status' },
   { label: 'Group Settings', path: '/group/settings' },
   { label: 'Pairings', path: '/group/pairings' },
+  { label: 'Roster', path: '/group/roster' },
 ];
 
 const SITE_LINKS: NavItem[] = [
@@ -163,9 +164,14 @@ const SidePanel = () => {
                     </button>
                   ))
                 ) : (
-                  <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
-                    Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
-                  </button>
+                  <>
+                    <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
+                      Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                    </button>
+                    <button type="button" onClick={() => goTo('/group/roster')} className={linkClasses('/group/roster')}>
+                      Roster
+                    </button>
+                  </>
                 )}
               </div>
             </div>

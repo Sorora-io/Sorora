@@ -78,6 +78,31 @@ export async function submitRanking(
   return { error: error ? error.message : null };
 }
 
+export interface RosterEntry extends RosterMember {
+  role: MembershipRole;
+}
+
+// All approved members of a group, any role — used for the roster page any
+// member can view, unlike getRoster() above which is scoped to one role for
+// building someone's ranking list.
+export async function getFullRoster(groupId: string): Promise<{ roster: RosterEntry[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('user_id, role, profile:profiles(email, name)')
+    .eq('group_id', groupId)
+    .eq('status', 'approved');
+
+  if (error) return { roster: [], error: error.message };
+
+  const roster = (data ?? []).map((row: any) => ({
+    userId: row.user_id as string,
+    role: row.role as MembershipRole,
+    name: (row.profile as Profile | null)?.name ?? null,
+    email: (row.profile as Profile | null)?.email ?? '',
+  }));
+  return { roster, error: null };
+}
+
 export async function getSubmissionStatus(
   groupId: string
 ): Promise<{ rows: SubmissionStatusRow[]; error: string | null }> {

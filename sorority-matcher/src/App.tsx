@@ -31,6 +31,7 @@ import GroupSettings from "./pages/group/Settings";
 import GroupSubmitRanking from "./pages/group/SubmitRanking";
 import GroupStatus from "./pages/group/Status";
 import GroupPairings from "./pages/group/Pairings";
+import GroupRoster from "./pages/group/Roster";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const App = () => (
                     <Route path="/group/status" element={<RequireGroupRole allow={['admin']}><GroupStatus /></RequireGroupRole>} />
                     <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
                     <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
+                    <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
