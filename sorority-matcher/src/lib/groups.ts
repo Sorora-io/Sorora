@@ -8,6 +8,7 @@ export interface Group {
   id: string;
   name: string;
   school: string;
+  description: string;
   join_code: string;
   min_big_rankings: number;
   min_little_rankings: number;
@@ -152,6 +153,11 @@ export async function updateGroupProfile(
   school: string
 ): Promise<{ error: string | null }> {
   const { error } = await supabase.from('groups').update({ name, school }).eq('id', groupId);
+  return { error: error ? error.message : null };
+}
+
+export async function updateGroupDescription(groupId: string, description: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('groups').update({ description }).eq('id', groupId);
   return { error: error ? error.message : null };
 }
 

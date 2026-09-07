@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import {
   updateGroupProfile,
+  updateGroupDescription,
   updateGroupSettings,
   getGroupAdmins,
   transferGroupOwnership,
@@ -26,6 +27,11 @@ const Settings = () => {
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
+
+  const [description, setDescription] = useState(group?.description ?? '');
+  const [descSaved, setDescSaved] = useState(false);
+  const [descError, setDescError] = useState('');
+  const [descSaving, setDescSaving] = useState(false);
 
   const [minBig, setMinBig] = useState(group?.min_big_rankings ?? 5);
   const [minLittle, setMinLittle] = useState(group?.min_little_rankings ?? 5);
@@ -111,6 +117,20 @@ const Settings = () => {
     setProfileSaving(false);
   };
 
+  const handleSaveDescription = async () => {
+    setDescSaving(true);
+    setDescError('');
+    setDescSaved(false);
+    const { error: saveError } = await updateGroupDescription(group.id, description.trim());
+    if (saveError) {
+      setDescError(saveError);
+    } else {
+      setDescSaved(true);
+      await refresh();
+    }
+    setDescSaving(false);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
@@ -171,6 +191,30 @@ const Settings = () => {
             className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {profileSaving ? '...' : 'Save Name & School'}
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4 mb-8 pb-8 border-b border-gray-200">
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="A little about your chapter — shown to members and prospective joiners"
+              rows={3}
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
+            />
+          </div>
+
+          {descError && <p className="text-brick text-sm">{descError}</p>}
+          {descSaved && <p className="text-jade-700 text-sm">Saved.</p>}
+
+          <button
+            onClick={handleSaveDescription}
+            disabled={descSaving}
+            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+          >
+            {descSaving ? '...' : 'Save Description'}
           </button>
         </div>
 

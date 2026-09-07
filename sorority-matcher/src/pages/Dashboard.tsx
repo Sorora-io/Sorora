@@ -70,6 +70,10 @@ const Dashboard = () => {
                 </span>
               </button>
 
+              {m.group.description && (
+                <p className="text-sm text-gray-600 mb-4 -mt-2">{m.group.description}</p>
+              )}
+
               {m.status === 'approved' ? (
                 <div className="flex flex-wrap gap-2">
                   {(m.role === 'big' || m.role === 'little') && (

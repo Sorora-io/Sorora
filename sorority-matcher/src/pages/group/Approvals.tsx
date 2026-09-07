@@ -108,6 +108,7 @@ const Approvals = () => {
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mb-6">
         <h2 className="text-2xl font-semibold mb-1">{group.name}</h2>
         {group.school && <p className="text-gray-500 text-sm mb-1">{group.school}</p>}
+        {group.description && <p className="text-gray-600 text-sm mb-2">{group.description}</p>}
         <p className="text-gray-500 text-sm mb-4">Share this with your chapter so they can join</p>
 
         <div className="flex flex-col gap-3">
