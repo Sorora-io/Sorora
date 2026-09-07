@@ -12,6 +12,7 @@ export interface Group {
   min_big_rankings: number;
   min_little_rankings: number;
   created_by: string;
+  owner_id: string;
   created_at: string;
 }
 
@@ -202,4 +203,33 @@ export async function resolveRoleChange(
     .update(approve ? { role: requestedRole, requested_role: null } : { requested_role: null })
     .eq('id', membershipId);
   return { error: error ? error.message : null };
+}
+
+export interface GroupAdmin {
+  user_id: string;
+  profile: Profile | null;
+}
+
+export async function getGroupAdmins(groupId: string): Promise<{ admins: GroupAdmin[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('user_id, profile:profiles(email, name)')
+    .eq('group_id', groupId)
+    .eq('role', 'admin')
+    .eq('status', 'approved');
+
+  if (error) return { admins: [], error: error.message };
+  return { admins: (data ?? []) as unknown as GroupAdmin[], error: null };
+}
+
+export async function transferGroupOwnership(
+  groupId: string,
+  newOwnerId: string
+): Promise<{ group: Group | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('transfer_group_ownership', {
+    p_group_id: groupId,
+    p_new_owner_id: newOwnerId,
+  });
+  if (error) return { group: null, error: error.message };
+  return { group: data as Group, error: null };
 }
