@@ -21,7 +21,6 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
 ];
 
 const SITE_LINKS: NavItem[] = [
-  { label: 'Home', path: '/' },
   { label: 'About', path: '/about' },
   { label: 'FAQ', path: '/faq' },
 ];
@@ -40,6 +39,7 @@ const WIZARD_LINKS: NavItem[] = [
 const SidePanel = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
@@ -152,28 +152,44 @@ const SidePanel = () => {
                 )}
               </div>
 
-              <div className="flex flex-col gap-1 mt-3">
-                {membership.status !== 'approved' ? (
-                  <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
-                    {membership.status === 'pending' ? 'View request status' : 'View details'}
-                  </button>
-                ) : membership.role === 'admin' ? (
-                  ADMIN_GROUP_LINKS.map(({ label, path }) => (
-                    <button key={path} type="button" onClick={() => goTo(path)} className={linkClasses(path)}>
-                      {label}
+              <button
+                type="button"
+                onClick={() => setLinksOpen(o => !o)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 mt-2 text-xs font-semibold text-gray-500 hover:text-gray-700 uppercase tracking-wide"
+              >
+                <span>Chapter menu</span>
+                <svg
+                  width="12" height="8" viewBox="0 0 12 8" fill="none"
+                  className={`flex-shrink-0 transition-transform ${linksOpen ? 'rotate-180' : ''}`}
+                >
+                  <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              </button>
+
+              {linksOpen && (
+                <div className="flex flex-col gap-1 mt-1">
+                  {membership.status !== 'approved' ? (
+                    <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
+                      {membership.status === 'pending' ? 'View request status' : 'View details'}
                     </button>
-                  ))
-                ) : (
-                  <>
-                    <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
-                      Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
-                    </button>
-                    <button type="button" onClick={() => goTo('/group/roster')} className={linkClasses('/group/roster')}>
-                      Roster
-                    </button>
-                  </>
-                )}
-              </div>
+                  ) : membership.role === 'admin' ? (
+                    ADMIN_GROUP_LINKS.map(({ label, path }) => (
+                      <button key={path} type="button" onClick={() => goTo(path)} className={linkClasses(path)}>
+                        {label}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => goTo('/group/submit-ranking')} className={linkClasses('/group/submit-ranking')}>
+                        Rank {membership.role === 'big' ? 'Littles' : 'Bigs'}
+                      </button>
+                      <button type="button" onClick={() => goTo('/group/roster')} className={linkClasses('/group/roster')}>
+                        Roster
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
