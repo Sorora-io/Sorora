@@ -57,6 +57,8 @@ const Profile = () => {
   const [schoolSaved, setSchoolSaved] = useState(false);
   const [schoolSaving, setSchoolSaving] = useState(false);
 
+  const [signOutConfirming, setSignOutConfirming] = useState(false);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteError, setDeleteError] = useState('');
@@ -462,12 +464,29 @@ const Profile = () => {
                 <h3 className="text-sm font-semibold">Sign out</h3>
                 <p className="text-xs text-gray-500">You can always sign back in later.</p>
               </div>
-              <button
-                onClick={signOut}
-                className="py-3 px-6 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-              >
-                Sign out
-              </button>
+              {signOutConfirming ? (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setSignOutConfirming(false)}
+                    className="py-3 px-4 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={signOut}
+                    className="py-3 px-4 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
+                  >
+                    Yes, sign out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSignOutConfirming(true)}
+                  className="py-3 px-6 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors flex-shrink-0"
+                >
+                  Sign out
+                </button>
+              )}
             </div>
 
             <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-brick-100 md:col-span-2">

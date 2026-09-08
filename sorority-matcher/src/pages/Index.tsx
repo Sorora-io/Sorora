@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,6 +11,7 @@ const STEPS = [
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [signOutConfirming, setSignOutConfirming] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col items-center p-8">
@@ -18,12 +20,24 @@ const Index = () => {
         {user ? (
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.email}</span>
-            <button
-              onClick={() => signOut()}
-              className="px-4 py-2 border border-jade-600 rounded-md hover:bg-jade-50 transition-colors text-sm"
-            >
-              Sign out
-            </button>
+            {signOutConfirming ? (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-gray-500">Sign out?</span>
+                <button onClick={() => signOut()} className="font-medium text-brick hover:underline">
+                  Yes
+                </button>
+                <button onClick={() => setSignOutConfirming(false)} className="text-gray-500 hover:underline">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSignOutConfirming(true)}
+                className="px-4 py-2 border border-jade-600 rounded-md hover:bg-jade-50 transition-colors text-sm"
+              >
+                Sign out
+              </button>
+            )}
           </div>
         ) : (
           <button

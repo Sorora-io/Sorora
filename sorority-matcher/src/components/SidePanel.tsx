@@ -32,13 +32,14 @@ const SidePanel = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
+  const [signOutConfirming, setSignOutConfirming] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
   const { membership, memberships, setActiveGroupId } = useGroup();
   const { bigs, littles, bigRankings, littleRankings, pairings } = useMatching();
 
-  const closeMobile = () => setMobileOpen(false);
+  const closeMobile = () => { setMobileOpen(false); setSignOutConfirming(false); };
 
   const goTo = (path: string) => {
     navigate(path);
@@ -296,13 +297,33 @@ const SidePanel = () => {
               <Link to="/profile" onClick={closeMobile} className="flex items-center gap-2 text-gray-600 hover:text-black">
                 <User size={15} /> Profile
               </Link>
-              <button
-                type="button"
-                onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
-                className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
-              >
-                <LogOut size={15} /> Sign out
-              </button>
+              {signOutConfirming ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">Sign out?</span>
+                  <button
+                    type="button"
+                    onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
+                    className="font-medium text-brick hover:underline"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignOutConfirming(false)}
+                    className="text-gray-500 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSignOutConfirming(true)}
+                  className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
+                >
+                  <LogOut size={15} /> Sign out
+                </button>
+              )}
             </div>
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
