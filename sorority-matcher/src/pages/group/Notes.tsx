@@ -213,6 +213,7 @@ const Notes = () => {
                           rows={2}
                           className="w-full p-2 text-sm border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
                         />
+                        <p className="text-sm text-gray-700">Would you want to meet again?</p>
                         <div className="grid grid-cols-2 gap-2">
                           {INTEREST_OPTIONS.map(opt => (
                             <button
