@@ -53,6 +53,17 @@ export async function updateMyProfile(
   return { profile: data as MyProfile, error: null };
 }
 
+// Permanently deletes the signed-in user's account. The RPC deletes the
+// underlying auth.users row (security definer, hardcoded to auth.uid() so
+// it can only ever target the caller's own account); every profile,
+// membership, ranking, pairing, and note referencing them cascades away
+// with it. Blocked server-side if they still own a chapter — see the
+// migration for why.
+export async function deleteMyAccount(): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('delete_my_account');
+  return { error: error ? error.message : null };
+}
+
 export async function uploadAvatar(file: File): Promise<{ url: string | null; error: string | null }> {
   if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
     return { url: null, error: 'Please choose a PNG, JPEG, GIF, or WebP image.' };

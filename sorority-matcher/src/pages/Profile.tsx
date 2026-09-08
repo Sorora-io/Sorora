@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
 import { requestRoleChange, groupLabel, MembershipRole } from '../lib/groups';
-import { getMyProfile, updateMyProfile, uploadAvatar } from '../lib/profile';
+import { getMyProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { user, isGuest, signOut, updatePassword } = useAuth();
   const { membership, memberships, setActiveGroupId, refresh } = useGroup();
 
@@ -55,6 +56,11 @@ const Profile = () => {
   const [schoolError, setSchoolError] = useState('');
   const [schoolSaved, setSchoolSaved] = useState(false);
   const [schoolSaving, setSchoolSaving] = useState(false);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
     if (isGuest) {
@@ -165,6 +171,19 @@ const Profile = () => {
       await refresh();
     }
     setRoleSavingId(null);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteSaving(true);
+    setDeleteError('');
+    const { error } = await deleteMyAccount();
+    if (error) {
+      setDeleteError(error);
+      setDeleteSaving(false);
+      return;
+    }
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -449,6 +468,64 @@ const Profile = () => {
               >
                 Sign out
               </button>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-brick-100 md:col-span-2">
+              <h3 className="text-sm font-semibold text-brick mb-1">Danger Zone</h3>
+
+              {!deleteOpen ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">Permanently delete your account and all its data.</p>
+                  <button
+                    onClick={() => setDeleteOpen(true)}
+                    className="py-2 px-4 border-2 border-brick text-brick rounded-md hover:bg-brick-50 transition-colors text-sm flex-shrink-0"
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-brick-50 border-2 border-brick rounded-md p-4">
+                    <p className="text-sm text-brick font-medium mb-2">This can't be undone.</p>
+                    <p className="text-sm text-brick">
+                      Deleting your account permanently removes your profile, organization memberships,
+                      rankings, and notes. If you currently own a chapter, you'll need to{' '}
+                      <Link to="/group/settings" className="underline">
+                        transfer ownership
+                      </Link>{' '}
+                      to another admin first — this won't go through until you do.
+                    </p>
+                  </div>
+
+                  <label className="text-sm text-gray-600">
+                    Type <span className="font-mono font-semibold">DELETE</span> to confirm.
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    className="w-full p-3 border-2 border-brick-200 rounded-md focus:border-brick focus:outline-none focus:ring-2 focus:ring-brick-100"
+                  />
+                  {deleteError && <p className="text-brick text-sm">{deleteError}</p>}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setDeleteOpen(false); setDeleteConfirmText(''); setDeleteError(''); }}
+                      className="flex-1 py-3 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== 'DELETE' || deleteSaving}
+                      className="flex-1 py-3 bg-brick text-white rounded-md hover:bg-brick-600 transition-colors disabled:opacity-50"
+                    >
+                      {deleteSaving ? '...' : 'Permanently Delete Account'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
