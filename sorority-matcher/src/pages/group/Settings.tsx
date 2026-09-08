@@ -10,6 +10,7 @@ import {
   getApprovedRoleCounts,
   GroupAdmin,
 } from '../../lib/groups';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const clamp = (value: number, min: number, max: number | undefined) => {
   if (Number.isNaN(value)) return min;
@@ -267,7 +268,7 @@ const Settings = () => {
         <div className="flex flex-col gap-3 mt-8 pt-8 border-t border-gray-200">
           <h3 className="text-sm font-semibold">Ownership</h3>
           {adminsLoading ? (
-            <p className="text-sm text-gray-500">Loading...</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500"><LoadingLogo size={18} /> Loading...</div>
           ) : isOwner ? (
             <>
               <p className="text-sm text-gray-600">You're the owner of this chapter.</p>

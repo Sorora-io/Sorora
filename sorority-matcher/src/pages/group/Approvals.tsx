@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
+import LoadingLogo from '../../components/LoadingLogo';
 import {
   getPendingMemberships,
   updateMembershipStatus,
@@ -143,7 +144,7 @@ const Approvals = () => {
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : pending.length === 0 ? (
           <p className="text-gray-500">No pending requests right now.</p>
         ) : (
@@ -218,7 +219,7 @@ const Approvals = () => {
         {adminError && <p className="text-brick text-sm mb-3">{adminError}</p>}
 
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
           <div className="flex flex-col gap-2">
             {members

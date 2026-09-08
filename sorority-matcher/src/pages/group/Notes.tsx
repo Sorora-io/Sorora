@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useGroup } from '../../contexts/GroupContext';
 import { getRoster, RosterMember } from '../../lib/rankings';
 import { getMyNotes, addNote, updateNote, deleteNote, Note, Interest, INTEREST_LABEL } from '../../lib/notes';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const INTEREST_OPTIONS: Interest[] = ['definitely', 'would_like_to', 'maybe', 'probably_not'];
 
@@ -184,7 +185,7 @@ const Notes = () => {
         {error && <p className="text-brick text-sm mt-2">{error}</p>}
 
         {loading ? (
-          <p className="text-gray-500 mt-6">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500 mt-6"><LoadingLogo size={20} /> Loading...</div>
         ) : roster.length === 0 ? (
           <p className="text-gray-400 text-sm mt-6">No {oppositeLabel.toLowerCase()} to note on yet.</p>
         ) : (

@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { MembershipRole, isEffectiveAdmin } from '../lib/groups';
+import LoadingScreen from './LoadingScreen';
 
 interface Props {
   allow: MembershipRole[];
@@ -31,11 +32,7 @@ const RequireGroupRole = ({ allow, children }: Props) => {
   const { membership, initialized } = useGroup();
 
   if (authLoading || !initialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) return <Navigate to="/login" replace />;

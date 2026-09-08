@@ -60,3 +60,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-spin {
+    animation: none;
+  }
+}

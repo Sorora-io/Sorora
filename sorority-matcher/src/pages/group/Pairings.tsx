@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import { getPairings, PairingRow } from '../../lib/rankings';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const Pairings = () => {
   const { membership } = useGroup();
@@ -46,7 +47,7 @@ const Pairings = () => {
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : byBig.size === 0 ? (
           <p className="text-gray-500">No pairings yet — run matching from the Status page.</p>
         ) : (

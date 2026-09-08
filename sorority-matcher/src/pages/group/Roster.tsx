@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import { getFullRoster, RosterEntry } from '../../lib/rankings';
 import { groupLabel, MembershipRole } from '../../lib/groups';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const roleLabel: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 const roleBadgeClasses: Record<MembershipRole, string> = {
@@ -105,7 +106,7 @@ const Roster = () => {
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
           <div className="flex flex-col gap-8">
             {renderSection('Bigs', bigs)}

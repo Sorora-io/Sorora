@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib/rankings';
+import LoadingLogo from '../../components/LoadingLogo';
 
 const Status = () => {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ const Status = () => {
         <h2 className="text-2xl font-semibold mb-6">Submission Status</h2>
 
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
           <div className="grid grid-cols-2 gap-6 mb-6">
             {renderList('Bigs', bigs)}
