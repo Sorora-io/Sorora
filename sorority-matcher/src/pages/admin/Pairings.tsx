@@ -104,7 +104,24 @@ const Pairings = () => {
       <Progressbar currentStep={8} className="max-w-4xl" />
 
       <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-semibold mb-8">Matching results</h2>
+        <div className="flex items-center gap-4 mb-8">
+          <svg width="48" height="40" viewBox="0 0 48 40" fill="none" aria-hidden="true">
+            {pairings.length > 0 ? (
+              <>
+                <circle cx="12" cy="20" r="9" fill="#DCEDE8" stroke="#296F62" strokeWidth="1.5" />
+                <circle cx="36" cy="20" r="9" fill="#DCEDE8" stroke="#296F62" strokeWidth="1.5" />
+                <line x1="21" y1="20" x2="27" y2="20" stroke="#296F62" strokeWidth="1.5" />
+                <circle cx="24" cy="20" r="2.5" fill="#AD8636" />
+              </>
+            ) : (
+              <>
+                <circle cx="12" cy="20" r="9" fill="none" stroke="#8FC2B3" strokeWidth="1.5" strokeDasharray="3 3" />
+                <circle cx="36" cy="20" r="9" fill="none" stroke="#8FC2B3" strokeWidth="1.5" strokeDasharray="3 3" />
+              </>
+            )}
+          </svg>
+          <h2 className="text-3xl font-semibold">Matching results</h2>
+        </div>
 
         {pairings.length === 0 ? (
           <p className="text-gray-500">

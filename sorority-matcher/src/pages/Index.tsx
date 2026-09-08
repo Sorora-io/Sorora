@@ -36,6 +36,11 @@ const Index = () => {
       </header>
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 md:p-10 text-center">
+        <svg width="72" height="40" viewBox="0 0 72 40" fill="none" className="mx-auto mb-4" aria-hidden="true">
+          <circle cx="24" cy="20" r="14" fill="#DCEDE8" />
+          <circle cx="48" cy="20" r="14" fill="#F2E6C6" />
+          <circle cx="36" cy="20" r="6" fill="#296F62" />
+        </svg>
         <h2 className="text-3xl font-display font-semibold mb-3 text-jade-800">
           Big–Little matching, without the spreadsheets.
         </h2>
