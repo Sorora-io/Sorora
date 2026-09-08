@@ -1,12 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useGroup } from '../../contexts/GroupContext';
 import { getRoster, RosterMember } from '../../lib/rankings';
 import { getMyNotes, addNote, updateNote, deleteNote, Note, Interest, INTEREST_LABEL } from '../../lib/notes';
 
 const INTEREST_OPTIONS: Interest[] = ['definitely', 'would_like_to', 'maybe', 'probably_not'];
 
+const UNDO_WINDOW_MS = 5000;
+
 const todayISO = () => new Date().toISOString().slice(0, 10);
+
+// Matches getMyNotes' own ordering (event_date desc, nulls last, then
+// created_at desc) so an undone delete reinserts where it originally was
+// instead of just jumping to the top of the list.
+function compareNotes(a: Note, b: Note): number {
+  if (a.eventDate !== b.eventDate) {
+    if (a.eventDate === null) return 1;
+    if (b.eventDate === null) return -1;
+    return a.eventDate < b.eventDate ? 1 : -1;
+  }
+  return a.createdAt < b.createdAt ? 1 : -1;
+}
 
 const formatDate = (iso: string | null) => {
   if (!iso) return null;
@@ -33,6 +48,14 @@ const Notes = () => {
   const [interest, setInterest] = useState<Interest | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Notes "deleted" via the undo toast aren't actually deleted from the
+  // database until the toast's window closes without Undo being clicked —
+  // this map tracks that pending timeout per note so Undo can cancel it.
+  // Deliberately never cleared on unmount: a pending delete should still go
+  // through in the background if the user navigates away before it fires,
+  // not silently get canceled.
+  const pendingDeletes = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const load = useCallback(async () => {
     if (!group || !oppositeRole) return;
@@ -110,14 +133,38 @@ const Notes = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (noteId: string) => {
-    const { error: deleteError } = await deleteNote(noteId);
-    if (deleteError) {
-      setFormError(deleteError);
-      return;
-    }
+  const handleDelete = (noteId: string) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+
+    // Optimistic: the note disappears from the list right away, but the
+    // actual database delete waits out the toast's undo window first.
     setNotes(prev => prev.filter(n => n.id !== noteId));
     if (editingNoteId === noteId) resetForm();
+
+    const timeoutId = setTimeout(async () => {
+      delete pendingDeletes.current[noteId];
+      const { error: deleteError } = await deleteNote(noteId);
+      if (deleteError) {
+        toast.error(`Couldn't delete that note: ${deleteError}`);
+        setNotes(prev => [...prev, note].sort(compareNotes));
+      }
+    }, UNDO_WINDOW_MS);
+    pendingDeletes.current[noteId] = timeoutId;
+
+    toast('Note deleted', {
+      duration: UNDO_WINDOW_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pending = pendingDeletes.current[noteId];
+          if (!pending) return; // the window already closed and it's gone
+          clearTimeout(pending);
+          delete pendingDeletes.current[noteId];
+          setNotes(prev => [...prev, note].sort(compareNotes));
+        },
+      },
+    });
   };
 
   return (
