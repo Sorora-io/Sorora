@@ -32,7 +32,7 @@ const ReviewSummary = () => {
       <Progressbar currentStep={7} className="max-w-4xl" />
 
       <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-semibold mb-8">Review Summary</h2>
+        <h2 className="text-3xl font-semibold mb-8">Review everything</h2>
 
         <div className="space-y-6">
           <div className="border-b pb-4">
@@ -109,15 +109,15 @@ const ReviewSummary = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={() => navigate('/admin/rank-bigs')}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
+          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
-          ⟵
+          Back
         </button>
         <button
           onClick={handleRunAlgorithm}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
+          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
-          ⟶
+          Generate pairings
         </button>
       </div>
     </div>

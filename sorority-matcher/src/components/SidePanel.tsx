@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
+import { useMatching } from '../contexts/MatchingContext';
 import { groupLabel, isEffectiveAdmin, Membership } from '../lib/groups';
 
 interface NavItem {
@@ -23,19 +24,8 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
 ];
 
 const SITE_LINKS: NavItem[] = [
-  { label: 'About', path: '/about' },
+  { label: 'How It Works', path: '/about' },
   { label: 'FAQ', path: '/faq' },
-];
-
-const WIZARD_LINKS: NavItem[] = [
-  { label: 'Enter Bigs', path: '/admin/enter-bigs' },
-  { label: 'Enter Littles', path: '/admin/enter-littles' },
-  { label: 'Twins', path: '/admin/twins' },
-  { label: 'Ranking Requirements', path: '/admin/ranking-requirements' },
-  { label: 'Rank Preferences', path: '/admin/rank-preferences' },
-  { label: 'Rank Bigs', path: '/admin/rank-bigs' },
-  { label: 'Review Summary', path: '/admin/review-summary' },
-  { label: 'Pairings', path: '/admin/pairings' },
 ];
 
 const SidePanel = () => {
@@ -46,6 +36,7 @@ const SidePanel = () => {
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth();
   const { membership, memberships, setActiveGroupId } = useGroup();
+  const { bigs, littles, bigRankings, littleRankings, pairings } = useMatching();
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -60,6 +51,28 @@ const SidePanel = () => {
   };
 
   const otherMemberships = memberships.filter(m => m.group_id !== membership?.group_id);
+
+  const hasBigs = bigs.length > 0;
+  const hasLittles = littles.length > 0;
+  const bigRankingsDone = hasBigs && Object.keys(bigRankings).length >= bigs.length;
+  const littleRankingsDone = hasLittles && Object.keys(littleRankings).length >= littles.length;
+
+  // Each Quick Match step only becomes reachable once its prerequisite is
+  // done, and only steps with an unambiguous finished state (not "twin
+  // availability" or "ranking rules," which have no wrong answer) get a
+  // checkmark — matching the wizard's actual data dependencies, not just a
+  // fixed step count.
+  const wizardSteps = [
+    { label: 'Add potential Bigs', path: '/admin/enter-bigs', enabled: true, done: hasBigs },
+    { label: 'Add potential Littles', path: '/admin/enter-littles', enabled: hasBigs, done: hasLittles },
+    { label: 'Twin availability', path: '/admin/twins', enabled: hasLittles, done: false },
+    { label: 'Set ranking rules', path: '/admin/ranking-requirements', enabled: hasLittles, done: false },
+    { label: "Enter each Big's Little rankings", path: '/admin/rank-preferences', enabled: hasBigs && hasLittles, done: bigRankingsDone },
+    { label: "Enter each Little's Big rankings", path: '/admin/rank-bigs', enabled: bigRankingsDone, done: littleRankingsDone },
+    { label: 'Review everything', path: '/admin/review-summary', enabled: hasBigs && hasLittles, done: false },
+    { label: 'Matching results', path: '/admin/pairings', enabled: pairings.length > 0, done: pairings.length > 0 },
+  ];
+  const wizardStarted = location.pathname.startsWith('/admin/') || hasBigs || hasLittles;
 
   const linkClasses = (path: string) =>
     `block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -217,16 +230,56 @@ const SidePanel = () => {
 
           {(!user || memberships.length === 0) && (
             <div className="pt-2 border-t border-gray-200">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Matching Wizard (No Org)
-              </p>
-              <div className="flex flex-col gap-1">
-                {WIZARD_LINKS.map(({ label, path }) => (
-                  <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
-                    {label}
-                  </Link>
-                ))}
-              </div>
+              {wizardStarted ? (
+                <>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Quick Match Setup
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {wizardSteps.map((step, i) => {
+                      const active = location.pathname === step.path;
+                      if (!step.enabled) {
+                        return (
+                          <span
+                            key={step.path}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-300 cursor-not-allowed"
+                          >
+                            <span className="flex-shrink-0 w-4 text-center">{i + 1}.</span>
+                            {step.label}
+                          </span>
+                        );
+                      }
+                      return (
+                        <button
+                          key={step.path}
+                          type="button"
+                          onClick={() => goTo(step.path)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-left transition-colors ${
+                            active ? 'bg-jade-600 text-white' : 'text-gray-700 hover:bg-jade-50'
+                          }`}
+                        >
+                          <span className="flex-shrink-0 w-4 text-center">
+                            {step.done ? (
+                              <Check size={14} className={active ? 'text-white' : 'text-jade-600'} />
+                            ) : (
+                              `${i + 1}.`
+                            )}
+                          </span>
+                          {step.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <Link
+                  to="/"
+                  onClick={closeMobile}
+                  className="block text-center px-3 py-2 rounded-md text-sm font-medium bg-jade-600 text-white hover:bg-jade-700 transition-colors"
+                >
+                  Get Started
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -253,9 +306,9 @@ const SidePanel = () => {
             </div>
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
-              <p className="text-gold-700">Browsing as guest — data won't be saved</p>
+              <p className="text-gold-700">Guest session · Saved on this device only</p>
               <Link to="/login" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
-                Sign in
+                Create an account
               </Link>
             </div>
           ) : (

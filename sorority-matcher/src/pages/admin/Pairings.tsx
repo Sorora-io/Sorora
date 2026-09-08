@@ -104,10 +104,12 @@ const Pairings = () => {
       <Progressbar currentStep={8} className="max-w-4xl" />
 
       <div className="max-w-4xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-semibold mb-8">Pairings</h2>
+        <h2 className="text-3xl font-semibold mb-8">Matching results</h2>
 
         {pairings.length === 0 ? (
-          <p className="text-gray-700 text-lg">No pairings yet</p>
+          <p className="text-gray-500">
+            No matches yet. Head back to Review everything and click Generate pairings.
+          </p>
         ) : (
           <>
             <div className="flex justify-between px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
@@ -156,9 +158,9 @@ const Pairings = () => {
       <div className="mt-8">
         <button
           onClick={() => navigate('/admin/review-summary')}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
+          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
-          ⟵ Edit Inputs
+          Edit Inputs
         </button>
       </div>
     </div>

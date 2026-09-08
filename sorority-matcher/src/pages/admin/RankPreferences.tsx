@@ -107,13 +107,13 @@ const RankPreferences = () => {
       <Progressbar currentStep={5} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-semibold mb-2">Big: {currentBig}</h2>
-        <p className="text-gray-600 mb-6">
-          Progress: {currentBigIndex + 1} / {bigs.length}
+        <h2 className="text-2xl font-semibold mb-1">Enter {currentBig}'s Little rankings</h2>
+        <p className="text-gray-500 text-sm mb-6">
+          Big {currentBigIndex + 1} of {bigs.length}
         </p>
 
         <div className="mb-4">
-          <h3 className="text-xl font-semibold mb-2">Rank Littles (one name per line, in order of preference)</h3>
+          <h3 className="text-lg font-semibold mb-2">Rank order, most preferred first</h3>
           <p className="text-gray-700 mb-4">Available Littles: {littles.join(', ')}</p>
           <textarea
             value={rankingInput}
@@ -131,15 +131,15 @@ const RankPreferences = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={handleBack}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
+          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
-          ⟵
+          Back
         </button>
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
+          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
-          ⟶
+          {currentBigIndex < bigs.length - 1 ? 'Continue to Next Big' : "Continue to Little Rankings"}
         </button>
       </div>
     </div>

@@ -9,8 +9,11 @@ const Login = () => {
   const { signIn, signUp, continueAsGuest } = useAuth();
   const [searchParams] = useSearchParams();
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
+  const modeFromLink = searchParams.get('mode');
 
-  const [mode, setMode] = useState<'signin' | 'signup'>(joinCodeFromLink ? 'signup' : 'signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(
+    joinCodeFromLink || modeFromLink === 'signup' ? 'signup' : 'signin'
+  );
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -278,25 +281,33 @@ const Login = () => {
               onClick={() => setShowGuestWarning(true)}
               className="w-full text-center text-sm text-gray-600 underline hover:text-black"
             >
-              Continue without signing in
+              Continue without an account
             </button>
           ) : (
             <div className="text-sm">
-              <p className="text-gold-700 bg-gold-50 border border-gold-200 rounded-md p-3 mb-3">
-                ⚠️ Without an account, your entries are only saved in this browser — not tied to you. If you switch devices, use a different browser, or clear your browser data, everything will be lost.
+              <h3 className="font-semibold mb-2">Continue without an account?</h3>
+              <p className="text-gray-600 mb-4">
+                Your progress will be stored only on this device. You won't be able to access it from
+                another browser or recover it if this browser's data is cleared.
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => setShowGuestWarning(false)}
-                  className="flex-1 py-2 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                  onClick={() => { setShowGuestWarning(false); setMode('signup'); }}
+                  className="w-full py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
                 >
-                  Cancel
+                  Create an account and save my work
                 </button>
                 <button
                   onClick={handleContinueAsGuest}
-                  className="flex-1 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
+                  className="w-full py-2 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                 >
-                  Continue anyway
+                  Continue on this device
+                </button>
+                <button
+                  onClick={() => setShowGuestWarning(false)}
+                  className="w-full py-2 text-gray-500 hover:text-black text-sm"
+                >
+                  Go back
                 </button>
               </div>
             </div>

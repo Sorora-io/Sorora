@@ -10,6 +10,12 @@ const EnterBigs = () => {
   const { bigsInput, setBigsInput, setBigs } = useMatching();
   const [error, setError] = useState('');
 
+  const count = bigsInput
+    .split('\n')
+    .flatMap(line => line.split('\t'))
+    .map(name => name.trim())
+    .filter(name => name !== '').length;
+
   const handleSubmit = () => {
     if (bigsInput.includes(',')) {
       setError('Please enter one person (first and last name) per line or tab-separated instead of using commas');
@@ -42,37 +48,38 @@ const EnterBigs = () => {
       <Progressbar currentStep={1} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-        <div className="flex items-start justify-between mb-6">
-          <h2 className="text-2xl font-semibold">Enter all Bigs</h2>
+        <div className="flex items-start justify-between mb-2">
+          <h2 className="text-2xl font-semibold">Who is eligible to be a Big?</h2>
           <CsvUploadButton
             entityLabel="big"
             onNames={(names) => { setBigsInput(names.join('\n')); setError(''); }}
             onError={setError}
           />
         </div>
+        <p className="text-gray-600 mb-4">
+          Add everyone participating as a potential Big — one name per line. You can also paste names
+          from a spreadsheet or upload a CSV.
+        </p>
         <textarea
           className="w-full h-64 p-4 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
           value={bigsInput}
           onChange={(e) => setBigsInput(e.target.value)}
-          placeholder="Enter big names, one per line or tab-separated"
+          placeholder={'e.g.\nMaya Chen\nIsabella Davis\nSophia Martinez'}
         />
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-sm text-gray-500">{count} {count === 1 ? 'Big' : 'Bigs'} added</p>
+        </div>
         {error && (
-          <p className="text-brick mt-4">{error}</p>
+          <p className="text-brick mt-2">{error}</p>
         )}
       </div>
 
-      <div className="mt-8 flex gap-4">
-        <button
-          onClick={() => navigate('/about')}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
-        >
-          ⟵
-        </button>
+      <div className="mt-8">
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
+          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
-          ⟶
+          Continue to Littles
         </button>
       </div>
     </div>

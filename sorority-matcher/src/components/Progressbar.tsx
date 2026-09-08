@@ -1,12 +1,12 @@
 export const ADMIN_STEPS = [
-  'Enter Bigs',
-  'Enter Littles',
-  'Twins',
-  'Ranking Requirements',
-  'Rank Preferences',
-  'Rank Bigs',
-  'Review Summary',
-  'Pairings',
+  'Add potential Bigs',
+  'Add potential Littles',
+  'Twin availability',
+  'Set ranking rules',
+  "Big rankings",
+  "Little rankings",
+  'Review everything',
+  'Matching results',
 ];
 
 interface ProgressBarProps {

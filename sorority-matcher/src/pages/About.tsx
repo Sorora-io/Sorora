@@ -1,8 +1,6 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const About = () => {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen flex flex-col items-center p-8">
       <header className="mb-12">
@@ -74,19 +72,13 @@ const About = () => {
         </section>
       </div>
 
-      <div className="mt-8 flex gap-4">
-        <button
-          onClick={() => navigate('/')}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
+      <div className="mt-8">
+        <Link
+          to="/"
+          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium inline-block"
         >
-          ⟵
-        </button>
-        <button
-          onClick={() => navigate('/admin/enter-bigs')}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
-        >
-          ⟶
-        </button>
+          Back to Home
+        </Link>
       </div>
     </div>
   );

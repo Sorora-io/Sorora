@@ -42,7 +42,11 @@ const RankingRequirements = () => {
       <Progressbar currentStep={4} />
 
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-semibold mb-6">Set Minimum Ranking Requirements</h2>
+        <h2 className="text-2xl font-semibold mb-2">Set ranking rules</h2>
+        <p className="text-gray-600 mb-6">
+          Everyone will need to rank at least this many people before their preferences count toward
+          matching.
+        </p>
 
         <div className="space-y-6">
           <div>
@@ -80,15 +84,15 @@ const RankingRequirements = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={() => navigate('/admin/twins')}
-          className="px-8 py-3 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors text-xl"
+          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
-          ⟵
+          Back
         </button>
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-xl"
+          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
-          ⟶
+          Continue to Enter Preferences
         </button>
       </div>
     </div>
