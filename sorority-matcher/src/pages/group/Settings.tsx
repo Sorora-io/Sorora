@@ -5,6 +5,7 @@ import {
   updateGroupProfile,
   updateGroupDescription,
   updateGroupSettings,
+  updateGroupDeadline,
   getGroupAdmins,
   transferGroupOwnership,
   getApprovedRoleCounts,
@@ -36,6 +37,7 @@ const Settings = () => {
 
   const [minBig, setMinBig] = useState(group?.min_big_rankings ?? 5);
   const [minLittle, setMinLittle] = useState(group?.min_little_rankings ?? 5);
+  const [deadline, setDeadline] = useState(group?.ranking_deadline ?? '');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -140,9 +142,12 @@ const Settings = () => {
     const clampedMinLittle = clamp(minLittle, 1, maxLittle);
     setMinBig(clampedMinBig);
     setMinLittle(clampedMinLittle);
-    const { error: saveError } = await updateGroupSettings(group.id, clampedMinBig, clampedMinLittle);
-    if (saveError) {
-      setError(saveError);
+    const [{ error: saveError }, { error: deadlineError }] = await Promise.all([
+      updateGroupSettings(group.id, clampedMinBig, clampedMinLittle),
+      updateGroupDeadline(group.id, deadline || null),
+    ]);
+    if (saveError || deadlineError) {
+      setError(saveError ?? deadlineError ?? 'Could not save.');
     } else {
       setSaved(true);
       await refresh();
@@ -252,6 +257,16 @@ const Settings = () => {
               {littleCount === null ? ' ' : `You have ${littleCount} approved little${littleCount === 1 ? '' : 's'}.`}
             </p>
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Ranking deadline (optional)</label>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+            />
+            <p className="text-xs text-gray-500 mt-1">Shown to Bigs and Littles on their Dashboard.</p>
+          </div>
 
           {error && <p className="text-brick text-sm">{error}</p>}
           {saved && <p className="text-jade-700 text-sm">Saved.</p>}
@@ -261,7 +276,7 @@ const Settings = () => {
             disabled={saving}
             className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
-            {saving ? '...' : 'Save Settings'}
+            {saving ? '...' : 'Save Ranking Rules'}
           </button>
         </div>
 

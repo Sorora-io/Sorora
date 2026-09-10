@@ -10,6 +10,13 @@ import { getMyProfile } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
+const todayISO = new Date().toISOString().slice(0, 10);
+
+const formatDeadline = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+};
+
 const ADMIN_ACTIONS = [
   { label: 'Approvals', path: '/group/approvals' },
   { label: 'Submission Status', path: '/group/status' },
@@ -100,9 +107,21 @@ const OrgCard = ({
       )}
 
       {m.status === 'approved' && mySubmission !== null && (m.role === 'big' || m.role === 'little') && (
-        <p className={`text-sm mb-4 -mt-2 ${mySubmission ? 'text-jade-700' : 'text-gold-700'}`}>
+        <p
+          className={`text-sm mb-4 -mt-2 ${
+            !mySubmission && m.group.ranking_deadline && m.group.ranking_deadline < todayISO
+              ? 'text-brick'
+              : mySubmission
+              ? 'text-jade-700'
+              : 'text-gold-700'
+          }`}
+        >
           {mySubmission
             ? `You've submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings.`
+            : m.group.ranking_deadline
+            ? `Your ${m.role === 'big' ? 'Little' : 'Big'} rankings ${
+                m.group.ranking_deadline < todayISO ? 'were due' : 'are due'
+              } ${formatDeadline(m.group.ranking_deadline)}.`
             : `You haven't submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings yet.`}
         </p>
       )}

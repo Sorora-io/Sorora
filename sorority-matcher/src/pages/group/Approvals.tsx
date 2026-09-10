@@ -9,6 +9,7 @@ import {
   resolveRoleChange,
   getGroupMembers,
   setMemberAdmin,
+  removeMember,
   PendingMembership,
   RoleChangeRequest,
   GroupMember,
@@ -28,6 +29,9 @@ const Approvals = () => {
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
   const [adminSavingId, setAdminSavingId] = useState<string | null>(null);
   const [adminError, setAdminError] = useState('');
+  const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
+  const [removeSavingId, setRemoveSavingId] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState('');
 
   const joinLink = group ? `${window.location.origin}/login?join=${group.join_code}` : '';
 
@@ -84,6 +88,19 @@ const Approvals = () => {
       setMembers(prev => prev.map(row => (row.id === m.id ? { ...row, is_admin: !row.is_admin } : row)));
     }
     setAdminSavingId(null);
+  };
+
+  const handleRemove = async (membershipId: string) => {
+    setRemoveSavingId(membershipId);
+    setRemoveError('');
+    const { error: removeError } = await removeMember(membershipId);
+    if (removeError) {
+      setRemoveError(removeError);
+    } else {
+      setMembers(prev => prev.filter(m => m.id !== membershipId));
+      setRemoveConfirmId(null);
+    }
+    setRemoveSavingId(null);
   };
 
   const copy = async (text: string, which: 'code' | 'link') => {
@@ -249,6 +266,66 @@ const Approvals = () => {
             {members.filter(m => m.role === 'big' || m.role === 'little').length === 0 && (
               <p className="text-gray-500 text-sm">No Bigs or Littles yet.</p>
             )}
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mt-6">
+        <h3 className="text-xl font-semibold mb-1">Members</h3>
+        <p className="text-gray-500 text-sm mb-4">
+          Remove someone who's graduated or left — this only removes them from this chapter, not their
+          Sorora account, and clears their rankings/pairings/notes for it.
+        </p>
+
+        {removeError && <p className="text-brick text-sm mb-3">{removeError}</p>}
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {members.map(m => {
+              const isOwner = m.user_id === group.owner_id;
+              const isSelf = m.user_id === membership?.user_id;
+              return (
+                <div key={m.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+                  <div>
+                    <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
+                    <p className="text-sm text-gray-500">
+                      {roleLabel[m.role]}
+                      {m.is_admin && m.role !== 'admin' && ' + Admin'}
+                      {isOwner && ' · Owner'}
+                      {isSelf && ' · You'}
+                    </p>
+                  </div>
+                  {isOwner || isSelf ? null : removeConfirmId === m.id ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-sm text-gray-500">Remove?</span>
+                      <button
+                        onClick={() => handleRemove(m.id)}
+                        disabled={removeSavingId === m.id}
+                        className="px-3 py-2 bg-brick text-white rounded-md text-sm hover:bg-brick-600 transition-colors disabled:opacity-50"
+                      >
+                        {removeSavingId === m.id ? '...' : 'Yes, remove'}
+                      </button>
+                      <button
+                        onClick={() => setRemoveConfirmId(null)}
+                        className="px-3 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setRemoveConfirmId(m.id)}
+                      className="px-4 py-2 border-2 border-brick text-brick rounded-md text-sm hover:bg-brick-50 transition-colors flex-shrink-0"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {members.length === 0 && <p className="text-gray-500 text-sm">No approved members yet.</p>}
           </div>
         )}
       </div>

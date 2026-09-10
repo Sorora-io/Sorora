@@ -12,6 +12,7 @@ export interface Group {
   join_code: string;
   min_big_rankings: number;
   min_little_rankings: number;
+  ranking_deadline: string | null;
   created_by: string;
   owner_id: string;
   created_at: string;
@@ -161,6 +162,11 @@ export async function updateGroupDescription(groupId: string, description: strin
   return { error: error ? error.message : null };
 }
 
+export async function updateGroupDeadline(groupId: string, deadline: string | null): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('groups').update({ ranking_deadline: deadline }).eq('id', groupId);
+  return { error: error ? error.message : null };
+}
+
 export async function getApprovedRoleCounts(
   groupId: string
 ): Promise<{ bigs: number; littles: number; error: string | null }> {
@@ -275,6 +281,14 @@ export async function setMemberAdmin(membershipId: string, isAdmin: boolean): Pr
     p_membership_id: membershipId,
     p_is_admin: isAdmin,
   });
+  return { error: error ? error.message : null };
+}
+
+// Removes an approved member from the chapter (they graduated, left, etc.)
+// without touching their Sorora account — only this chapter's data about
+// them. Blocked server-side if they're the owner (transfer first).
+export async function removeMember(membershipId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('remove_member', { p_membership_id: membershipId });
   return { error: error ? error.message : null };
 }
 
