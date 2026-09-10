@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGroup } from '../../contexts/GroupContext';
 import { getRoster, RosterMember } from '../../lib/rankings';
@@ -177,6 +178,10 @@ const Notes = () => {
       </header>
 
       <div className="max-w-2xl w-full">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
+          <ArrowLeft size={14} /> Back to Dashboard
+        </Link>
+
         <h2 className="text-2xl font-semibold mb-1">Notes</h2>
         <p className="text-gray-500 text-sm mb-1">
           Keep a private log on the {oppositeLabel.toLowerCase()} you're getting to know — only you can

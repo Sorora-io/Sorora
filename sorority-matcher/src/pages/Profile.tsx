@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
@@ -10,10 +11,12 @@ const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, isGuest, signOut, updatePassword } = useAuth();
+  const { user, isGuest, signOut, signIn, updatePassword } = useAuth();
   const { membership, memberships, setActiveGroupId, refresh } = useGroup();
 
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -145,19 +148,42 @@ const Profile = () => {
   };
 
   const handleChangePassword = async () => {
+    if (!oldPassword) {
+      setPasswordError('Please enter your current password.');
+      return;
+    }
     if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
       return;
     }
     setPasswordSaving(true);
     setPasswordError('');
     setPasswordSaved(false);
+
+    if (!user?.email) {
+      setPasswordError('Could not verify your account. Please sign in again.');
+      setPasswordSaving(false);
+      return;
+    }
+    const { error: verifyError } = await signIn(user.email, oldPassword);
+    if (verifyError) {
+      setPasswordError('Current password is incorrect.');
+      setPasswordSaving(false);
+      return;
+    }
+
     const { error } = await updatePassword(newPassword);
     if (error) {
       setPasswordError(error.message);
     } else {
       setPasswordSaved(true);
+      setOldPassword('');
       setNewPassword('');
+      setConfirmPassword('');
     }
     setPasswordSaving(false);
   };
@@ -195,6 +221,14 @@ const Profile = () => {
           <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
+
+      {!isGuest && (
+        <div className="max-w-5xl w-full mb-2">
+          <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black">
+            <ArrowLeft size={14} /> Back to Dashboard
+          </Link>
+        </div>
+      )}
 
       {isGuest ? (
         <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
@@ -341,10 +375,28 @@ const Profile = () => {
               <div className="flex flex-col gap-2">
                 <input
                   type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Current password"
+                  autoComplete="current-password"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                />
+                <input
+                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="New password"
                   minLength={6}
+                  autoComplete="new-password"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  minLength={6}
+                  autoComplete="new-password"
                   className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
                 {passwordError && <p className="text-brick text-sm">{passwordError}</p>}

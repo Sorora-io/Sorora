@@ -4,12 +4,13 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MatchingProvider } from "./contexts/MatchingContext";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { GroupProvider } from "./contexts/GroupContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RequireRealAccount from "./components/RequireRealAccount";
 import RequireGroupRole from "./components/RequireGroupRole";
 import SidePanel from "./components/SidePanel";
+import LoadingScreen from "./components/LoadingScreen";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -38,6 +39,54 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Session restore on a fresh page load/reload is the one moment the whole
+// app is in an unknown auth state — gating the entire shell (not just each
+// route's own content area) on it avoids a signed-in sidebar/content
+// flashing signed-out chrome for a beat before AuthContext resolves.
+const AppShell = () => {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <div className="md:flex">
+      <SidePanel />
+      <div className="flex-1 min-w-0">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/admin/enter-bigs" element={<ProtectedRoute><EnterBigs /></ProtectedRoute>} />
+          <Route path="/admin/enter-littles" element={<ProtectedRoute><EnterLittles /></ProtectedRoute>} />
+          <Route path="/admin/twins" element={<ProtectedRoute><Twins /></ProtectedRoute>} />
+          <Route path="/admin/ranking-requirements" element={<ProtectedRoute><RankingRequirements /></ProtectedRoute>} />
+          <Route path="/admin/rank-preferences" element={<ProtectedRoute><RankPreferences /></ProtectedRoute>} />
+          <Route path="/admin/rank-bigs" element={<ProtectedRoute><RankBigs /></ProtectedRoute>} />
+          <Route path="/admin/review-summary" element={<ProtectedRoute><ReviewSummary /></ProtectedRoute>} />
+          <Route path="/admin/pairings" element={<ProtectedRoute><Pairings /></ProtectedRoute>} />
+          <Route path="/group/onboarding" element={<RequireRealAccount><GroupOnboarding /></RequireRealAccount>} />
+          <Route path="/group/pending" element={<RequireRealAccount><GroupPending /></RequireRealAccount>} />
+          <Route path="/group/approvals" element={<RequireGroupRole allow={['admin']}><GroupApprovals /></RequireGroupRole>} />
+          <Route path="/group/settings" element={<RequireGroupRole allow={['admin']}><GroupSettings /></RequireGroupRole>} />
+          <Route path="/group/status" element={<RequireGroupRole allow={['admin']}><GroupStatus /></RequireGroupRole>} />
+          <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
+          <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
+          <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
+          <Route path="/group/notes" element={<RequireGroupRole allow={['big', 'little']}><GroupNotes /></RequireGroupRole>} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+    </div>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -47,39 +96,7 @@ const App = () => (
         <GroupProvider>
           <MatchingProvider>
             <BrowserRouter>
-              <div className="md:flex">
-                <SidePanel />
-                <div className="flex-1 min-w-0">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                    <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/admin/enter-bigs" element={<ProtectedRoute><EnterBigs /></ProtectedRoute>} />
-                    <Route path="/admin/enter-littles" element={<ProtectedRoute><EnterLittles /></ProtectedRoute>} />
-                    <Route path="/admin/twins" element={<ProtectedRoute><Twins /></ProtectedRoute>} />
-                    <Route path="/admin/ranking-requirements" element={<ProtectedRoute><RankingRequirements /></ProtectedRoute>} />
-                    <Route path="/admin/rank-preferences" element={<ProtectedRoute><RankPreferences /></ProtectedRoute>} />
-                    <Route path="/admin/rank-bigs" element={<ProtectedRoute><RankBigs /></ProtectedRoute>} />
-                    <Route path="/admin/review-summary" element={<ProtectedRoute><ReviewSummary /></ProtectedRoute>} />
-                    <Route path="/admin/pairings" element={<ProtectedRoute><Pairings /></ProtectedRoute>} />
-                    <Route path="/group/onboarding" element={<RequireRealAccount><GroupOnboarding /></RequireRealAccount>} />
-                    <Route path="/group/pending" element={<RequireRealAccount><GroupPending /></RequireRealAccount>} />
-                    <Route path="/group/approvals" element={<RequireGroupRole allow={['admin']}><GroupApprovals /></RequireGroupRole>} />
-                    <Route path="/group/settings" element={<RequireGroupRole allow={['admin']}><GroupSettings /></RequireGroupRole>} />
-                    <Route path="/group/status" element={<RequireGroupRole allow={['admin']}><GroupStatus /></RequireGroupRole>} />
-                    <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
-                    <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
-                    <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
-                    <Route path="/group/notes" element={<RequireGroupRole allow={['big', 'little']}><GroupNotes /></RequireGroupRole>} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
-              </div>
+              <AppShell />
             </BrowserRouter>
           </MatchingProvider>
         </GroupProvider>

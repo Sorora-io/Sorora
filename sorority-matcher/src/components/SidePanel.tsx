@@ -30,8 +30,7 @@ const SITE_LINKS: NavItem[] = [
 
 const SidePanel = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [linksOpen, setLinksOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [signOutConfirming, setSignOutConfirming] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,12 +42,13 @@ const SidePanel = () => {
 
   const goTo = (path: string) => {
     navigate(path);
+    setMenuOpen(false);
     closeMobile();
   };
 
   const switchTo = (groupId: string) => {
     setActiveGroupId(groupId);
-    setSwitcherOpen(false);
+    setMenuOpen(false);
   };
 
   const otherMemberships = memberships.filter(m => m.group_id !== membership?.group_id);
@@ -122,68 +122,31 @@ const SidePanel = () => {
 
         <div className="p-4 flex flex-col gap-4">
           {user && !isGuest && membership && (
-            <div>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setSwitcherOpen(o => !o)}
-                  className="w-full flex items-center justify-between gap-2 text-left bg-jade-50 border border-jade-100 rounded-md px-3 py-2 hover:bg-jade-100 transition-colors"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold text-jade-800 truncate">
-                      {groupLabel(membership.group)}
-                    </span>
-                    <span className="block text-xs font-medium text-jade-600">
-                      {membershipLabel(membership)}
-                      {membership.status !== 'approved' && ` · ${membership.status}`}
-                    </span>
-                  </span>
-                  {otherMemberships.length > 0 && (
-                    <svg
-                      width="12" height="8" viewBox="0 0 12 8" fill="none"
-                      className={`flex-shrink-0 text-jade-700 transition-transform ${switcherOpen ? 'rotate-180' : ''}`}
-                    >
-                      <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    </svg>
-                  )}
-                </button>
-
-                {switcherOpen && otherMemberships.length > 0 && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-sm p-1 z-10">
-                    {otherMemberships.map(m => (
-                      <button
-                        key={m.group_id}
-                        type="button"
-                        onClick={() => switchTo(m.group_id)}
-                        className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-jade-50 transition-colors"
-                      >
-                        <span className="block font-medium truncate">{groupLabel(m.group)}</span>
-                        <span className="block text-xs text-gray-500">
-                          {membershipLabel(m)}
-                          {m.status !== 'approved' && ` · ${m.status}`}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => setLinksOpen(o => !o)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 mt-2 text-xs font-semibold text-gray-500 hover:text-gray-700 uppercase tracking-wide"
+                onClick={() => setMenuOpen(o => !o)}
+                className="w-full flex items-center justify-between gap-2 text-left bg-jade-50 border border-jade-100 rounded-md px-3 py-2 hover:bg-jade-100 transition-colors"
               >
-                <span>Chapter menu</span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-jade-800 truncate">
+                    {groupLabel(membership.group)}
+                  </span>
+                  <span className="block text-xs font-medium text-jade-600">
+                    {membershipLabel(membership)}
+                    {membership.status !== 'approved' && ` · ${membership.status}`}
+                  </span>
+                </span>
                 <svg
                   width="12" height="8" viewBox="0 0 12 8" fill="none"
-                  className={`flex-shrink-0 transition-transform ${linksOpen ? 'rotate-180' : ''}`}
+                  className={`flex-shrink-0 text-jade-700 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
                 >
                   <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </button>
 
-              {linksOpen && (
-                <div className="flex flex-col gap-1 mt-1">
+              {menuOpen && (
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-sm p-1 z-10 flex flex-col gap-0.5">
                   {membership.status !== 'approved' ? (
                     <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
                       {membership.status === 'pending' ? 'View request status' : 'View details'}
@@ -209,6 +172,28 @@ const SidePanel = () => {
                       <button type="button" onClick={() => goTo('/group/roster')} className={linkClasses('/group/roster')}>
                         Roster
                       </button>
+                    </>
+                  )}
+
+                  {otherMemberships.length > 0 && (
+                    <>
+                      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                        Switch chapter
+                      </p>
+                      {otherMemberships.map(m => (
+                        <button
+                          key={m.group_id}
+                          type="button"
+                          onClick={() => switchTo(m.group_id)}
+                          className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-jade-50 transition-colors"
+                        >
+                          <span className="block font-medium truncate">{groupLabel(m.group)}</span>
+                          <span className="block text-xs text-gray-500">
+                            {membershipLabel(m)}
+                            {m.status !== 'approved' && ` · ${m.status}`}
+                          </span>
+                        </button>
+                      ))}
                     </>
                   )}
                 </div>

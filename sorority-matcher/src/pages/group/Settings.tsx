@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import {
   updateGroupProfile,
@@ -162,6 +163,12 @@ const Settings = () => {
           <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
       </header>
+
+      <div className="max-w-md w-full">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
+          <ArrowLeft size={14} /> Back to Dashboard
+        </Link>
+      </div>
 
       <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Group Settings</h2>
