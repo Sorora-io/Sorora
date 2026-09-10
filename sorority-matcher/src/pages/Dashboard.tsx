@@ -1,12 +1,51 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
+import OnboardingTour, { TourStep } from '../components/OnboardingTour';
 import { homeForRole } from '../components/RequireGroupRole';
 import { isEffectiveAdmin, MembershipWithGroup } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking } from '../lib/rankings';
 import { getMyProfile } from '../lib/profile';
+import { hasTourSeen, markTourSeen } from '../lib/tour';
+import { queryKeys } from '../lib/queryKeys';
+
+const DASHBOARD_TOUR_ID = 'dashboard';
+
+const DASHBOARD_TOUR_STEPS: TourStep[] = [
+  {
+    target: 'dashboard-header',
+    title: 'Welcome to your dashboard',
+    body: "This is home base — every chapter you're part of shows up below, along with your ranking progress.",
+  },
+  {
+    target: 'dashboard-orgcards',
+    title: 'Your chapters',
+    body: 'Each card is one chapter. Tap it to jump into rankings, notes, roster, or admin tools for that chapter.',
+  },
+  {
+    target: 'sidepanel-chapter',
+    title: 'Switch chapters',
+    body: "In more than one chapter? Use this to switch between them and reach chapter-specific pages.",
+  },
+  {
+    target: 'sidepanel-explore',
+    title: 'Learn the matching algorithm',
+    body: 'Curious how pairings are generated? Check How It Works, or the FAQ, any time.',
+  },
+  {
+    target: 'dashboard-addorg',
+    title: 'Add another chapter',
+    body: 'Starting or joining a new chapter? You can do that here anytime.',
+  },
+  {
+    target: 'sidepanel-account',
+    title: "You're all set",
+    body: 'Manage your profile, password, and account from here. Have fun!',
+  },
+];
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -40,45 +79,36 @@ const OrgCard = ({
   active: boolean;
   goTo: (groupId: string, path: string) => void;
 }) => {
-  const [adminProgress, setAdminProgress] = useState<AdminProgress | null>(null);
-  const [mySubmission, setMySubmission] = useState<boolean | null>(null);
-  // adminProgress/mySubmission start out null regardless of their real
-  // value, so rendering as soon as they're non-null let the card pop in a
-  // "not submitted yet" / "Start Ranking" state for a beat even when the
-  // real answer is the opposite — this tracks the fetch itself, so the card
-  // can show a neutral skeleton instead of a wrong answer while it's out.
-  const [statusLoading, setStatusLoading] = useState(m.status === 'approved');
+  const isApproved = m.status === 'approved';
+  const isAdmin = isApproved && isEffectiveAdmin(m);
+  const isRanker = isApproved && (m.role === 'big' || m.role === 'little');
 
-  useEffect(() => {
-    if (m.status !== 'approved') {
-      setStatusLoading(false);
-      return;
-    }
+  // Cached per group under react-query — so a card that was already shown
+  // once (here, or on the Status/SubmitRanking pages that fetch the same
+  // data) renders its real numbers immediately instead of a skeleton, and
+  // a genuinely-stale beat is a quiet background refetch, not a blocking
+  // loading state.
+  const { data: statusRows, isLoading: progressLoading } = useQuery({
+    queryKey: queryKeys.submissionStatus(m.group_id),
+    queryFn: () => getSubmissionStatus(m.group_id).then(({ rows }) => rows),
+    enabled: isAdmin,
+  });
 
-    setStatusLoading(true);
-    const tasks: Promise<unknown>[] = [];
+  const { data: rankedIds, isLoading: rankingLoading } = useQuery({
+    queryKey: queryKeys.myRanking(m.group_id),
+    queryFn: () => getMyRanking(m.group_id).then(({ rankedIds: ids }) => ids),
+    enabled: isRanker,
+  });
 
-    if (isEffectiveAdmin(m)) {
-      tasks.push(
-        getSubmissionStatus(m.group_id).then(({ rows }) => {
-          const bigs = rows.filter(r => r.role === 'big');
-          const littles = rows.filter(r => r.role === 'little');
-          setAdminProgress({
-            bigsSubmitted: bigs.filter(r => r.submitted).length,
-            bigsTotal: bigs.length,
-            littlesSubmitted: littles.filter(r => r.submitted).length,
-            littlesTotal: littles.length,
-          });
-        })
-      );
-    }
-
-    if (m.role === 'big' || m.role === 'little') {
-      tasks.push(getMyRanking(m.group_id).then(({ rankedIds }) => setMySubmission(rankedIds.length > 0)));
-    }
-
-    Promise.all(tasks).then(() => setStatusLoading(false));
-  }, [m]);
+  const adminProgress: AdminProgress | null = statusRows
+    ? {
+        bigsSubmitted: statusRows.filter(r => r.role === 'big' && r.submitted).length,
+        bigsTotal: statusRows.filter(r => r.role === 'big').length,
+        littlesSubmitted: statusRows.filter(r => r.role === 'little' && r.submitted).length,
+        littlesTotal: statusRows.filter(r => r.role === 'little').length,
+      }
+    : null;
+  const mySubmission = rankedIds ? rankedIds.length > 0 : null;
 
   const skeletonLine = (width: string) => (
     <span className={`inline-block h-3 ${width} bg-gray-100 rounded animate-pulse`} />
@@ -111,7 +141,7 @@ const OrgCard = ({
       {m.status === 'approved' && isEffectiveAdmin(m) && (
         <div className="mb-4 -mt-2 flex flex-col gap-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Matching progress</p>
-          {statusLoading || !adminProgress ? (
+          {progressLoading || !adminProgress ? (
             <>{skeletonLine('w-40')}{skeletonLine('w-36')}</>
           ) : adminProgress.bigsTotal === 0 && adminProgress.littlesTotal === 0 ? (
             <p className="text-sm text-gray-500">No Bigs or Littles approved yet.</p>
@@ -130,7 +160,7 @@ const OrgCard = ({
 
       {m.status === 'approved' && (m.role === 'big' || m.role === 'little') && (
         <div className="mb-4 -mt-2">
-          {statusLoading || mySubmission === null ? (
+          {rankingLoading || mySubmission === null ? (
             skeletonLine('w-56')
           ) : (
             <p
@@ -162,7 +192,7 @@ const OrgCard = ({
                 onClick={() => goTo(m.group_id, '/group/submit-ranking')}
                 className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
               >
-                {statusLoading || mySubmission === null
+                {rankingLoading || mySubmission === null
                   ? 'Rankings'
                   : mySubmission
                   ? 'Update Rankings'
@@ -210,17 +240,28 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { memberships, membership, setActiveGroupId } = useGroup();
   const [showAddOrg, setShowAddOrg] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [name, setName] = useState<string | null>(null);
+  const [tourActive, setTourActive] = useState(false);
 
+  const { data: profile } = useQuery({
+    queryKey: queryKeys.myProfile(),
+    queryFn: () => getMyProfile().then(({ profile: p }) => p),
+  });
+  const avatarUrl = profile?.avatar_url ?? null;
+  const name = profile?.name ?? null;
+
+  // First time a member with at least one org lands here, walk them
+  // through the dashboard automatically; "Take a tour" below lets anyone
+  // replay it later.
   useEffect(() => {
-    getMyProfile().then(({ profile }) => {
-      if (profile) {
-        setAvatarUrl(profile.avatar_url);
-        setName(profile.name);
-      }
-    });
-  }, []);
+    if (memberships.length > 0 && !hasTourSeen(DASHBOARD_TOUR_ID)) {
+      setTourActive(true);
+    }
+  }, [memberships.length]);
+
+  const finishTour = () => {
+    setTourActive(false);
+    markTourSeen(DASHBOARD_TOUR_ID);
+  };
 
   const goTo = (groupId: string, path: string) => {
     setActiveGroupId(groupId);
@@ -236,20 +277,31 @@ const Dashboard = () => {
       </header>
 
       <div className="max-w-2xl w-full flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-sm font-display font-semibold text-jade-700">
-                {(name || user?.email || '?').charAt(0).toUpperCase()}
-              </span>
-            )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3" data-tour="dashboard-header">
+            <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-sm font-display font-semibold text-jade-700">
+                  {(name || user?.email || '?').charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold leading-tight">Your Organizations</h2>
+              {name && <p className="text-sm text-gray-500">{name}</p>}
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold leading-tight">Your Organizations</h2>
-            {name && <p className="text-sm text-gray-500">{name}</p>}
-          </div>
+          {memberships.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTourActive(true)}
+              className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 underline"
+            >
+              Take a tour
+            </button>
+          )}
         </div>
 
         {memberships.length === 0 && (
@@ -262,11 +314,13 @@ const Dashboard = () => {
           </div>
         )}
 
-        {memberships.map(m => (
-          <OrgCard key={m.id} m={m} active={m.group_id === membership?.group_id} goTo={goTo} />
-        ))}
+        <div className="flex flex-col gap-4" data-tour="dashboard-orgcards">
+          {memberships.map(m => (
+            <OrgCard key={m.id} m={m} active={m.group_id === membership?.group_id} goTo={goTo} />
+          ))}
+        </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-5">
+        <div className="bg-white rounded-lg shadow-sm p-5" data-tour="dashboard-addorg">
           {showAddOrg ? (
             <AddOrganizationForm
               onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
@@ -283,6 +337,8 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      <OnboardingTour steps={DASHBOARD_TOUR_STEPS} active={tourActive} onFinish={finishTour} />
     </div>
   );
 };

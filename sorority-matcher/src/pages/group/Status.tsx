@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib/rankings';
+import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
 const Status = () => {
@@ -10,23 +12,22 @@ const Status = () => {
   const { membership } = useGroup();
   const group = membership?.group;
 
-  const [rows, setRows] = useState<SubmissionStatusRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
-  const [error, setError] = useState('');
+  const [runError, setRunError] = useState('');
 
-  const load = useCallback(async () => {
-    if (!group) return;
-    setLoading(true);
-    const { rows: r, error: loadError } = await getSubmissionStatus(group.id);
-    if (loadError) setError(loadError);
-    setRows(r);
-    setLoading(false);
-  }, [group]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const {
+    data: rows = [] as SubmissionStatusRow[],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: queryKeys.submissionStatus(group?.id ?? ''),
+    queryFn: () => getSubmissionStatus(group!.id).then(({ rows: r, error: loadError }) => {
+      if (loadError) throw new Error(loadError);
+      return r;
+    }),
+    enabled: !!group,
+  });
+  const error = runError || (queryError ? (queryError as Error).message : '');
 
   const bigs = rows.filter(r => r.role === 'big');
   const littles = rows.filter(r => r.role === 'little');
@@ -35,10 +36,10 @@ const Status = () => {
   const handleRun = async () => {
     if (!group) return;
     setRunning(true);
-    setError('');
-    const { error: runError } = await runMatching(group.id);
-    if (runError) {
-      setError(runError);
+    setRunError('');
+    const { error: runFailure } = await runMatching(group.id);
+    if (runFailure) {
+      setRunError(runFailure);
       setRunning(false);
       return;
     }

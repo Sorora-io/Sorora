@@ -114,6 +114,9 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setInitialized(true);
   }, [user]);
 
+  const lastUserId = useRef<string | null>(null);
+  const identitySeen = useRef(false);
+
   useEffect(() => {
     // Wait for AuthContext's own session check to resolve first — otherwise
     // this fires once with `user` still null (before the real session is
@@ -121,8 +124,23 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // briefly bounce a genuinely-signed-in admin/big/little through
     // Onboarding before the real membership loads.
     if (authLoading) return;
+
+    const currentId = user?.id ?? null;
+    // A real identity change (signing in, signing out, switching accounts)
+    // means the loaded membership list belongs to someone else — clear
+    // `initialized` so route guards fall back to the full-page loading
+    // screen instead of briefly showing the previous (or empty) org list
+    // while the real one loads. A manual refresh() for the SAME user (e.g.
+    // after saving a setting) must not do this, or every save would bounce
+    // the whole app back to a loading screen.
+    if (identitySeen.current && lastUserId.current !== currentId) {
+      setInitialized(false);
+    }
+    identitySeen.current = true;
+    lastUserId.current = currentId;
+
     refresh();
-  }, [authLoading, refresh]);
+  }, [authLoading, user, refresh]);
 
   // Runs a create/join action stashed at signup time, the first time this
   // browser sees this user with no orgs yet (i.e. right after email

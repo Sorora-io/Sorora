@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { LayoutGrid, List, ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getFullRoster, RosterEntry } from '../../lib/rankings';
 import { groupLabel, MembershipRole } from '../../lib/groups';
+import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
 type View = 'card' | 'list';
@@ -20,9 +22,6 @@ const Roster = () => {
   const { membership } = useGroup();
   const group = membership?.group;
 
-  const [roster, setRoster] = useState<RosterEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [view, setView] = useState<View>(() => {
     try {
       return (localStorage.getItem(VIEW_KEY) as View) || 'card';
@@ -40,18 +39,19 @@ const Roster = () => {
     }
   };
 
-  const load = useCallback(async () => {
-    if (!group) return;
-    setLoading(true);
-    const { roster: r, error: loadError } = await getFullRoster(group.id);
-    if (loadError) setError(loadError);
-    setRoster(r);
-    setLoading(false);
-  }, [group]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const {
+    data: roster = [] as RosterEntry[],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: queryKeys.fullRoster(group?.id ?? ''),
+    queryFn: () => getFullRoster(group!.id).then(({ roster: r, error: loadError }) => {
+      if (loadError) throw new Error(loadError);
+      return r;
+    }),
+    enabled: !!group,
+  });
+  const error = queryError ? (queryError as Error).message : '';
 
   if (!group) return null;
 

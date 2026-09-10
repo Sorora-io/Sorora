@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, LogOut, Check } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMatching } from '../contexts/MatchingContext';
@@ -9,6 +9,10 @@ import { groupLabel, isEffectiveAdmin, Membership } from '../lib/groups';
 interface NavItem {
   label: string;
   path: string;
+}
+
+interface NavItemWithIcon extends NavItem {
+  icon: LucideIcon;
 }
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
@@ -23,9 +27,14 @@ const ADMIN_GROUP_LINKS: NavItem[] = [
   { label: 'Pairings', path: '/group/pairings' },
 ];
 
-const SITE_LINKS: NavItem[] = [
-  { label: 'How It Works', path: '/about' },
-  { label: 'FAQ', path: '/faq' },
+const ACCOUNT_LINKS: NavItemWithIcon[] = [
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Profile', path: '/profile', icon: User },
+];
+
+const SITE_LINKS: NavItemWithIcon[] = [
+  { label: 'How It Works', path: '/about', icon: BookOpen },
+  { label: 'FAQ', path: '/faq', icon: HelpCircle },
 ];
 
 const SidePanel = () => {
@@ -88,7 +97,7 @@ const SidePanel = () => {
   const wizardStarted = location.pathname.startsWith('/admin/') || hasBigs || hasLittles;
 
   const linkClasses = (path: string) =>
-    `block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
       location.pathname === path
         ? 'bg-jade-600 text-white'
         : 'text-gray-700 hover:bg-jade-50'
@@ -134,7 +143,7 @@ const SidePanel = () => {
 
         <div className="p-4 flex flex-col gap-4">
           {user && !isGuest && membership && (
-            <div className="relative" ref={menuRef}>
+            <div className="relative" ref={menuRef} data-tour="sidepanel-chapter">
               <button
                 type="button"
                 onClick={() => setMenuOpen(o => !o)}
@@ -213,14 +222,32 @@ const SidePanel = () => {
             </div>
           )}
 
-          <div className={user && !isGuest && membership ? 'pt-2 border-t border-gray-200' : ''}>
+          {user && !isGuest && (
+            <div className={membership ? 'pt-2 border-t border-gray-200' : ''} data-tour="sidepanel-account">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Account
+              </p>
+              <div className="flex flex-col gap-1">
+                {ACCOUNT_LINKS.map(({ label, path, icon: Icon }) => (
+                  <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
+                    <Icon size={15} /> {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={user ? 'pt-2 border-t border-gray-200' : ''}
+            data-tour="sidepanel-explore"
+          >
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               Explore
             </p>
             <div className="flex flex-col gap-1">
-              {SITE_LINKS.map(({ label, path }) => (
+              {SITE_LINKS.map(({ label, path, icon: Icon }) => (
                 <Link key={path} to={path} onClick={closeMobile} className={linkClasses(path)}>
-                  {label}
+                  <Icon size={15} /> {label}
                 </Link>
               ))}
             </div>
@@ -284,44 +311,33 @@ const SidePanel = () => {
 
         <div className="p-4 border-t border-gray-200 text-sm">
           {user ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-gray-600 truncate">Signed in as {user.email}</p>
-              {!isGuest && (
-                <Link to="/dashboard" onClick={closeMobile} className="flex items-center gap-2 text-gray-600 hover:text-black">
-                  <LayoutDashboard size={15} /> Dashboard
-                </Link>
-              )}
-              <Link to="/profile" onClick={closeMobile} className="flex items-center gap-2 text-gray-600 hover:text-black">
-                <User size={15} /> Profile
-              </Link>
-              {signOutConfirming ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500">Sign out?</span>
-                  <button
-                    type="button"
-                    onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
-                    className="font-medium text-brick hover:underline"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignOutConfirming(false)}
-                    className="text-gray-500 hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+            signOutConfirming ? (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Sign out?</span>
                 <button
                   type="button"
-                  onClick={() => setSignOutConfirming(true)}
-                  className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
+                  onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
+                  className="font-medium text-brick hover:underline"
                 >
-                  <LogOut size={15} /> Sign out
+                  Yes
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setSignOutConfirming(false)}
+                  className="text-gray-500 hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSignOutConfirming(true)}
+                className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
+              >
+                <LogOut size={15} /> Sign out
+              </button>
+            )
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
               <p className="text-gold-700">Guest session · Saved on this device only</p>

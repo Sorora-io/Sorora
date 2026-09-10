@@ -37,7 +37,22 @@ import GroupRoster from "./pages/group/Roster";
 import GroupNotes from "./pages/group/Notes";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// A page that fetches its own data on every mount (the old pattern here)
+// re-shows a loading state every time you navigate back to it, even
+// seconds after you left — nothing has actually changed. staleTime keeps
+// cached data "fresh" for a while so revisiting a page renders instantly
+// from cache instead of blocking on a refetch; gcTime keeps it around a
+// bit longer than that so a quick back-and-forth between pages doesn't
+// even trigger a network request.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Session restore on a fresh page load/reload is the one moment the whole
 // app is in an unknown auth AND organization state — gating the entire

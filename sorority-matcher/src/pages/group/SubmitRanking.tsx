@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
-import { getRoster, getMyRanking, submitRanking, RosterMember } from '../../lib/rankings';
+import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
+import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
 const SubmitRanking = () => {
@@ -13,34 +15,39 @@ const SubmitRanking = () => {
   const oppositeRole = role === 'big' ? 'little' : 'big';
   const oppositeLabel = oppositeRole === 'big' ? 'Bigs' : 'Littles';
   const minRequired = role === 'big' ? group?.min_big_rankings ?? 1 : group?.min_little_rankings ?? 1;
+  const queryClient = useQueryClient();
 
-  const [roster, setRoster] = useState<RosterMember[]>([]);
+  const { data: roster = [], isLoading: rosterLoading } = useQuery({
+    queryKey: queryKeys.groupRoster(group?.id ?? '', oppositeRole),
+    queryFn: () => getRoster(group!.id, oppositeRole).then(({ roster: r }) => r),
+    enabled: !!group,
+  });
+  // Shares its cache key with Dashboard's OrgCard — whichever page the
+  // member visited first already has this warm.
+  const { data: existingRankedIds, isLoading: rankingLoading } = useQuery({
+    queryKey: queryKeys.myRanking(group?.id ?? ''),
+    queryFn: () => getMyRanking(group!.id).then(({ rankedIds: ids }) => ids),
+    enabled: !!group,
+  });
+
   const [rankedIds, setRankedIds] = useState<string[]>([]);
   const [willingToTakeTwins, setWillingToTakeTwins] = useState(membership?.willing_to_take_twins ?? false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!group || !oppositeRole) return;
-    setLoading(true);
-    const [{ roster: r, error: rosterError }, { rankedIds: existing, error: rankError }] = await Promise.all([
-      getRoster(group.id, oppositeRole),
-      getMyRanking(group.id),
-    ]);
-    if (rosterError) setError(rosterError);
-    else if (rankError) setError(rankError);
-    setRoster(r);
-    // Drop any previously-ranked ids that are no longer on the roster.
-    const rosterIds = new Set(r.map(m => m.userId));
-    setRankedIds(existing.filter(id => rosterIds.has(id)));
-    setLoading(false);
-  }, [group, oppositeRole]);
-
+  // Seed the editable draft from cached/fetched data exactly once — after
+  // that, this is the user's own in-progress edit, and a background
+  // refetch of the same query must not silently overwrite it.
+  const seeded = useRef(false);
   useEffect(() => {
-    load();
-  }, [load]);
+    if (seeded.current || !existingRankedIds) return;
+    const rosterIds = new Set(roster.map(m => m.userId));
+    setRankedIds(existingRankedIds.filter(id => rosterIds.has(id)));
+    seeded.current = true;
+  }, [existingRankedIds, roster]);
+
+  const loading = (rosterLoading || rankingLoading) && !seeded.current;
 
   const rosterById = new Map(roster.map(m => [m.userId, m]));
   const available = roster.filter(m => !rankedIds.includes(m.userId));
@@ -83,6 +90,10 @@ const SubmitRanking = () => {
       setError(failed.error!);
     } else {
       setSaved(true);
+      // Other pages (Dashboard's OrgCard) cache this same query — without
+      // invalidating it here, they'd keep showing "not submitted" until
+      // their own cache happens to go stale on its own.
+      queryClient.invalidateQueries({ queryKey: queryKeys.myRanking(group.id) });
       await refresh();
     }
     setSaving(false);
