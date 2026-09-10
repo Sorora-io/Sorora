@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, LucideIcon } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, Compass, LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMatching } from '../contexts/MatchingContext';
@@ -250,6 +250,15 @@ const SidePanel = () => {
                   <Icon size={15} /> {label}
                 </Link>
               ))}
+              {user && !isGuest && memberships.length > 0 && (
+                <Link
+                  to="/dashboard?tour=1"
+                  onClick={closeMobile}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-jade-50 transition-colors"
+                >
+                  <Compass size={15} /> Take a tour
+                </Link>
+              )}
             </div>
           </div>
 

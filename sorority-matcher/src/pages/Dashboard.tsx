@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
@@ -237,6 +237,7 @@ const OrgCard = ({
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { memberships, membership, setActiveGroupId } = useGroup();
   const [showAddOrg, setShowAddOrg] = useState(false);
@@ -250,13 +251,26 @@ const Dashboard = () => {
   const name = profile?.name ?? null;
 
   // First time a member with at least one org lands here, walk them
-  // through the dashboard automatically; "Take a tour" below lets anyone
-  // replay it later.
+  // through the dashboard automatically; "Take a tour" (here, and in the
+  // sidebar's Explore section via ?tour=1) lets anyone replay it later.
   useEffect(() => {
     if (memberships.length > 0 && !hasTourSeen(DASHBOARD_TOUR_ID)) {
       setTourActive(true);
     }
   }, [memberships.length]);
+
+  useEffect(() => {
+    if (searchParams.get('tour') === '1' && memberships.length > 0) {
+      setTourActive(true);
+      // Strip the param so refreshing the page doesn't re-trigger the tour.
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('tour');
+        return next;
+      }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, memberships.length]);
 
   const finishTour = () => {
     setTourActive(false);
