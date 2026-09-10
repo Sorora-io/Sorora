@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib/rankings';
+import { sendRankingReminders } from '../../lib/reminders';
 import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
@@ -14,6 +15,9 @@ const Status = () => {
 
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState('');
+  const [reminding, setReminding] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
+  const [reminderError, setReminderError] = useState('');
 
   const {
     data: rows = [] as SubmissionStatusRow[],
@@ -44,6 +48,24 @@ const Status = () => {
       return;
     }
     navigate('/group/pairings');
+  };
+
+  const handleRemind = async () => {
+    if (!group) return;
+    setReminding(true);
+    setReminderError('');
+    setReminderMessage('');
+    const { result, error: sendError } = await sendRankingReminders(group.id);
+    if (sendError) {
+      setReminderError(sendError);
+    } else if (result) {
+      setReminderMessage(
+        result.total === 0
+          ? 'Everyone has already submitted.'
+          : `Sent ${result.sent} of ${result.total} reminder ${result.total === 1 ? 'email' : 'emails'}.`
+      );
+    }
+    setReminding(false);
   };
 
   if (!group) return null;
@@ -96,10 +118,21 @@ const Status = () => {
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
         {!allSubmitted && !loading && (
-          <p className="text-gold-700 text-sm mb-4">
-            Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
-            members will be treated as having no preferences.
-          </p>
+          <div className="mb-4">
+            <p className="text-gold-700 text-sm mb-2">
+              Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
+              members will be treated as having no preferences.
+            </p>
+            <button
+              onClick={handleRemind}
+              disabled={reminding}
+              className="text-sm border border-jade-300 rounded-md px-3 py-1.5 hover:bg-jade-50 transition-colors disabled:opacity-50"
+            >
+              {reminding ? 'Sending...' : 'Send reminder emails'}
+            </button>
+            {reminderMessage && <p className="text-jade-700 text-sm mt-2">{reminderMessage}</p>}
+            {reminderError && <p className="text-brick text-sm mt-2">{reminderError}</p>}
+          </div>
         )}
 
         <button
