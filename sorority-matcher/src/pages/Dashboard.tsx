@@ -42,27 +42,47 @@ const OrgCard = ({
 }) => {
   const [adminProgress, setAdminProgress] = useState<AdminProgress | null>(null);
   const [mySubmission, setMySubmission] = useState<boolean | null>(null);
+  // adminProgress/mySubmission start out null regardless of their real
+  // value, so rendering as soon as they're non-null let the card pop in a
+  // "not submitted yet" / "Start Ranking" state for a beat even when the
+  // real answer is the opposite — this tracks the fetch itself, so the card
+  // can show a neutral skeleton instead of a wrong answer while it's out.
+  const [statusLoading, setStatusLoading] = useState(m.status === 'approved');
 
   useEffect(() => {
-    if (m.status !== 'approved') return;
+    if (m.status !== 'approved') {
+      setStatusLoading(false);
+      return;
+    }
+
+    setStatusLoading(true);
+    const tasks: Promise<unknown>[] = [];
 
     if (isEffectiveAdmin(m)) {
-      getSubmissionStatus(m.group_id).then(({ rows }) => {
-        const bigs = rows.filter(r => r.role === 'big');
-        const littles = rows.filter(r => r.role === 'little');
-        setAdminProgress({
-          bigsSubmitted: bigs.filter(r => r.submitted).length,
-          bigsTotal: bigs.length,
-          littlesSubmitted: littles.filter(r => r.submitted).length,
-          littlesTotal: littles.length,
-        });
-      });
+      tasks.push(
+        getSubmissionStatus(m.group_id).then(({ rows }) => {
+          const bigs = rows.filter(r => r.role === 'big');
+          const littles = rows.filter(r => r.role === 'little');
+          setAdminProgress({
+            bigsSubmitted: bigs.filter(r => r.submitted).length,
+            bigsTotal: bigs.length,
+            littlesSubmitted: littles.filter(r => r.submitted).length,
+            littlesTotal: littles.length,
+          });
+        })
+      );
     }
 
     if (m.role === 'big' || m.role === 'little') {
-      getMyRanking(m.group_id).then(({ rankedIds }) => setMySubmission(rankedIds.length > 0));
+      tasks.push(getMyRanking(m.group_id).then(({ rankedIds }) => setMySubmission(rankedIds.length > 0)));
     }
+
+    Promise.all(tasks).then(() => setStatusLoading(false));
   }, [m]);
+
+  const skeletonLine = (width: string) => (
+    <span className={`inline-block h-3 ${width} bg-gray-100 rounded animate-pulse`} />
+  );
 
   return (
     <div
@@ -88,10 +108,12 @@ const OrgCard = ({
         <p className="text-sm text-gray-600 mb-4 -mt-2">{m.group.description}</p>
       )}
 
-      {m.status === 'approved' && adminProgress && (
+      {m.status === 'approved' && isEffectiveAdmin(m) && (
         <div className="mb-4 -mt-2 flex flex-col gap-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Matching progress</p>
-          {adminProgress.bigsTotal === 0 && adminProgress.littlesTotal === 0 ? (
+          {statusLoading || !adminProgress ? (
+            <>{skeletonLine('w-40')}{skeletonLine('w-36')}</>
+          ) : adminProgress.bigsTotal === 0 && adminProgress.littlesTotal === 0 ? (
             <p className="text-sm text-gray-500">No Bigs or Littles approved yet.</p>
           ) : (
             <>
@@ -106,24 +128,30 @@ const OrgCard = ({
         </div>
       )}
 
-      {m.status === 'approved' && mySubmission !== null && (m.role === 'big' || m.role === 'little') && (
-        <p
-          className={`text-sm mb-4 -mt-2 ${
-            !mySubmission && m.group.ranking_deadline && m.group.ranking_deadline < todayISO
-              ? 'text-brick'
-              : mySubmission
-              ? 'text-jade-700'
-              : 'text-gold-700'
-          }`}
-        >
-          {mySubmission
-            ? `You've submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings.`
-            : m.group.ranking_deadline
-            ? `Your ${m.role === 'big' ? 'Little' : 'Big'} rankings ${
-                m.group.ranking_deadline < todayISO ? 'were due' : 'are due'
-              } ${formatDeadline(m.group.ranking_deadline)}.`
-            : `You haven't submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings yet.`}
-        </p>
+      {m.status === 'approved' && (m.role === 'big' || m.role === 'little') && (
+        <div className="mb-4 -mt-2">
+          {statusLoading || mySubmission === null ? (
+            skeletonLine('w-56')
+          ) : (
+            <p
+              className={`text-sm ${
+                !mySubmission && m.group.ranking_deadline && m.group.ranking_deadline < todayISO
+                  ? 'text-brick'
+                  : mySubmission
+                  ? 'text-jade-700'
+                  : 'text-gold-700'
+              }`}
+            >
+              {mySubmission
+                ? `You've submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings.`
+                : m.group.ranking_deadline
+                ? `Your ${m.role === 'big' ? 'Little' : 'Big'} rankings ${
+                    m.group.ranking_deadline < todayISO ? 'were due' : 'are due'
+                  } ${formatDeadline(m.group.ranking_deadline)}.`
+                : `You haven't submitted your ${m.role === 'big' ? 'Little' : 'Big'} rankings yet.`}
+            </p>
+          )}
+        </div>
       )}
 
       {m.status === 'approved' ? (
@@ -134,7 +162,11 @@ const OrgCard = ({
                 onClick={() => goTo(m.group_id, '/group/submit-ranking')}
                 className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
               >
-                {mySubmission ? 'Update Rankings' : `Start Ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
+                {statusLoading || mySubmission === null
+                  ? 'Rankings'
+                  : mySubmission
+                  ? 'Update Rankings'
+                  : `Start Ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
               </button>
               <button
                 onClick={() => goTo(m.group_id, '/group/notes')}
