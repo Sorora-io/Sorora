@@ -11,6 +11,7 @@ import RequireRealAccount from "./components/RequireRealAccount";
 import RequireGroupRole from "./components/RequireGroupRole";
 import SidePanel from "./components/SidePanel";
 import LoadingScreen from "./components/LoadingScreen";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -117,7 +118,9 @@ const App = () => (
         <GroupProvider>
           <MatchingProvider>
             <BrowserRouter>
-              <AppShell />
+              <ErrorBoundary>
+                <AppShell />
+              </ErrorBoundary>
             </BrowserRouter>
           </MatchingProvider>
         </GroupProvider>
