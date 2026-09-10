@@ -73,12 +73,23 @@ const OnboardingTour = ({
       else onFinish();
       return;
     }
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const t = setTimeout(updateRect, 300);
+    // A *smooth* native scroll here fights the spotlight's own CSS
+    // transition: the scroll listener keeps re-measuring mid-animation, so
+    // the spotlight chases a moving target and visibly judders instead of
+    // making one clean move. Jump instantly instead, then let the
+    // spotlight/card's own transition do the one smooth move from the old
+    // rect to the new (already-settled) one. The double rAF gives the
+    // instant scroll a frame to actually land before we measure.
+    el.scrollIntoView({ block: 'center', behavior: 'auto' });
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(updateRect);
+    });
     window.addEventListener('resize', updateRect);
     window.addEventListener('scroll', updateRect, true);
     return () => {
-      clearTimeout(t);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       window.removeEventListener('resize', updateRect);
       window.removeEventListener('scroll', updateRect, true);
     };
@@ -119,6 +130,7 @@ const OnboardingTour = ({
     bottom: cardBottom,
     width: CARD_WIDTH,
     maxWidth: `calc(100vw - ${MARGIN * 2}px)`,
+    transition: 'top 0.2s ease, left 0.2s ease, bottom 0.2s ease',
     zIndex: 9999,
   };
 
