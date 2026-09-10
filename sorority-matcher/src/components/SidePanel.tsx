@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, User, LogOut, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +37,18 @@ const SidePanel = () => {
   const { user, isGuest, signOut } = useAuth();
   const { membership, memberships, setActiveGroupId } = useGroup();
   const { bigs, littles, bigRankings, littleRankings, pairings } = useMatching();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const closeMobile = () => { setMobileOpen(false); setSignOutConfirming(false); };
 
@@ -122,7 +134,7 @@ const SidePanel = () => {
 
         <div className="p-4 flex flex-col gap-4">
           {user && !isGuest && membership && (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 type="button"
                 onClick={() => setMenuOpen(o => !o)}

@@ -115,7 +115,7 @@ const SubmitRanking = () => {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Available</h3>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Available</h3>
               <div className="flex flex-col gap-2 min-h-[100px]">
                 {available.length === 0 && (
                   <p className="text-gray-400 text-sm">Everyone's been ranked.</p>
@@ -133,7 +133,7 @@ const SubmitRanking = () => {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                 Your ranking ({rankedIds.length})
               </h3>
               <div className="flex flex-col gap-2 min-h-[100px]">

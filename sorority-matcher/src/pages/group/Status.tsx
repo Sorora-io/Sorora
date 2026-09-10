@@ -49,7 +49,7 @@ const Status = () => {
 
   const renderList = (label: string, list: SubmissionStatusRow[]) => (
     <div>
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
         {label} ({list.filter(r => r.submitted).length}/{list.length} submitted)
       </h3>
       <div className="flex flex-col gap-1">

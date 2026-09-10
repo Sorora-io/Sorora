@@ -250,7 +250,7 @@ const Notes = () => {
                       )}
 
                       <div className="flex flex-col gap-2">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                           {editingNoteId ? 'Edit note' : 'Add a note'}
                         </p>
                         <input

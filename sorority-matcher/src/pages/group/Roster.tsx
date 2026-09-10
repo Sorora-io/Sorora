@@ -136,7 +136,7 @@ const Roster = () => {
 
   const renderSection = (label: string, list: RosterEntry[]) => (
     <div>
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
         {label} ({list.length})
       </h3>
       {list.length === 0 ? (
