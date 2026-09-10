@@ -120,7 +120,7 @@ const SidePanel = () => {
           </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-6">
+        <div className="p-4 flex flex-col gap-4">
           {user && !isGuest && membership && (
             <div>
               <div className="relative">
@@ -149,7 +149,7 @@ const SidePanel = () => {
                 </button>
 
                 {switcherOpen && otherMemberships.length > 0 && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-lg p-1 z-10">
+                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-sm p-1 z-10">
                     {otherMemberships.map(m => (
                       <button
                         key={m.group_id}

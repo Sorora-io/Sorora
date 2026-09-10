@@ -66,7 +66,7 @@ const OrgCard = ({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-lg p-6 border-2 ${active ? 'border-jade-600' : 'border-transparent'}`}
+      className={`bg-white rounded-lg shadow-sm p-5 border ${active ? 'border-jade-600' : 'border-transparent'}`}
     >
       <button
         type="button"
@@ -132,13 +132,13 @@ const OrgCard = ({
             <>
               <button
                 onClick={() => goTo(m.group_id, '/group/submit-ranking')}
-                className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
               >
                 {mySubmission ? 'Update Rankings' : `Start Ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
               </button>
               <button
                 onClick={() => goTo(m.group_id, '/group/notes')}
-                className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
               >
                 Notes
               </button>
@@ -149,14 +149,14 @@ const OrgCard = ({
               <button
                 key={a.path}
                 onClick={() => goTo(m.group_id, a.path)}
-                className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
               >
                 {a.label}
               </button>
             ))}
           <button
             onClick={() => goTo(m.group_id, '/group/roster')}
-            className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+            className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
           >
             Roster
           </button>
@@ -164,7 +164,7 @@ const OrgCard = ({
       ) : (
         <button
           onClick={() => goTo(m.group_id, '/group/pending')}
-          className="px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+          className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
         >
           {m.status === 'pending' ? 'View request status' : 'View details'}
         </button>
@@ -221,7 +221,7 @@ const Dashboard = () => {
         </div>
 
         {memberships.length === 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center text-gray-600">
+          <div className="bg-white rounded-lg shadow-sm p-5 text-center text-gray-600">
             You're not part of any organization yet.{' '}
             <Link to="/group/onboarding" className="underline font-medium text-black">
               Get started
@@ -234,7 +234,7 @@ const Dashboard = () => {
           <OrgCard key={m.id} m={m} active={m.group_id === membership?.group_id} goTo={goTo} />
         ))}
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-sm p-5">
           {showAddOrg ? (
             <AddOrganizationForm
               onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
@@ -244,7 +244,7 @@ const Dashboard = () => {
           ) : (
             <button
               onClick={() => setShowAddOrg(true)}
-              className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
+              className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
             >
               + Add Organization
             </button>

@@ -123,7 +123,7 @@ const Approvals = () => {
         </Link>
       </header>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mb-6">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mb-6">
         <h2 className="text-2xl font-semibold mb-1">{group.name}</h2>
         {group.school && <p className="text-gray-500 text-sm mb-1">{group.school}</p>}
         {group.description && <p className="text-gray-600 text-sm mb-2">{group.description}</p>}
@@ -137,7 +137,7 @@ const Approvals = () => {
             </code>
             <button
               onClick={() => copy(group.join_code, 'code')}
-              className="px-3 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
+              className="px-3 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
             >
               {copied === 'code' ? 'Copied' : 'Copy'}
             </button>
@@ -147,7 +147,7 @@ const Approvals = () => {
             <code className="flex-1 bg-gray-100 rounded-md px-3 py-2 text-sm truncate">{joinLink}</code>
             <button
               onClick={() => copy(joinLink, 'link')}
-              className="px-3 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
+              className="px-3 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
             >
               {copied === 'link' ? 'Copied' : 'Copy'}
             </button>
@@ -155,7 +155,7 @@ const Approvals = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h3 className="text-xl font-semibold mb-4">Pending requests</h3>
 
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
@@ -167,7 +167,7 @@ const Approvals = () => {
         ) : (
           <div className="flex flex-col gap-3">
             {pending.map(m => (
-              <div key={m.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+              <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
                 <div>
                   <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
                   <p className="text-sm text-gray-500">
@@ -177,7 +177,7 @@ const Approvals = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDecision(m.id, 'rejected')}
-                    className="px-4 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
+                    className="px-4 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
                   >
                     Reject
                   </button>
@@ -195,11 +195,11 @@ const Approvals = () => {
       </div>
 
       {roleChanges.length > 0 && (
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mt-6">
+        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
           <h3 className="text-xl font-semibold mb-4">Role change requests</h3>
           <div className="flex flex-col gap-3">
             {roleChanges.map(r => (
-              <div key={r.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+              <div key={r.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
                 <div>
                   <p className="font-medium">{r.profile?.name || r.profile?.email || 'Unknown'}</p>
                   <p className="text-sm text-gray-500">
@@ -209,7 +209,7 @@ const Approvals = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleRoleDecision(r, false)}
-                    className="px-4 py-2 border-2 border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
+                    className="px-4 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
                   >
                     Reject
                   </button>
@@ -226,7 +226,7 @@ const Approvals = () => {
         </div>
       )}
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mt-6">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
         <h3 className="text-xl font-semibold mb-1">Admin access</h3>
         <p className="text-gray-500 text-sm mb-4">
           Grant admin access to a Big or Little without changing their role — they'll keep ranking as
@@ -242,7 +242,7 @@ const Approvals = () => {
             {members
               .filter(m => m.role === 'big' || m.role === 'little')
               .map(m => (
-                <div key={m.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+                <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
                   <div>
                     <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
                     <p className="text-sm text-gray-500">
@@ -255,7 +255,7 @@ const Approvals = () => {
                     disabled={adminSavingId === m.id}
                     className={`px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50 ${
                       m.is_admin
-                        ? 'border-2 border-brick text-brick hover:bg-brick-50'
+                        ? 'border border-brick text-brick hover:bg-brick-50'
                         : 'bg-jade-600 text-white hover:bg-jade-700'
                     }`}
                   >
@@ -270,7 +270,7 @@ const Approvals = () => {
         )}
       </div>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 mt-6">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
         <h3 className="text-xl font-semibold mb-1">Members</h3>
         <p className="text-gray-500 text-sm mb-4">
           Remove someone who's graduated or left — this only removes them from this chapter, not their
@@ -287,7 +287,7 @@ const Approvals = () => {
               const isOwner = m.user_id === group.owner_id;
               const isSelf = m.user_id === membership?.user_id;
               return (
-                <div key={m.id} className="flex items-center justify-between border-2 border-gray-200 rounded-md p-3">
+                <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
                   <div>
                     <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
                     <p className="text-sm text-gray-500">
@@ -309,7 +309,7 @@ const Approvals = () => {
                       </button>
                       <button
                         onClick={() => setRemoveConfirmId(null)}
-                        className="px-3 py-2 border-2 border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                        className="px-3 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
                       >
                         Cancel
                       </button>
@@ -317,7 +317,7 @@ const Approvals = () => {
                   ) : (
                     <button
                       onClick={() => setRemoveConfirmId(m.id)}
-                      className="px-4 py-2 border-2 border-brick text-brick rounded-md text-sm hover:bg-brick-50 transition-colors flex-shrink-0"
+                      className="px-4 py-2 border border-brick text-brick rounded-md text-sm hover:bg-brick-50 transition-colors flex-shrink-0"
                     >
                       Remove
                     </button>

@@ -10,7 +10,7 @@ const About = () => {
       </header>
 
       <div className="max-w-3xl w-full flex flex-col gap-8">
-        <section className="bg-white rounded-lg shadow-lg p-8">
+        <section className="bg-white rounded-lg shadow-sm p-5">
           <h2 className="text-2xl font-semibold mb-6">Our Mission</h2>
           <div className="space-y-4 text-lg">
             <p>1. Streamline and optimize the big-little process for collegiate fraternities and sororities</p>
@@ -23,7 +23,7 @@ const About = () => {
           </p>
         </section>
 
-        <section className="bg-white rounded-lg shadow-lg p-8">
+        <section className="bg-white rounded-lg shadow-sm p-5">
           <h2 className="text-2xl font-semibold mb-6">How It Works</h2>
 
           <div className="space-y-8">
@@ -60,7 +60,7 @@ const About = () => {
           </div>
         </section>
 
-        <section className="bg-white rounded-lg shadow-lg p-8">
+        <section className="bg-white rounded-lg shadow-sm p-5">
           <h2 className="text-2xl font-semibold mb-6">Why It Works</h2>
           <ul className="space-y-4 text-lg leading-relaxed list-disc list-inside text-gray-700">
             <li>Perfect matches (mutual first choices) are always preserved</li>
@@ -75,7 +75,7 @@ const About = () => {
       <div className="mt-8">
         <Link
           to="/"
-          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium inline-block"
+          className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium inline-block"
         >
           Back to Home
         </Link>

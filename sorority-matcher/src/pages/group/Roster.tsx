@@ -48,7 +48,7 @@ const Roster = () => {
     ].filter(Boolean) as string[];
 
     return (
-      <div key={r.userId} className="bg-white rounded-lg shadow-lg p-5 flex flex-col gap-3">
+      <div key={r.userId} className="bg-white rounded-lg shadow-sm p-5 flex flex-col gap-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
             {r.avatarUrl ? (

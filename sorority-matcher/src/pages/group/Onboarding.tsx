@@ -24,7 +24,7 @@ const Onboarding = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Get started</h2>
         <AddOrganizationForm
           onCreated={(groupId) => {

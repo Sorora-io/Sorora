@@ -111,7 +111,7 @@ const RankBigs = () => {
 
       <Progressbar currentStep={6} />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-1">Enter {currentLittle}'s Big rankings</h2>
         <p className="text-gray-500 text-sm mb-6">
           Little {currentLittleIndex + 1} of {littles.length}
@@ -124,7 +124,7 @@ const RankBigs = () => {
             value={rankingInput}
             onChange={(e) => setRankingInput(e.target.value)}
             rows={10}
-            className="w-full p-4 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+            className="w-full p-4 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             placeholder="Enter names, one per line, in order of preference"
           />
           {validationError && (
@@ -136,13 +136,13 @@ const RankBigs = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={handleBack}
-          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
+          className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
           Back
         </button>
         <button
           onClick={handleSubmit}
-          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+          className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
           {currentLittleIndex < littles.length - 1 ? 'Continue to Next Little' : 'Review everything'}
         </button>

@@ -16,7 +16,7 @@ const Twins = () => {
 
       <Progressbar currentStep={3} />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-2">Twin availability</h2>
         <p className="text-gray-600 mb-6">
           A Big willing to take twins can be matched with two Littles instead of one. Check anyone
@@ -51,13 +51,13 @@ const Twins = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={() => navigate('/admin/enter-littles')}
-          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
+          className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
           Back
         </button>
         <button
           onClick={() => navigate('/admin/ranking-requirements')}
-          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+          className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
           Continue to Ranking Rules
         </button>

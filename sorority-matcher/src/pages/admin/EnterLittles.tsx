@@ -68,7 +68,7 @@ const EnterLittles = () => {
 
       <Progressbar currentStep={2} />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <div className="flex items-start justify-between mb-2">
           <h2 className="text-2xl font-semibold">Who is eligible to be a Little?</h2>
           <CsvUploadButton entityLabel="little" onNames={handleCsvNames} onError={setError} />
@@ -92,7 +92,7 @@ const EnterLittles = () => {
         ) : (
           <>
             <textarea
-              className="w-full h-48 p-4 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full h-48 p-4 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               value={littlesInput}
               onChange={(e) => setLittlesInput(e.target.value)}
               placeholder={'e.g.\nAva Thompson\nOlivia Rodriguez\nEmma Patel'}
@@ -130,13 +130,13 @@ const EnterLittles = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={() => navigate('/admin/enter-bigs')}
-          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
+          className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
           Back
         </button>
         <button
           onClick={handleSubmit}
-          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+          className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
           Continue to Twin Availability
         </button>

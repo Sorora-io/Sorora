@@ -163,10 +163,10 @@ const Settings = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Group Settings</h2>
 
-        <div className="flex flex-col gap-4 mb-8 pb-8 border-b border-gray-200">
+        <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
           <div>
             <label className="block text-sm font-medium mb-1">Sorority group name</label>
             <input
@@ -174,7 +174,7 @@ const Settings = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alpha Beta Chapter"
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           <div>
@@ -184,7 +184,7 @@ const Settings = () => {
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. New York University"
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -194,13 +194,13 @@ const Settings = () => {
           <button
             onClick={handleSaveProfile}
             disabled={profileSaving}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {profileSaving ? '...' : 'Save Name & School'}
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 mb-8 pb-8 border-b border-gray-200">
+        <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
             <textarea
@@ -208,7 +208,7 @@ const Settings = () => {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A little about your chapter — shown to members and prospective joiners"
               rows={3}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
             />
           </div>
 
@@ -218,7 +218,7 @@ const Settings = () => {
           <button
             onClick={handleSaveDescription}
             disabled={descSaving}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {descSaving ? '...' : 'Save Description'}
           </button>
@@ -235,7 +235,7 @@ const Settings = () => {
               max={maxLittle}
               value={minLittle}
               onChange={(e) => setMinLittle(clamp(Number(e.target.value), 1, maxLittle))}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
             <p className="text-xs text-gray-500 mt-1">
               {bigCount === null ? ' ' : `You have ${bigCount} approved big${bigCount === 1 ? '' : 's'}.`}
@@ -251,7 +251,7 @@ const Settings = () => {
               max={maxBig}
               value={minBig}
               onChange={(e) => setMinBig(clamp(Number(e.target.value), 1, maxBig))}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
             <p className="text-xs text-gray-500 mt-1">
               {littleCount === null ? ' ' : `You have ${littleCount} approved little${littleCount === 1 ? '' : 's'}.`}
@@ -263,7 +263,7 @@ const Settings = () => {
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
             <p className="text-xs text-gray-500 mt-1">Shown to Bigs and Littles on their Dashboard.</p>
           </div>
@@ -274,13 +274,13 @@ const Settings = () => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {saving ? '...' : 'Save Ranking Rules'}
           </button>
         </div>
 
-        <div className="flex flex-col gap-3 mt-8 pt-8 border-t border-gray-200">
+        <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-200">
           <h3 className="text-sm font-semibold">Ownership</h3>
           {adminsLoading ? (
             <div className="flex items-center gap-2 text-sm text-gray-500"><LoadingLogo size={18} /> Loading...</div>
@@ -297,7 +297,7 @@ const Settings = () => {
                   <select
                     value={transferTarget}
                     onChange={(e) => setTransferTarget(e.target.value)}
-                    className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                    className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                   >
                     <option value="">Choose a new owner…</option>
                     {otherAdmins.map(a => (
@@ -310,13 +310,13 @@ const Settings = () => {
                   <button
                     onClick={() => setConfirmingTransfer(true)}
                     disabled={!transferTarget}
-                    className="w-full py-3 border-2 border-brick text-brick rounded-md hover:bg-brick-50 transition-colors disabled:opacity-50"
+                    className="w-full py-2.5 border border-brick text-brick rounded-md hover:bg-brick-50 transition-colors disabled:opacity-50"
                   >
                     Transfer Ownership
                   </button>
                 </>
               ) : (
-                <div className="flex flex-col gap-2 p-3 bg-brick-50 border-2 border-brick rounded-md">
+                <div className="flex flex-col gap-2 p-3 bg-brick-50 border border-brick rounded-md">
                   <p className="text-sm text-brick font-medium">
                     Transfer ownership to{' '}
                     {otherAdmins.find(a => a.user_id === transferTarget)?.profile?.name ||
@@ -328,7 +328,7 @@ const Settings = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setConfirmingTransfer(false)}
-                      className="flex-1 py-2 border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                      className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
                     >
                       Cancel
                     </button>

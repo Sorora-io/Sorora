@@ -68,7 +68,7 @@ const EnterBigs = () => {
 
       <Progressbar currentStep={1} />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <div className="flex items-start justify-between mb-2">
           <h2 className="text-2xl font-semibold">Who is eligible to be a Big?</h2>
           <CsvUploadButton entityLabel="big" onNames={handleCsvNames} onError={setError} />
@@ -92,7 +92,7 @@ const EnterBigs = () => {
         ) : (
           <>
             <textarea
-              className="w-full h-48 p-4 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full h-48 p-4 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               value={bigsInput}
               onChange={(e) => setBigsInput(e.target.value)}
               placeholder={'e.g.\nMaya Chen\nIsabella Davis\nSophia Martinez'}
@@ -130,7 +130,7 @@ const EnterBigs = () => {
       <div className="mt-8">
         <button
           onClick={handleSubmit}
-          className="px-8 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+          className="px-8 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
           Continue to Littles
         </button>

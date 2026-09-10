@@ -56,7 +56,7 @@ const ResetPassword = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Set a New Password</h2>
 
         {invalid ? (
@@ -66,7 +66,7 @@ const ResetPassword = () => {
             </p>
             <Link
               to="/login"
-              className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-center"
+              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-center"
             >
               Back to Sign In
             </Link>
@@ -78,7 +78,7 @@ const ResetPassword = () => {
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
+              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
             >
               Continue to Sign In
             </button>
@@ -96,7 +96,7 @@ const ResetPassword = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               />
             </div>
             <div>
@@ -108,14 +108,14 @@ const ResetPassword = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               />
             </div>
             {error && <p className="text-brick text-sm">{error}</p>}
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
             >
               {saving ? '...' : 'Update Password'}
             </button>

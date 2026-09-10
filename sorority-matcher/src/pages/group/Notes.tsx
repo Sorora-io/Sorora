@@ -194,7 +194,7 @@ const Notes = () => {
               const open = openSubjectId === person.userId;
               const personNotes = notesFor(person.userId);
               return (
-                <div key={person.userId} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div key={person.userId} className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <button
                     type="button"
                     onClick={() => openCandidate(person.userId)}
@@ -211,7 +211,7 @@ const Notes = () => {
                       {personNotes.length > 0 && (
                         <div className="flex flex-col gap-3">
                           {personNotes.map(note => (
-                            <div key={note.id} className="border-2 border-gray-100 rounded-md p-3">
+                            <div key={note.id} className="border border-gray-100 rounded-md p-3">
                               <div className="flex items-start justify-between gap-2 mb-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {note.eventDate && (
@@ -252,14 +252,14 @@ const Notes = () => {
                           type="date"
                           value={eventDate}
                           onChange={(e) => setEventDate(e.target.value)}
-                          className="w-full p-2 text-sm border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                          className="w-full p-2 text-sm border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                         />
                         <textarea
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                           placeholder="What do you want to remember about this?"
                           rows={2}
-                          className="w-full p-2 text-sm border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
+                          className="w-full p-2 text-sm border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-none"
                         />
                         <p className="text-sm text-gray-700">Would you want to meet again?</p>
                         <div className="grid grid-cols-2 gap-2">
@@ -268,7 +268,7 @@ const Notes = () => {
                               key={opt}
                               type="button"
                               onClick={() => setInterest(interest === opt ? null : opt)}
-                              className={`text-xs font-medium px-2 py-2 rounded-md border-2 transition-colors ${
+                              className={`text-xs font-medium px-2 py-2 rounded-md border transition-colors ${
                                 interest === opt
                                   ? 'bg-jade-600 border-jade-600 text-white'
                                   : 'border-gray-200 text-gray-600 hover:bg-jade-50'
@@ -283,7 +283,7 @@ const Notes = () => {
                           {editingNoteId && (
                             <button
                               onClick={resetForm}
-                              className="flex-1 py-2 text-sm border-2 border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                              className="flex-1 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                             >
                               Cancel
                             </button>

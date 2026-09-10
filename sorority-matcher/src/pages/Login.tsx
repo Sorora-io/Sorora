@@ -134,7 +134,7 @@ const Login = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">
           {forgotMode ? 'Reset Password' : mode === 'signin' ? 'Sign In' : 'Create Account'}
         </h2>
@@ -177,14 +177,14 @@ const Login = () => {
                   onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
               </div>
               {resetError && <p className="text-brick text-sm">{resetError}</p>}
               <button
                 type="submit"
                 disabled={resetLoading}
-                className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+                className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
               >
                 {resetLoading ? '...' : 'Send Reset Link'}
               </button>
@@ -208,13 +208,13 @@ const Login = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
               />
             </div>
           )}
 
           {mode === 'signup' && (
-            <div className="border-2 border-gray-200 rounded-md p-4">
+            <div className="border border-gray-200 rounded-md p-4">
               <div className="flex gap-2 mb-3">
                 <button
                   type="button"
@@ -245,7 +245,7 @@ const Login = () => {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder="e.g. Alpha Beta Chapter"
-                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     />
                   </div>
                   <div>
@@ -255,7 +255,7 @@ const Login = () => {
                       value={school}
                       onChange={(e) => setSchool(e.target.value)}
                       placeholder="e.g. New York University"
-                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     />
                   </div>
                   <p className="text-xs text-gray-500">
@@ -271,7 +271,7 @@ const Login = () => {
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="e.g. XK7P2QRT"
-                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
+                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
                     />
                   </div>
                   <div>
@@ -279,7 +279,7 @@ const Login = () => {
                     <select
                       value={role}
                       onChange={(e) => setRole(e.target.value as MembershipRole)}
-                      className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                     >
                       <option value="big">Big</option>
                       <option value="little">Little</option>
@@ -302,7 +302,7 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -315,7 +315,7 @@ const Login = () => {
               placeholder="••••••••"
               required
               minLength={6}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
             {mode === 'signin' && (
               <button
@@ -335,7 +335,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
@@ -377,7 +377,7 @@ const Login = () => {
                 </button>
                 <button
                   onClick={handleContinueAsGuest}
-                  className="w-full py-2 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+                  className="w-full py-2 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
                 >
                   Continue on this device
                 </button>

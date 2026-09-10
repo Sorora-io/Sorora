@@ -96,7 +96,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="e.g. Alpha Beta Chapter"
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           <div>
@@ -106,14 +106,14 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={school}
               onChange={(e) => setSchool(e.target.value)}
               placeholder="e.g. New York University"
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
           {error && <p className="text-brick text-sm">{error}</p>}
           <button
             onClick={handleCreate}
             disabled={loading}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : 'Create Group'}
           </button>
@@ -127,7 +127,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="e.g. XK7P2QRT"
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
             />
           </div>
           <div>
@@ -135,7 +135,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as MembershipRole)}
-              className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             >
               <option value="big">Big</option>
               <option value="little">Little</option>
@@ -146,7 +146,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
           <button
             onClick={handleJoin}
             disabled={loading}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
           >
             {loading ? '...' : 'Request to Join'}
           </button>

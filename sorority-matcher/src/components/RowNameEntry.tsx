@@ -80,7 +80,7 @@ const RowNameEntry = ({ entityLabel, initialValue, onChange }: RowNameEntryProps
               value={row.first}
               onChange={(e) => updateRow(row.id, 'first', e.target.value)}
               placeholder="First name"
-              className={`flex-1 min-w-0 p-2 border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-jade-100 ${
+              className={`flex-1 min-w-0 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-jade-100 ${
                 isDuplicate ? 'border-brick-300 focus:border-brick' : 'border-jade-300 focus:border-jade-500'
               }`}
             />
@@ -89,7 +89,7 @@ const RowNameEntry = ({ entityLabel, initialValue, onChange }: RowNameEntryProps
               value={row.last}
               onChange={(e) => updateRow(row.id, 'last', e.target.value)}
               placeholder="Last name"
-              className={`flex-1 min-w-0 p-2 border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-jade-100 ${
+              className={`flex-1 min-w-0 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-jade-100 ${
                 isDuplicate ? 'border-brick-300 focus:border-brick' : 'border-jade-300 focus:border-jade-500'
               }`}
             />
@@ -114,7 +114,7 @@ const RowNameEntry = ({ entityLabel, initialValue, onChange }: RowNameEntryProps
       <button
         type="button"
         onClick={addRow}
-        className="self-start px-3 py-2 text-sm border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+        className="self-start px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
       >
         + Add another {entityLabel}
       </button>

@@ -41,7 +41,7 @@ const RankingRequirements = () => {
 
       <Progressbar currentStep={4} />
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-2">Set ranking rules</h2>
         <p className="text-gray-600 mb-6">
           Everyone will need to rank at least this many people before their preferences count toward
@@ -58,7 +58,7 @@ const RankingRequirements = () => {
               min="1"
               value={minBigInput}
               onChange={(e) => setMinBigInput(e.target.value)}
-              className="w-32 p-2 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-32 p-2 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -71,7 +71,7 @@ const RankingRequirements = () => {
               min="1"
               value={minLittleInput}
               onChange={(e) => setMinLittleInput(e.target.value)}
-              className="w-32 p-2 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="w-32 p-2 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
           </div>
 
@@ -84,13 +84,13 @@ const RankingRequirements = () => {
       <div className="mt-8 flex gap-4">
         <button
           onClick={() => navigate('/admin/twins')}
-          className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
+          className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
         >
           Back
         </button>
         <button
           onClick={handleSubmit}
-          className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+          className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
         >
           Continue to Enter Preferences
         </button>

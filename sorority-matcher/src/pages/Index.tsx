@@ -49,7 +49,7 @@ const Index = () => {
         )}
       </header>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 md:p-10 text-center">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 md:p-10 text-center">
         <svg width="72" height="40" viewBox="0 0 72 40" fill="none" className="mx-auto mb-4" aria-hidden="true">
           <circle cx="24" cy="20" r="14" fill="#DCEDE8" />
           <circle cx="48" cy="20" r="14" fill="#F2E6C6" />
@@ -65,13 +65,13 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
           <button
             onClick={() => navigate(user ? '/dashboard' : '/login?mode=signup')}
-            className="px-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+            className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
           >
             Set up my chapter
           </button>
           <button
             onClick={() => navigate('/admin/enter-bigs')}
-            className="px-6 py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
+            className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
           >
             Run a quick match
           </button>
@@ -86,7 +86,7 @@ const Index = () => {
           </button>
         )}
 
-        <div className="mt-10 pt-8 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
+        <div className="mt-10 pt-8 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
           {STEPS.map((step, i) => (
             <div key={step} className="flex gap-3 items-start">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-jade-100 text-jade-700 text-sm font-semibold flex items-center justify-center">

@@ -97,7 +97,7 @@ const SubmitRanking = () => {
         </Link>
       </header>
 
-      <div className="max-w-3xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-3xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-1">Rank your {oppositeLabel}</h2>
         <p className="text-gray-500 text-sm mb-6">
           {groupLabel(group)} · rank at least {minRequired}, most preferred first
@@ -106,7 +106,7 @@ const SubmitRanking = () => {
         {loading ? (
           <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Available</h3>
               <div className="flex flex-col gap-2 min-h-[100px]">
@@ -117,7 +117,7 @@ const SubmitRanking = () => {
                   <button
                     key={m.userId}
                     onClick={() => addToRanking(m.userId)}
-                    className="text-left px-3 py-2 border-2 border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                    className="text-left px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     {m.name || m.email}
                   </button>
@@ -136,7 +136,7 @@ const SubmitRanking = () => {
                 {rankedIds.map((id, idx) => (
                   <div
                     key={id}
-                    className="flex items-center justify-between px-3 py-2 border-2 border-gray-200 rounded-md bg-gray-50"
+                    className="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-md bg-gray-50"
                   >
                     <span>
                       <span className="text-gray-400 mr-2">{idx + 1}.</span>
@@ -182,7 +182,7 @@ const SubmitRanking = () => {
         <button
           onClick={handleSave}
           disabled={saving || loading}
-          className="w-full mt-6 py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+          className="w-full mt-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
         >
           {saving ? '...' : 'Save Ranking'}
         </button>

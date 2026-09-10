@@ -41,7 +41,7 @@ const Pairings = () => {
         </Link>
       </header>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Pairings</h2>
 
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
@@ -53,7 +53,7 @@ const Pairings = () => {
         ) : (
           <div className="flex flex-col gap-2">
             {Array.from(byBig.values()).map(({ bigName, littles }) => (
-              <div key={bigName} className="flex justify-between px-4 py-3 border-2 border-gray-200 rounded-md">
+              <div key={bigName} className="flex justify-between px-4 py-2.5 border border-gray-200 rounded-md">
                 <span className="font-medium">{bigName}</span>
                 <span className="text-gray-600">{littles.join(', ')}</span>
               </div>

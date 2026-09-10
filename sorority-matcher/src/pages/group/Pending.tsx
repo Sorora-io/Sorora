@@ -31,7 +31,7 @@ const Pending = () => {
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5 text-center">
         {rejected ? (
           <>
             <h2 className="text-2xl font-semibold mb-4">Request not approved</h2>
@@ -62,13 +62,13 @@ const Pending = () => {
         <div className="flex flex-col gap-3">
           <button
             onClick={refresh}
-            className="w-full py-3 border-2 border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
+            className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
           >
             Check again
           </button>
           <button
             onClick={signOut}
-            className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
           >
             Sign out
           </button>
