@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MatchingProvider } from "./contexts/MatchingContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { GroupProvider } from "./contexts/GroupContext";
+import { GroupProvider, useGroup } from "./contexts/GroupContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RequireRealAccount from "./components/RequireRealAccount";
 import RequireGroupRole from "./components/RequireGroupRole";
@@ -40,13 +40,19 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 // Session restore on a fresh page load/reload is the one moment the whole
-// app is in an unknown auth state — gating the entire shell (not just each
-// route's own content area) on it avoids a signed-in sidebar/content
-// flashing signed-out chrome for a beat before AuthContext resolves.
+// app is in an unknown auth AND organization state — gating the entire
+// shell (not just each route's own content area) on both avoids a
+// signed-in sidebar/content flashing signed-out chrome, or a real member
+// briefly flashing "no organizations," before AuthContext and GroupContext
+// resolve. `groupInitialized` (not GroupContext's `loading`) is the right
+// flag here — it only ever flips false->true once, on the first membership
+// fetch, so a later refresh() (e.g. after saving something) doesn't bounce
+// the whole app back to this full-page spinner.
 const AppShell = () => {
-  const { loading } = useAuth();
+  const { loading: authLoading } = useAuth();
+  const { initialized: groupInitialized } = useGroup();
 
-  if (loading) {
+  if (authLoading || !groupInitialized) {
     return <LoadingScreen />;
   }
 
