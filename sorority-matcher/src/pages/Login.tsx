@@ -6,7 +6,7 @@ import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, continueAsGuest } = useAuth();
+  const { signIn, signUp, continueAsGuest, sendPasswordReset } = useAuth();
   const [searchParams] = useSearchParams();
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
   const modeFromLink = searchParams.get('mode');
@@ -29,6 +29,12 @@ const Login = () => {
   const [role, setRole] = useState<MembershipRole>('big');
   const [invitedGroupLabel, setInvitedGroupLabel] = useState('');
 
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
   useEffect(() => {
     if (!joinCodeFromLink) return;
     findGroupByJoinCode(joinCodeFromLink).then(({ group }) => {
@@ -39,6 +45,19 @@ const Login = () => {
   const handleContinueAsGuest = () => {
     continueAsGuest();
     navigate('/admin/enter-bigs');
+  };
+
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    const { error } = await sendPasswordReset(resetEmail.trim());
+    if (error) {
+      setResetError(error.message);
+    } else {
+      setResetSent(true);
+    }
+    setResetLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,21 +136,69 @@ const Login = () => {
 
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-2xl font-semibold mb-6">
-          {mode === 'signin' ? 'Sign In' : 'Create Account'}
+          {forgotMode ? 'Reset Password' : mode === 'signin' ? 'Sign In' : 'Create Account'}
         </h2>
 
-        {invitedGroupLabel && (
+        {!forgotMode && invitedGroupLabel && (
           <p className="mb-4 text-blue-700 bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
             You've been invited to join <strong>{invitedGroupLabel}</strong>! Create an account below to request to join.
           </p>
         )}
 
-        {successMessage && (
+        {!forgotMode && successMessage && (
           <p className="mb-4 text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
             {successMessage}
           </p>
         )}
 
+        {forgotMode ? (
+          resetSent ? (
+            <div className="flex flex-col gap-4">
+              <p className="text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
+                Check {resetEmail} for a link to set a new password.
+              </p>
+              <button
+                onClick={() => { setForgotMode(false); setResetSent(false); setResetEmail(''); }}
+                className="text-sm text-gray-600 underline hover:text-black"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSendReset} className="flex flex-col gap-4">
+              <p className="text-sm text-gray-600">
+                Enter your email and we'll send you a link to set a new password.
+              </p>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                />
+              </div>
+              {resetError && <p className="text-brick text-sm">{resetError}</p>}
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full py-3 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+              >
+                {resetLoading ? '...' : 'Send Reset Link'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setForgotMode(false); setResetError(''); }}
+                className="text-sm text-gray-600 underline hover:text-black"
+              >
+                Back to sign in
+              </button>
+            </form>
+          )
+        ) : (
+        <>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {mode === 'signup' && (
             <div>
@@ -250,6 +317,15 @@ const Login = () => {
               minLength={6}
               className="w-full p-3 border-2 border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             />
+            {mode === 'signin' && (
+              <button
+                type="button"
+                onClick={() => { setForgotMode(true); setError(''); }}
+                className="mt-1 text-sm text-gray-500 underline hover:text-black"
+              >
+                Forgot password?
+              </button>
+            )}
           </div>
 
           {error && (
@@ -274,6 +350,8 @@ const Login = () => {
             {mode === 'signin' ? 'Sign up' : 'Sign in'}
           </button>
         </p>
+        </>
+        )}
 
         <div className="mt-6 pt-6 border-t border-gray-200">
           {!showGuestWarning ? (

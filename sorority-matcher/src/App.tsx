@@ -12,6 +12,7 @@ import RequireGroupRole from "./components/RequireGroupRole";
 import SidePanel from "./components/SidePanel";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
@@ -52,6 +53,7 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
                     <Route path="/about" element={<About />} />
