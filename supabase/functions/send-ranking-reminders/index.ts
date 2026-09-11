@@ -26,6 +26,12 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const REMINDER_FROM = Deno.env.get('REMINDER_FROM') ?? 'Sorora <onboarding@resend.dev>';
 const APP_URL = Deno.env.get('APP_URL') ?? 'https://sorora.vercel.app';
 
+// An admin re-clicking "Send reminder emails" (or a misbehaving client
+// retrying) shouldn't be able to spam members or burn through the Resend
+// quota — enforced here, server-side, since a client-side disabled button
+// alone is trivially bypassed by calling the function directly.
+const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -40,10 +46,25 @@ interface MemberRow {
   profiles: { email: string; name: string | null } | null;
 }
 
-async function remindGroup(
-  admin: ReturnType<typeof createClient>,
-  group: { id: string; name: string; ranking_deadline: string | null }
-) {
+interface RemindableGroup {
+  id: string;
+  name: string;
+  ranking_deadline: string | null;
+  reminders_last_sent_at: string | null;
+}
+
+function cooldownRemaining(group: RemindableGroup): number {
+  if (!group.reminders_last_sent_at) return 0;
+  const elapsed = Date.now() - new Date(group.reminders_last_sent_at).getTime();
+  return Math.max(0, COOLDOWN_MS - elapsed);
+}
+
+async function remindGroup(admin: ReturnType<typeof createClient>, group: RemindableGroup) {
+  const remaining = cooldownRemaining(group);
+  if (remaining > 0) {
+    return { sent: 0, total: 0, skipped: true, retryAfterSeconds: Math.ceil(remaining / 1000) };
+  }
+
   const { data: members } = await admin
     .from('memberships')
     .select('user_id, role, profiles(email, name)')
@@ -51,12 +72,17 @@ async function remindGroup(
     .eq('status', 'approved')
     .in('role', ['big', 'little']);
 
-  if (!members || members.length === 0) return { sent: 0, total: 0 };
+  if (!members || members.length === 0) return { sent: 0, total: 0, skipped: false };
 
   const { data: rankings } = await admin.from('rankings').select('ranker_id').eq('group_id', group.id);
   const submittedIds = new Set((rankings ?? []).map(r => r.ranker_id as string));
 
   const toRemind = (members as unknown as MemberRow[]).filter(m => !submittedIds.has(m.user_id) && m.profiles?.email);
+
+  // Nothing to send (everyone's submitted) — don't start the cooldown for
+  // no reason, so a legitimate click right after the last holdout submits
+  // isn't blocked.
+  if (toRemind.length === 0) return { sent: 0, total: 0, skipped: false };
 
   let sent = 0;
   for (const m of toRemind) {
@@ -85,7 +111,9 @@ async function remindGroup(
     if (res.ok) sent++;
   }
 
-  return { sent, total: toRemind.length };
+  await admin.from('groups').update({ reminders_last_sent_at: new Date().toISOString() }).eq('id', group.id);
+
+  return { sent, total: toRemind.length, skipped: false };
 }
 
 serve(async req => {
@@ -101,12 +129,13 @@ serve(async req => {
     if (body.all === true) {
       const { data: groups } = await admin
         .from('groups')
-        .select('id, name, ranking_deadline')
+        .select('id, name, ranking_deadline, reminders_last_sent_at')
         .not('ranking_deadline', 'is', null);
 
       const results = await Promise.all((groups ?? []).map(g => remindGroup(admin, g)));
       const sent = results.reduce((sum, r) => sum + r.sent, 0);
-      return json({ groups: groups?.length ?? 0, sent });
+      const skipped = results.filter(r => r.skipped).length;
+      return json({ groups: groups?.length ?? 0, sent, skipped });
     }
 
     const { groupId } = body;
@@ -135,12 +164,19 @@ serve(async req => {
 
     const { data: group, error: groupError } = await admin
       .from('groups')
-      .select('id, name, ranking_deadline')
+      .select('id, name, ranking_deadline, reminders_last_sent_at')
       .eq('id', groupId)
       .single();
     if (groupError || !group) return json({ error: 'Group not found' }, 404);
 
     const result = await remindGroup(admin, group);
+    if (result.skipped) {
+      const minutes = Math.ceil((result.retryAfterSeconds ?? 0) / 60);
+      return json(
+        { error: `Reminders for this group were already sent recently. Try again in about ${minutes} minute${minutes === 1 ? '' : 's'}.` },
+        429
+      );
+    }
     return json(result);
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
