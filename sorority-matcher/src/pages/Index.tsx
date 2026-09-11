@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { getMyProfile } from '../lib/profile';
-import { groupLabel } from '../lib/groups';
 import { queryKeys } from '../lib/queryKeys';
 
 const STEPS = [
@@ -115,7 +114,10 @@ const Index = () => {
                   onClick={() => navigate('/dashboard')}
                   className="flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-jade-50 transition-colors"
                 >
-                  <span className="truncate">{groupLabel(m.group)}</span>
+                  <span className="min-w-0 text-left">
+                    <span className="block truncate">{m.group.name}</span>
+                    {m.group.school && <span className="block text-xs text-gray-400 truncate">{m.group.school}</span>}
+                  </span>
                   <span className="flex-shrink-0 text-gray-400">→</span>
                 </button>
               ))}

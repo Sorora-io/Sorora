@@ -144,7 +144,14 @@ export async function updateMembershipStatus(
   membershipId: string,
   status: 'approved' | 'rejected'
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('memberships').update({ status }).eq('id', membershipId);
+  // Routed through a SECURITY DEFINER function (not a raw .update()) so
+  // approving a request for role='admin' also sets is_admin — otherwise
+  // the approved member gets admin nav links that silently fail, since
+  // is_group_admin() checks is_admin, not role.
+  const { error } = await supabase.rpc('approve_membership', {
+    p_membership_id: membershipId,
+    p_approve: status === 'approved',
+  });
   return { error: error ? error.message : null };
 }
 
@@ -234,10 +241,14 @@ export async function resolveRoleChange(
   approve: boolean,
   requestedRole: MembershipRole
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from('memberships')
-    .update(approve ? { role: requestedRole, requested_role: null } : { requested_role: null })
-    .eq('id', membershipId);
+  // Same reasoning as approve_membership — approving a change to
+  // role='admin' must also grant is_admin, or the member ends up with
+  // admin nav links but no actual admin access.
+  const { error } = await supabase.rpc('resolve_role_change', {
+    p_membership_id: membershipId,
+    p_approve: approve,
+    p_requested_role: requestedRole,
+  });
   return { error: error ? error.message : null };
 }
 

@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
-import { requestRoleChange, groupLabel, MembershipRole } from '../lib/groups';
+import { requestRoleChange, MembershipRole } from '../lib/groups';
 import { getMyProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
@@ -428,7 +428,8 @@ const Profile = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium">{groupLabel(m.group)}</p>
+                          <p className="text-sm font-medium">{m.group.name}</p>
+                          {m.group.school && <p className="text-xs text-gray-400">{m.group.school}</p>}
                           <p className="text-xs text-gray-500">
                             {roleLabel[m.role]}
                             {m.status !== 'approved' && ` (${m.status})`}
