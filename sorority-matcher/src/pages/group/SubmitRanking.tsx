@@ -15,6 +15,7 @@ const SubmitRanking = () => {
   const oppositeRole = role === 'big' ? 'little' : 'big';
   const oppositeLabel = oppositeRole === 'big' ? 'Bigs' : 'Littles';
   const minRequired = role === 'big' ? group?.min_big_rankings ?? 1 : group?.min_little_rankings ?? 1;
+  const cycleId = group?.active_cycle_id ?? null;
   const queryClient = useQueryClient();
 
   const { data: roster = [], isLoading: rosterLoading } = useQuery({
@@ -25,9 +26,9 @@ const SubmitRanking = () => {
   // Shares its cache key with Dashboard's OrgCard — whichever page the
   // member visited first already has this warm.
   const { data: existingRankedIds, isLoading: rankingLoading } = useQuery({
-    queryKey: queryKeys.myRanking(group?.id ?? ''),
-    queryFn: () => getMyRanking(group!.id).then(({ rankedIds: ids }) => ids),
-    enabled: !!group,
+    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
+    enabled: !!cycleId,
   });
 
   const [rankedIds, setRankedIds] = useState<string[]>([]);
@@ -72,7 +73,7 @@ const SubmitRanking = () => {
   };
 
   const handleSave = async () => {
-    if (!group) return;
+    if (!group || !cycleId) return;
     if (rankedIds.length < minRequired) {
       setError(`Please rank at least ${minRequired} ${minRequired === 1 ? oppositeLabel.slice(0, -1) : oppositeLabel}.`);
       return;
@@ -81,7 +82,7 @@ const SubmitRanking = () => {
     setError('');
     setSaved(false);
 
-    const tasks: Promise<{ error: string | null }>[] = [submitRanking(group.id, rankedIds)];
+    const tasks: Promise<{ error: string | null }>[] = [submitRanking(group.id, cycleId, rankedIds)];
     if (role === 'big') tasks.push(setMyTwinWillingness(group.id, willingToTakeTwins));
 
     const results = await Promise.all(tasks);
@@ -93,7 +94,7 @@ const SubmitRanking = () => {
       // Other pages (Dashboard's OrgCard) cache this same query — without
       // invalidating it here, they'd keep showing "not submitted" until
       // their own cache happens to go stale on its own.
-      queryClient.invalidateQueries({ queryKey: queryKeys.myRanking(group.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.myRanking(cycleId) });
       await refresh();
     }
     setSaving(false);
@@ -121,7 +122,11 @@ const SubmitRanking = () => {
           {groupLabel(group)} · rank at least {minRequired}, most preferred first
         </p>
 
-        {loading ? (
+        {!cycleId ? (
+          <p className="text-gray-500 text-sm">
+            No active cycle yet — check back once your chapter admin starts one.
+          </p>
+        ) : loading ? (
           <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
@@ -199,7 +204,7 @@ const SubmitRanking = () => {
 
         <button
           onClick={handleSave}
-          disabled={saving || loading}
+          disabled={saving || loading || !cycleId}
           className="w-full mt-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
         >
           {saving ? '...' : 'Save Ranking'}

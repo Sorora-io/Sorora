@@ -15,6 +15,17 @@ export interface Group {
   ranking_deadline: string | null;
   created_by: string;
   owner_id: string;
+  active_cycle_id: string | null;
+  created_at: string;
+}
+
+export interface Cycle {
+  id: string;
+  group_id: string;
+  label: string;
+  started_at: string;
+  ended_at: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
@@ -172,6 +183,28 @@ export async function updateGroupDescription(groupId: string, description: strin
 export async function updateGroupDeadline(groupId: string, deadline: string | null): Promise<{ error: string | null }> {
   const { error } = await supabase.from('groups').update({ ranking_deadline: deadline }).eq('id', groupId);
   return { error: error ? error.message : null };
+}
+
+// Every past and present cycle for a group, newest first — any member can
+// see the list (RLS), though only rankings/pairings tied to a cycle carry
+// the actual data.
+export async function getGroupCycles(groupId: string): Promise<{ cycles: Cycle[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('cycles')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('started_at', { ascending: false });
+  if (error) return { cycles: [], error: error.message };
+  return { cycles: (data ?? []) as Cycle[], error: null };
+}
+
+// Closes whatever cycle is currently active (if any) and starts a new
+// one, atomically — see start_cycle() in supabase/migrations for why this
+// is a security-definer RPC rather than a couple of raw .update() calls.
+export async function startCycle(groupId: string, label: string): Promise<{ cycle: Cycle | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('start_cycle', { p_group_id: groupId, p_label: label });
+  if (error) return { cycle: null, error: error.message };
+  return { cycle: data as Cycle, error: null };
 }
 
 export async function getApprovedRoleCounts(

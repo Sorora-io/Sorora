@@ -19,17 +19,19 @@ const Status = () => {
   const [reminderMessage, setReminderMessage] = useState('');
   const [reminderError, setReminderError] = useState('');
 
+  const cycleId = group?.active_cycle_id ?? null;
+
   const {
     data: rows = [] as SubmissionStatusRow[],
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: queryKeys.submissionStatus(group?.id ?? ''),
-    queryFn: () => getSubmissionStatus(group!.id).then(({ rows: r, error: loadError }) => {
+    queryKey: queryKeys.submissionStatus(cycleId ?? ''),
+    queryFn: () => getSubmissionStatus(group!.id, cycleId).then(({ rows: r, error: loadError }) => {
       if (loadError) throw new Error(loadError);
       return r;
     }),
-    enabled: !!group,
+    enabled: !!group && !!cycleId,
   });
   const error = runError || (queryError ? (queryError as Error).message : '');
 
@@ -38,10 +40,10 @@ const Status = () => {
   const allSubmitted = rows.length > 0 && rows.every(r => r.submitted);
 
   const handleRun = async () => {
-    if (!group) return;
+    if (!group || !cycleId) return;
     setRunning(true);
     setRunError('');
-    const { error: runFailure } = await runMatching(group.id);
+    const { error: runFailure } = await runMatching(group.id, cycleId);
     if (runFailure) {
       setRunError(runFailure);
       setRunning(false);
@@ -106,7 +108,11 @@ const Status = () => {
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Submission Status</h2>
 
-        {loading ? (
+        {!cycleId ? (
+          <p className="text-gray-500 text-sm">
+            No active cycle yet — start one from Group Settings before collecting rankings.
+          </p>
+        ) : loading ? (
           <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
         ) : (
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -117,7 +123,7 @@ const Status = () => {
 
         {error && <p className="text-brick text-sm mb-4">{error}</p>}
 
-        {!allSubmitted && !loading && (
+        {cycleId && !allSubmitted && !loading && (
           <div className="mb-4">
             <p className="text-gold-700 text-sm mb-2">
               Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
@@ -135,13 +141,15 @@ const Status = () => {
           </div>
         )}
 
-        <button
-          onClick={handleRun}
-          disabled={running || loading || rows.length === 0}
-          className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-        >
-          {running ? 'Running...' : 'Run Matching'}
-        </button>
+        {cycleId && (
+          <button
+            onClick={handleRun}
+            disabled={running || loading || rows.length === 0}
+            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
+          >
+            {running ? 'Running...' : 'Run Matching'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -88,16 +88,18 @@ const OrgCard = ({
   // data) renders its real numbers immediately instead of a skeleton, and
   // a genuinely-stale beat is a quiet background refetch, not a blocking
   // loading state.
+  const cycleId = m.group.active_cycle_id;
+
   const { data: statusRows, isLoading: progressLoading } = useQuery({
-    queryKey: queryKeys.submissionStatus(m.group_id),
-    queryFn: () => getSubmissionStatus(m.group_id).then(({ rows }) => rows),
-    enabled: isAdmin,
+    queryKey: queryKeys.submissionStatus(cycleId ?? ''),
+    queryFn: () => getSubmissionStatus(m.group_id, cycleId).then(({ rows }) => rows),
+    enabled: isAdmin && !!cycleId,
   });
 
   const { data: rankedIds, isLoading: rankingLoading } = useQuery({
-    queryKey: queryKeys.myRanking(m.group_id),
-    queryFn: () => getMyRanking(m.group_id).then(({ rankedIds: ids }) => ids),
-    enabled: isRanker,
+    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
+    enabled: isRanker && !!cycleId,
   });
 
   const adminProgress: AdminProgress | null = statusRows

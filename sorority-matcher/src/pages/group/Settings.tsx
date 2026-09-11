@@ -10,9 +10,15 @@ import {
   getGroupAdmins,
   transferGroupOwnership,
   getApprovedRoleCounts,
+  getGroupCycles,
+  startCycle,
   GroupAdmin,
+  Cycle,
 } from '../../lib/groups';
 import LoadingLogo from '../../components/LoadingLogo';
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
 const clamp = (value: number, min: number, max: number | undefined) => {
   if (Number.isNaN(value)) return min;
@@ -52,6 +58,25 @@ const Settings = () => {
   const maxBig = littleCount && littleCount > 0 ? littleCount : undefined;
   const maxLittle = bigCount && bigCount > 0 ? bigCount : undefined;
 
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [cyclesLoading, setCyclesLoading] = useState(true);
+  const [newCycleLabel, setNewCycleLabel] = useState('');
+  const [confirmingNewCycle, setConfirmingNewCycle] = useState(false);
+  const [cycleSaving, setCycleSaving] = useState(false);
+  const [cycleError, setCycleError] = useState('');
+
+  const loadCycles = useCallback(async () => {
+    if (!group) return;
+    setCyclesLoading(true);
+    const { cycles: list } = await getGroupCycles(group.id);
+    setCycles(list);
+    setCyclesLoading(false);
+  }, [group]);
+
+  useEffect(() => {
+    loadCycles();
+  }, [loadCycles]);
+
   const [admins, setAdmins] = useState<GroupAdmin[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(true);
   const [transferTarget, setTransferTarget] = useState('');
@@ -85,6 +110,23 @@ const Settings = () => {
   const isOwner = membership?.user_id === group.owner_id;
   const owner = admins.find(a => a.user_id === group.owner_id);
   const otherAdmins = admins.filter(a => a.user_id !== group.owner_id);
+  const activeCycle = cycles.find(c => c.id === group.active_cycle_id);
+  const pastCycles = cycles.filter(c => c.id !== group.active_cycle_id);
+
+  const handleStartCycle = async () => {
+    if (!newCycleLabel.trim()) return;
+    setCycleSaving(true);
+    setCycleError('');
+    const { error: startError } = await startCycle(group.id, newCycleLabel.trim());
+    if (startError) {
+      setCycleError(startError);
+    } else {
+      setNewCycleLabel('');
+      setConfirmingNewCycle(false);
+      await Promise.all([refresh(), loadCycles()]);
+    }
+    setCycleSaving(false);
+  };
 
   const handleTransfer = async () => {
     if (!transferTarget) return;
@@ -285,6 +327,80 @@ const Settings = () => {
           >
             {saving ? '...' : 'Save Ranking Rules'}
           </button>
+        </div>
+
+        <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-200">
+          <h3 className="text-sm font-semibold">Rush Cycle</h3>
+          {cyclesLoading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500"><LoadingLogo size={18} /> Loading...</div>
+          ) : (
+            <>
+              {activeCycle && (
+                <p className="text-sm text-gray-600">
+                  Currently on <span className="font-medium">{activeCycle.label}</span>, started{' '}
+                  {formatDate(activeCycle.started_at)}.
+                </p>
+              )}
+
+              {pastCycles.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Past cycles</p>
+                  {pastCycles.map(c => (
+                    <div key={c.id} className="flex items-center justify-between text-sm text-gray-600 px-1">
+                      <span>{c.label}</span>
+                      <span className="text-xs text-gray-400">
+                        {formatDate(c.started_at)}
+                        {c.ended_at ? ` – ${formatDate(c.ended_at)}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                  <Link to="/group/pairings" className="text-xs text-gray-500 underline hover:text-black mt-1">
+                    View a past cycle's pairings
+                  </Link>
+                </div>
+              )}
+
+              {!confirmingNewCycle ? (
+                <button
+                  onClick={() => setConfirmingNewCycle(true)}
+                  className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
+                >
+                  Start a New Cycle
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 p-3 bg-gold-50 border border-gold-200 rounded-md">
+                  <p className="text-sm text-gray-700">
+                    Starting a new cycle closes {activeCycle ? `"${activeCycle.label}"` : 'the current cycle'} —
+                    its rankings and pairings stay saved, but Bigs/Littles start ranking fresh under the new
+                    cycle. Chapter membership isn't affected.
+                  </p>
+                  <input
+                    type="text"
+                    value={newCycleLabel}
+                    onChange={(e) => setNewCycleLabel(e.target.value)}
+                    placeholder="e.g. Spring 2027"
+                    className="w-full p-2.5 text-sm border border-gold-300 rounded-md focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-100"
+                  />
+                  {cycleError && <p className="text-brick text-sm">{cycleError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setConfirmingNewCycle(false); setCycleError(''); setNewCycleLabel(''); }}
+                      className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleStartCycle}
+                      disabled={cycleSaving || !newCycleLabel.trim()}
+                      className="flex-1 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50 text-sm"
+                    >
+                      {cycleSaving ? '...' : 'Start Cycle'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-200">

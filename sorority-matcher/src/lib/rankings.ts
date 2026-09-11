@@ -41,9 +41,13 @@ export async function getRoster(
   return { roster, error: null };
 }
 
+// A cycle-less group (shouldn't happen post-migration, but a defensive
+// caller can hit this before the group's active_cycle_id has loaded) has
+// nothing to rank yet.
 export async function getMyRanking(
-  groupId: string
+  cycleId: string | null
 ): Promise<{ rankedIds: string[]; error: string | null }> {
+  if (!cycleId) return { rankedIds: [], error: null };
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -52,7 +56,7 @@ export async function getMyRanking(
   const { data, error } = await supabase
     .from('rankings')
     .select('ranked_ids')
-    .eq('group_id', groupId)
+    .eq('cycle_id', cycleId)
     .eq('ranker_id', user.id)
     .maybeSingle();
 
@@ -62,6 +66,7 @@ export async function getMyRanking(
 
 export async function submitRanking(
   groupId: string,
+  cycleId: string,
   rankedIds: string[]
 ): Promise<{ error: string | null }> {
   const {
@@ -72,8 +77,14 @@ export async function submitRanking(
   const { error } = await supabase
     .from('rankings')
     .upsert(
-      { group_id: groupId, ranker_id: user.id, ranked_ids: rankedIds, updated_at: new Date().toISOString() },
-      { onConflict: 'group_id,ranker_id' }
+      {
+        group_id: groupId,
+        cycle_id: cycleId,
+        ranker_id: user.id,
+        ranked_ids: rankedIds,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'cycle_id,ranker_id' }
     );
   return { error: error ? error.message : null };
 }
@@ -127,7 +138,8 @@ export async function getFullRoster(groupId: string): Promise<{ roster: RosterEn
 }
 
 export async function getSubmissionStatus(
-  groupId: string
+  groupId: string,
+  cycleId: string | null
 ): Promise<{ rows: SubmissionStatusRow[]; error: string | null }> {
   const [membersRes, rankingsRes] = await Promise.all([
     supabase
@@ -136,7 +148,9 @@ export async function getSubmissionStatus(
       .eq('group_id', groupId)
       .eq('status', 'approved')
       .in('role', ['big', 'little']),
-    supabase.from('rankings').select('ranker_id').eq('group_id', groupId),
+    cycleId
+      ? supabase.from('rankings').select('ranker_id').eq('cycle_id', cycleId)
+      : Promise.resolve({ data: [] as { ranker_id: string }[], error: null }),
   ]);
 
   if (membersRes.error) return { rows: [], error: membersRes.error.message };
@@ -155,7 +169,7 @@ export async function getSubmissionStatus(
   return { rows, error: null };
 }
 
-export async function runMatching(groupId: string): Promise<{ error: string | null }> {
+export async function runMatching(groupId: string, cycleId: string): Promise<{ error: string | null }> {
   const [bigsRes, littlesRes, rankingsRes] = await Promise.all([
     supabase
       .from('memberships')
@@ -164,7 +178,7 @@ export async function runMatching(groupId: string): Promise<{ error: string | nu
       .eq('role', 'big')
       .eq('status', 'approved'),
     supabase.from('memberships').select('user_id').eq('group_id', groupId).eq('role', 'little').eq('status', 'approved'),
-    supabase.from('rankings').select('ranker_id, ranked_ids').eq('group_id', groupId),
+    supabase.from('rankings').select('ranker_id, ranked_ids').eq('cycle_id', cycleId),
   ]);
 
   if (bigsRes.error) return { error: bigsRes.error.message };
@@ -190,11 +204,13 @@ export async function runMatching(groupId: string): Promise<{ error: string | nu
 
   const result = runDeferredAcceptance(bigIds, littleIds, bigRankings, littleRankings, twinsWilling);
 
-  const { error: deleteError } = await supabase.from('pairings').delete().eq('group_id', groupId);
+  // Scoped to this cycle only — re-running matching never touches a past
+  // cycle's pairings, which is the whole point of cycles existing.
+  const { error: deleteError } = await supabase.from('pairings').delete().eq('cycle_id', cycleId);
   if (deleteError) return { error: deleteError.message };
 
   const rows = result.flatMap(({ big, littles }) =>
-    littles.map(littleId => ({ group_id: groupId, big_id: big, little_id: littleId }))
+    littles.map(littleId => ({ group_id: groupId, cycle_id: cycleId, big_id: big, little_id: littleId }))
   );
   if (rows.length > 0) {
     const { error: insertError } = await supabase.from('pairings').insert(rows);
@@ -204,13 +220,13 @@ export async function runMatching(groupId: string): Promise<{ error: string | nu
   return { error: null };
 }
 
-export async function getPairings(groupId: string): Promise<{ pairings: PairingRow[]; error: string | null }> {
+export async function getPairings(cycleId: string): Promise<{ pairings: PairingRow[]; error: string | null }> {
   const { data, error } = await supabase
     .from('pairings')
     .select(
       'big_id, little_id, big:profiles!pairings_big_id_fkey(name), little:profiles!pairings_little_id_fkey(name)'
     )
-    .eq('group_id', groupId);
+    .eq('cycle_id', cycleId);
 
   if (error) return { pairings: [], error: error.message };
 
