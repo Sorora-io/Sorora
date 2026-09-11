@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import Button from '../components/Button';
 
 // Reached only via the link in a password-reset email — Supabase's client
 // picks up the recovery token from the URL on its own (detectSessionInUrl,
@@ -76,12 +77,9 @@ const ResetPassword = () => {
             <p className="text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
               Your password has been updated.
             </p>
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
-            >
+            <Button onClick={() => navigate('/login')} fullWidth>
               Continue to Sign In
-            </button>
+            </Button>
           </div>
         ) : !ready ? (
           <p className="text-gray-500">Loading...</p>
@@ -112,13 +110,9 @@ const ResetPassword = () => {
               />
             </div>
             {error && <p className="text-brick text-sm">{error}</p>}
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-            >
+            <Button type="submit" disabled={saving} fullWidth>
               {saving ? '...' : 'Update Password'}
-            </button>
+            </Button>
           </form>
         )}
       </div>

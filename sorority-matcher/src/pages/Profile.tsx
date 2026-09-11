@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
+import Button from '../components/Button';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
 import { getMyProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
@@ -288,13 +289,9 @@ const Profile = () => {
                 />
                 {nameError && <p className="text-brick text-sm">{nameError}</p>}
                 {nameSaved && <p className="text-jade-700 text-sm">Name updated.</p>}
-                <button
-                  onClick={handleSaveName}
-                  disabled={nameSaving || profileLoading}
-                  className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-                >
+                <Button fullWidth onClick={handleSaveName} disabled={nameSaving || profileLoading}>
                   {nameSaving ? '...' : 'Save Name'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -311,13 +308,9 @@ const Profile = () => {
                 />
                 {bioError && <p className="text-brick text-sm">{bioError}</p>}
                 {bioSaved && <p className="text-jade-700 text-sm">Bio updated.</p>}
-                <button
-                  onClick={handleSaveBio}
-                  disabled={bioSaving || profileLoading}
-                  className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-                >
+                <Button fullWidth onClick={handleSaveBio} disabled={bioSaving || profileLoading}>
                   {bioSaving ? '...' : 'Save Bio'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -360,13 +353,9 @@ const Profile = () => {
                 </div>
                 {schoolError && <p className="text-brick text-sm">{schoolError}</p>}
                 {schoolSaved && <p className="text-jade-700 text-sm">School info updated.</p>}
-                <button
-                  onClick={handleSaveSchool}
-                  disabled={schoolSaving || profileLoading}
-                  className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-                >
+                <Button fullWidth onClick={handleSaveSchool} disabled={schoolSaving || profileLoading}>
                   {schoolSaving ? '...' : 'Save School Info'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -401,13 +390,9 @@ const Profile = () => {
                 />
                 {passwordError && <p className="text-brick text-sm">{passwordError}</p>}
                 {passwordSaved && <p className="text-jade-700 text-sm">Password updated.</p>}
-                <button
-                  onClick={handleChangePassword}
-                  disabled={passwordSaving}
-                  className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-                >
+                <Button fullWidth onClick={handleChangePassword} disabled={passwordSaving}>
                   {passwordSaving ? '...' : 'Update Password'}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -503,12 +488,9 @@ const Profile = () => {
                   onCancel={() => setShowAddOrg(false)}
                 />
               ) : (
-                <button
-                  onClick={() => setShowAddOrg(true)}
-                  className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
-                >
+                <Button variant="outline" size="sm" fullWidth onClick={() => setShowAddOrg(true)}>
                   + Add Organization
-                </button>
+                </Button>
               )}
             </div>
 
@@ -519,26 +501,17 @@ const Profile = () => {
               </div>
               {signOutConfirming ? (
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => setSignOutConfirming(false)}
-                    className="py-2.5 px-4 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-                  >
+                  <Button variant="ghost" onClick={() => setSignOutConfirming(false)}>
                     Cancel
-                  </button>
-                  <button
-                    onClick={signOut}
-                    className="py-2.5 px-4 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
-                  >
+                  </Button>
+                  <Button onClick={signOut}>
                     Yes, sign out
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setSignOutConfirming(true)}
-                  className="py-2.5 px-6 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors flex-shrink-0"
-                >
+                <Button variant="outline" className="flex-shrink-0" onClick={() => setSignOutConfirming(true)}>
                   Sign out
-                </button>
+                </Button>
               )}
             </div>
 
@@ -548,12 +521,14 @@ const Profile = () => {
               {!deleteOpen ? (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">Permanently delete your account and all its data.</p>
-                  <button
+                  <Button
+                    variant="danger-outline"
+                    size="sm"
+                    className="flex-shrink-0"
                     onClick={() => setDeleteOpen(true)}
-                    className="py-2 px-4 border border-brick text-brick rounded-md hover:bg-brick-50 transition-colors text-sm flex-shrink-0"
                   >
                     Delete Account
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -582,19 +557,21 @@ const Profile = () => {
                   {deleteError && <p className="text-brick text-sm">{deleteError}</p>}
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      className="flex-1"
                       onClick={() => { setDeleteOpen(false); setDeleteConfirmText(''); setDeleteError(''); }}
-                      className="flex-1 py-2.5 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="flex-1"
                       onClick={handleDeleteAccount}
                       disabled={deleteConfirmText !== 'DELETE' || deleteSaving}
-                      className="flex-1 py-2.5 bg-brick text-white rounded-md hover:bg-brick-600 transition-colors disabled:opacity-50"
                     >
                       {deleteSaving ? '...' : 'Permanently Delete Account'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

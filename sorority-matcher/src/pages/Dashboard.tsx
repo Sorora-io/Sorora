@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import AddOrganizationForm from '../components/AddOrganizationForm';
 import OnboardingTour, { TourStep } from '../components/OnboardingTour';
+import Button from '../components/Button';
 import { homeForRole } from '../components/RequireGroupRole';
 import { isEffectiveAdmin, MembershipWithGroup } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking } from '../lib/rankings';
@@ -190,48 +191,32 @@ const OrgCard = ({
         <div className="flex flex-wrap gap-2">
           {(m.role === 'big' || m.role === 'little') && (
             <>
-              <button
-                onClick={() => goTo(m.group_id, '/group/submit-ranking')}
-                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-              >
+              <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/submit-ranking')}>
                 {rankingLoading || mySubmission === null
                   ? 'Rankings'
                   : mySubmission
                   ? 'Update Rankings'
                   : `Start Ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
-              </button>
-              <button
-                onClick={() => goTo(m.group_id, '/group/notes')}
-                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-              >
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/notes')}>
                 Notes
-              </button>
+              </Button>
             </>
           )}
           {isEffectiveAdmin(m) &&
             ADMIN_ACTIONS.map(a => (
-              <button
-                key={a.path}
-                onClick={() => goTo(m.group_id, a.path)}
-                className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-              >
+              <Button key={a.path} variant="outline" size="sm" onClick={() => goTo(m.group_id, a.path)}>
                 {a.label}
-              </button>
+              </Button>
             ))}
-          <button
-            onClick={() => goTo(m.group_id, '/group/roster')}
-            className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-          >
+          <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/roster')}>
             Roster
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
-          onClick={() => goTo(m.group_id, '/group/pending')}
-          className="px-3 py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-        >
+        <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/pending')}>
           {m.status === 'pending' ? 'View request status' : 'View details'}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -344,12 +329,9 @@ const Dashboard = () => {
               onCancel={() => setShowAddOrg(false)}
             />
           ) : (
-            <button
-              onClick={() => setShowAddOrg(true)}
-              className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
-            >
+            <Button variant="outline" size="sm" fullWidth onClick={() => setShowAddOrg(true)}>
               + Add Organization
-            </button>
+            </Button>
           )}
         </div>
       </div>

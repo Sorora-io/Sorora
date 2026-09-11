@@ -11,6 +11,11 @@ import LoadingLogo from '../../components/LoadingLogo';
 type View = 'card' | 'list';
 const VIEW_KEY = 'sorora-roster-view';
 
+type SortMode = 'role' | 'az' | 'za';
+const SORT_KEY = 'sorora-roster-sort';
+
+const displayName = (r: RosterEntry) => r.name || r.email;
+
 const roleLabel: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 const roleBadgeClasses: Record<MembershipRole, string> = {
   admin: 'bg-jade-100 text-jade-700',
@@ -39,6 +44,23 @@ const Roster = () => {
     }
   };
 
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    try {
+      return (localStorage.getItem(SORT_KEY) as SortMode) || 'role';
+    } catch {
+      return 'role';
+    }
+  });
+
+  const changeSort = (s: SortMode) => {
+    setSortMode(s);
+    try {
+      localStorage.setItem(SORT_KEY, s);
+    } catch {
+      // ignore — per-device preference only, fine to lose
+    }
+  };
+
   const {
     data: roster = [] as RosterEntry[],
     isLoading: loading,
@@ -58,6 +80,10 @@ const Roster = () => {
   const admins = roster.filter(r => r.role === 'admin');
   const bigs = roster.filter(r => r.role === 'big');
   const littles = roster.filter(r => r.role === 'little');
+
+  const sortedRoster = [...roster].sort((a, b) =>
+    sortMode === 'za' ? displayName(b).localeCompare(displayName(a)) : displayName(a).localeCompare(displayName(b))
+  );
 
   const renderCard = (r: RosterEntry) => {
     const details = [
@@ -167,25 +193,36 @@ const Roster = () => {
             <h2 className="text-2xl font-semibold mb-1">Roster</h2>
             <p className="text-gray-500 text-sm">{groupLabel(group)}</p>
           </div>
-          <div className="flex-shrink-0 flex items-center gap-1 bg-gray-100 rounded-md p-1">
-            <button
-              type="button"
-              onClick={() => changeView('card')}
-              aria-label="Card view"
-              aria-pressed={view === 'card'}
-              className={`p-1.5 rounded ${view === 'card' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <select
+              value={sortMode}
+              onChange={(e) => changeSort(e.target.value as SortMode)}
+              className="text-sm border border-jade-300 rounded-md px-2 py-1.5 focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             >
-              <LayoutGrid size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => changeView('list')}
-              aria-label="List view"
-              aria-pressed={view === 'list'}
-              className={`p-1.5 rounded ${view === 'list' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              <List size={16} />
-            </button>
+              <option value="role">By member type</option>
+              <option value="az">Name (A–Z)</option>
+              <option value="za">Name (Z–A)</option>
+            </select>
+            <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1">
+              <button
+                type="button"
+                onClick={() => changeView('card')}
+                aria-label="Card view"
+                aria-pressed={view === 'card'}
+                className={`p-1.5 rounded ${view === 'card' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <LayoutGrid size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => changeView('list')}
+                aria-label="List view"
+                aria-pressed={view === 'list'}
+                className={`p-1.5 rounded ${view === 'list' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <List size={16} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -193,12 +230,18 @@ const Roster = () => {
 
         {loading ? (
           <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : (
+        ) : sortMode === 'role' ? (
           <div className="flex flex-col gap-8">
             {renderSection('Bigs', bigs)}
             {renderSection('Littles', littles)}
             {renderSection('Admins', admins)}
           </div>
+        ) : sortedRoster.length === 0 ? (
+          <p className="text-gray-400 text-sm">No one here yet.</p>
+        ) : view === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{sortedRoster.map(renderCard)}</div>
+        ) : (
+          <div className="flex flex-col gap-2">{sortedRoster.map(renderRow)}</div>
         )}
       </div>
     </div>

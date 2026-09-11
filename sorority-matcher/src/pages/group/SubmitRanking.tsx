@@ -7,6 +7,7 @@ import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
 import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
 import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
+import Button from '../../components/Button';
 
 const SubmitRanking = () => {
   const { membership, refresh } = useGroup();
@@ -202,13 +203,9 @@ const SubmitRanking = () => {
         {error && <p className="text-brick text-sm mt-4">{error}</p>}
         {saved && <p className="text-jade-700 text-sm mt-4">Ranking saved.</p>}
 
-        <button
-          onClick={handleSave}
-          disabled={saving || loading || !cycleId}
-          className="w-full mt-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-        >
+        <Button className="mt-6" fullWidth onClick={handleSave} disabled={saving || loading || !cycleId}>
           {saving ? '...' : 'Save Ranking'}
-        </button>
+        </Button>
       </div>
     </div>
   );

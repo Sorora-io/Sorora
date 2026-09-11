@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGroup } from '../../contexts/GroupContext';
-import { getRoster, RosterMember } from '../../lib/rankings';
+import { getRoster } from '../../lib/rankings';
 import { getMyNotes, addNote, updateNote, deleteNote, Note, Interest, INTEREST_LABEL } from '../../lib/notes';
+import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
+import Button from '../../components/Button';
 
 const INTEREST_OPTIONS: Interest[] = ['definitely', 'would_like_to', 'maybe', 'probably_not'];
 
@@ -38,10 +41,52 @@ const Notes = () => {
   const oppositeRole = role === 'big' ? 'little' : 'big';
   const oppositeLabel = oppositeRole === 'big' ? 'Bigs' : 'Littles';
 
-  const [roster, setRoster] = useState<RosterMember[]>([]);
+  const queryClient = useQueryClient();
+
+  // Shares its cache key with SubmitRanking — whichever page the member
+  // visited first already has the roster warm.
+  const { data: roster = [], isLoading: rosterLoading, error: rosterQueryError } = useQuery({
+    queryKey: queryKeys.groupRoster(group?.id ?? '', oppositeRole),
+    queryFn: () => getRoster(group!.id, oppositeRole).then(({ roster: r }) => r),
+    enabled: !!group,
+  });
+
+  const { data: notesData, isLoading: notesLoading, error: notesQueryError } = useQuery({
+    queryKey: queryKeys.myNotes(group?.id ?? ''),
+    queryFn: () => getMyNotes(group!.id).then(({ notes: n, error: notesError }) => {
+      if (notesError) throw new Error(notesError);
+      return n;
+    }),
+    enabled: !!group,
+  });
+
+  // notes is a local, freely-mutated mirror of the cache, not a direct read
+  // of it — the undo-delete flow below needs to add/remove rows on its own
+  // timeline (independent of any refetch), so it seeds from the cache
+  // exactly once rather than staying subscribed to it. Every mutation
+  // below writes through to the cache too (via updateNotes), so revisiting
+  // this page within the cache's staleTime still sees the latest edits.
   const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || !notesData) return;
+    setNotes(notesData);
+    seeded.current = true;
+  }, [notesData]);
+
+  const updateNotes = (updater: (prev: Note[]) => Note[]) => {
+    setNotes(updater);
+    if (group) {
+      queryClient.setQueryData<Note[]>(queryKeys.myNotes(group.id), prev => updater(prev ?? []));
+    }
+  };
+
+  const loading = (rosterLoading || notesLoading) && !seeded.current;
+  const error = rosterQueryError
+    ? (rosterQueryError as Error).message
+    : notesQueryError
+    ? (notesQueryError as Error).message
+    : '';
 
   const [openSubjectId, setOpenSubjectId] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -58,24 +103,6 @@ const Notes = () => {
   // through in the background if the user navigates away before it fires,
   // not silently get canceled.
   const pendingDeletes = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  const load = useCallback(async () => {
-    if (!group || !oppositeRole) return;
-    setLoading(true);
-    const [{ roster: r, error: rosterError }, { notes: n, error: notesError }] = await Promise.all([
-      getRoster(group.id, oppositeRole),
-      getMyNotes(group.id),
-    ]);
-    if (rosterError) setError(rosterError);
-    else if (notesError) setError(notesError);
-    setRoster(r);
-    setNotes(n);
-    setLoading(false);
-  }, [group, oppositeRole]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   if (!group || !role) return null;
 
@@ -121,7 +148,7 @@ const Notes = () => {
         setSaving(false);
         return;
       }
-      setNotes(prev => prev.map(n => (n.id === editingNoteId ? { ...n, ...fields } : n)));
+      updateNotes(prev => prev.map(n => (n.id === editingNoteId ? { ...n, ...fields } : n)));
     } else {
       const { note, error: saveError } = await addNote(group.id, openSubjectId, fields);
       if (saveError || !note) {
@@ -129,7 +156,7 @@ const Notes = () => {
         setSaving(false);
         return;
       }
-      setNotes(prev => [note, ...prev]);
+      updateNotes(prev => [note, ...prev]);
     }
     resetForm();
     setSaving(false);
@@ -141,7 +168,7 @@ const Notes = () => {
 
     // Optimistic: the note disappears from the list right away, but the
     // actual database delete waits out the toast's undo window first.
-    setNotes(prev => prev.filter(n => n.id !== noteId));
+    updateNotes(prev => prev.filter(n => n.id !== noteId));
     if (editingNoteId === noteId) resetForm();
 
     const timeoutId = setTimeout(async () => {
@@ -149,7 +176,7 @@ const Notes = () => {
       const { error: deleteError } = await deleteNote(noteId);
       if (deleteError) {
         toast.error(`Couldn't delete that note: ${deleteError}`);
-        setNotes(prev => [...prev, note].sort(compareNotes));
+        updateNotes(prev => [...prev, note].sort(compareNotes));
       }
     }, UNDO_WINDOW_MS);
     pendingDeletes.current[noteId] = timeoutId;
@@ -163,7 +190,7 @@ const Notes = () => {
           if (!pending) return; // the window already closed and it's gone
           clearTimeout(pending);
           delete pendingDeletes.current[noteId];
-          setNotes(prev => [...prev, note].sort(compareNotes));
+          updateNotes(prev => [...prev, note].sort(compareNotes));
         },
       },
     });
@@ -286,20 +313,13 @@ const Notes = () => {
                         {formError && <p className="text-brick text-xs">{formError}</p>}
                         <div className="flex gap-2">
                           {editingNoteId && (
-                            <button
-                              onClick={resetForm}
-                              className="flex-1 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-                            >
+                            <Button variant="ghost" size="sm" className="flex-1" onClick={resetForm}>
                               Cancel
-                            </button>
+                            </Button>
                           )}
-                          <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1 py-2 text-sm bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-                          >
+                          <Button size="sm" className="flex-1" onClick={handleSave} disabled={saving}>
                             {saving ? '...' : editingNoteId ? 'Save Changes' : 'Add Note'}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </div>

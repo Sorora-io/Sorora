@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useGroup } from '../../contexts/GroupContext';
 import { homeForRole } from '../../components/RequireGroupRole';
 import { groupLabel } from '../../lib/groups';
+import Button from '../../components/Button';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -60,18 +61,12 @@ const Pending = () => {
           </>
         )}
         <div className="flex flex-col gap-3">
-          <button
-            onClick={refresh}
-            className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-          >
+          <Button variant="outline" fullWidth onClick={refresh}>
             Check again
-          </button>
-          <button
-            onClick={signOut}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
-          >
+          </Button>
+          <Button fullWidth onClick={signOut}>
             Sign out
-          </button>
+          </Button>
         </div>
       </div>
     </div>

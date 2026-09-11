@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendContactMessage } from '../lib/contact';
+import Button from '../components/Button';
 
 const ContactUs = () => {
   const { user } = useAuth();
@@ -98,13 +99,9 @@ const ContactUs = () => {
 
             {error && <p className="text-brick text-sm">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-            >
+            <Button type="submit" disabled={sending} fullWidth>
               {sending ? '...' : 'Send Message'}
-            </button>
+            </Button>
           </form>
         )}
       </div>

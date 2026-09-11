@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -12,32 +13,39 @@ import RequireGroupRole from "./components/RequireGroupRole";
 import SidePanel from "./components/SidePanel";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
+// Index and Login stay eager — they're the two pages a fresh visitor is
+// actually likely to land on first, so loading them shouldn't cost an
+// extra chunk-fetch round trip. Everything else (chapter-scoped pages a
+// visitor needs a real membership to ever reach, the guest-only quick
+// -match wizard, account settings) is lazy — a first-time visitor pays
+// for none of that code until they navigate somewhere that needs it.
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
-import About from "./pages/About";
-import FAQ from "./pages/FAQ";
-import ContactUs from "./pages/ContactUs";
-import EnterBigs from "./pages/admin/EnterBigs";
-import EnterLittles from "./pages/admin/EnterLittles";
-import Twins from "./pages/admin/Twins";
-import RankingRequirements from "./pages/admin/RankingRequirements";
-import RankPreferences from "./pages/admin/RankPreferences";
-import RankBigs from "./pages/admin/RankBigs";
-import ReviewSummary from "./pages/admin/ReviewSummary";
-import Pairings from "./pages/admin/Pairings";
-import GroupOnboarding from "./pages/group/Onboarding";
-import GroupPending from "./pages/group/Pending";
-import GroupApprovals from "./pages/group/Approvals";
-import GroupSettings from "./pages/group/Settings";
-import GroupSubmitRanking from "./pages/group/SubmitRanking";
-import GroupStatus from "./pages/group/Status";
-import GroupPairings from "./pages/group/Pairings";
-import GroupRoster from "./pages/group/Roster";
-import GroupNotes from "./pages/group/Notes";
-import NotFound from "./pages/NotFound";
+
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const About = lazy(() => import("./pages/About"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const EnterBigs = lazy(() => import("./pages/admin/EnterBigs"));
+const EnterLittles = lazy(() => import("./pages/admin/EnterLittles"));
+const Twins = lazy(() => import("./pages/admin/Twins"));
+const RankingRequirements = lazy(() => import("./pages/admin/RankingRequirements"));
+const RankPreferences = lazy(() => import("./pages/admin/RankPreferences"));
+const RankBigs = lazy(() => import("./pages/admin/RankBigs"));
+const ReviewSummary = lazy(() => import("./pages/admin/ReviewSummary"));
+const Pairings = lazy(() => import("./pages/admin/Pairings"));
+const GroupOnboarding = lazy(() => import("./pages/group/Onboarding"));
+const GroupPending = lazy(() => import("./pages/group/Pending"));
+const GroupApprovals = lazy(() => import("./pages/group/Approvals"));
+const GroupSettings = lazy(() => import("./pages/group/Settings"));
+const GroupSubmitRanking = lazy(() => import("./pages/group/SubmitRanking"));
+const GroupStatus = lazy(() => import("./pages/group/Status"));
+const GroupPairings = lazy(() => import("./pages/group/Pairings"));
+const GroupRoster = lazy(() => import("./pages/group/Roster"));
+const GroupNotes = lazy(() => import("./pages/group/Notes"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // A page that fetches its own data on every mount (the old pattern here)
 // re-shows a loading state every time you navigate back to it, even
@@ -77,6 +85,7 @@ const AppShell = () => {
     <div className="md:flex">
       <SidePanel />
       <div className="flex-1 min-w-0">
+        <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
@@ -106,6 +115,7 @@ const AppShell = () => {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </div>
     </div>
   );

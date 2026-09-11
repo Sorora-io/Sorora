@@ -7,6 +7,7 @@ import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib
 import { sendRankingReminders } from '../../lib/reminders';
 import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
+import Button from '../../components/Button';
 
 const Status = () => {
   const navigate = useNavigate();
@@ -129,26 +130,18 @@ const Status = () => {
               Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
               members will be treated as having no preferences.
             </p>
-            <button
-              onClick={handleRemind}
-              disabled={reminding}
-              className="text-sm border border-jade-300 rounded-md px-3 py-1.5 hover:bg-jade-50 transition-colors disabled:opacity-50"
-            >
+            <Button variant="outline" size="sm" onClick={handleRemind} disabled={reminding}>
               {reminding ? 'Sending...' : 'Send reminder emails'}
-            </button>
+            </Button>
             {reminderMessage && <p className="text-jade-700 text-sm mt-2">{reminderMessage}</p>}
             {reminderError && <p className="text-brick text-sm mt-2">{reminderError}</p>}
           </div>
         )}
 
         {cycleId && (
-          <button
-            onClick={handleRun}
-            disabled={running || loading || rows.length === 0}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
+          <Button fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0}>
             {running ? 'Running...' : 'Run Matching'}
-          </button>
+          </Button>
         )}
       </div>
     </div>

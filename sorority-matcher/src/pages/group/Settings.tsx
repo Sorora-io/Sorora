@@ -16,6 +16,7 @@ import {
   Cycle,
 } from '../../lib/groups';
 import LoadingLogo from '../../components/LoadingLogo';
+import Button from '../../components/Button';
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -240,13 +241,9 @@ const Settings = () => {
           {profileError && <p className="text-brick text-sm">{profileError}</p>}
           {profileSaved && <p className="text-jade-700 text-sm">Saved.</p>}
 
-          <button
-            onClick={handleSaveProfile}
-            disabled={profileSaving}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={handleSaveProfile} disabled={profileSaving} fullWidth>
             {profileSaving ? '...' : 'Save Name & School'}
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
@@ -264,13 +261,9 @@ const Settings = () => {
           {descError && <p className="text-brick text-sm">{descError}</p>}
           {descSaved && <p className="text-jade-700 text-sm">Saved.</p>}
 
-          <button
-            onClick={handleSaveDescription}
-            disabled={descSaving}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={handleSaveDescription} disabled={descSaving} fullWidth>
             {descSaving ? '...' : 'Save Description'}
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -320,13 +313,9 @@ const Settings = () => {
           {error && <p className="text-brick text-sm">{error}</p>}
           {saved && <p className="text-jade-700 text-sm">Saved.</p>}
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={handleSave} disabled={saving} fullWidth>
             {saving ? '...' : 'Save Ranking Rules'}
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-200">
@@ -361,12 +350,9 @@ const Settings = () => {
               )}
 
               {!confirmingNewCycle ? (
-                <button
-                  onClick={() => setConfirmingNewCycle(true)}
-                  className="w-full py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors text-sm"
-                >
+                <Button variant="outline" size="sm" fullWidth onClick={() => setConfirmingNewCycle(true)}>
                   Start a New Cycle
-                </button>
+                </Button>
               ) : (
                 <div className="flex flex-col gap-2 p-3 bg-gold-50 border border-gold-200 rounded-md">
                   <p className="text-sm text-gray-700">
@@ -383,19 +369,22 @@ const Settings = () => {
                   />
                   {cycleError && <p className="text-brick text-sm">{cycleError}</p>}
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
                       onClick={() => { setConfirmingNewCycle(false); setCycleError(''); setNewCycleLabel(''); }}
-                      className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
                       onClick={handleStartCycle}
                       disabled={cycleSaving || !newCycleLabel.trim()}
-                      className="flex-1 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50 text-sm"
                     >
                       {cycleSaving ? '...' : 'Start Cycle'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -430,13 +419,14 @@ const Settings = () => {
                     ))}
                   </select>
                   {transferSaved && <p className="text-jade-700 text-sm">Ownership transferred.</p>}
-                  <button
+                  <Button
+                    variant="danger-outline"
+                    fullWidth
                     onClick={() => setConfirmingTransfer(true)}
                     disabled={!transferTarget}
-                    className="w-full py-2.5 border border-brick text-brick rounded-md hover:bg-brick-50 transition-colors disabled:opacity-50"
                   >
                     Transfer Ownership
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <div className="flex flex-col gap-2 p-3 bg-brick-50 border border-brick rounded-md">
@@ -449,19 +439,12 @@ const Settings = () => {
                   </p>
                   {transferError && <p className="text-brick text-sm">{transferError}</p>}
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setConfirmingTransfer(false)}
-                      className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors text-sm"
-                    >
+                    <Button variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmingTransfer(false)}>
                       Cancel
-                    </button>
-                    <button
-                      onClick={handleTransfer}
-                      disabled={transferSaving}
-                      className="flex-1 py-2 bg-brick text-white rounded-md hover:bg-brick-600 transition-colors disabled:opacity-50 text-sm"
-                    >
+                    </Button>
+                    <Button variant="danger" size="sm" className="flex-1" onClick={handleTransfer} disabled={transferSaving}>
                       {transferSaving ? '...' : 'Confirm Transfer'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

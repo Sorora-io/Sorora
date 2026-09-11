@@ -11,4 +11,5 @@ export const queryKeys = {
   myRanking: (cycleId: string) => ['my-ranking', cycleId] as const,
   fullRoster: (groupId: string) => ['full-roster', groupId] as const,
   groupRoster: (groupId: string, role: string) => ['group-roster', groupId, role] as const,
+  myNotes: (groupId: string) => ['my-notes', groupId] as const,
 };
