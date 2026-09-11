@@ -194,6 +194,16 @@ const FAQ = () => {
             </div>
           </section>
         ))}
+
+        <div className="text-center pt-2">
+          <p className="text-sm text-gray-500">
+            Still have questions?{' '}
+            <Link to="/contact" className="underline text-jade-700 hover:text-jade-800 font-medium">
+              Contact us
+            </Link>
+            .
+          </p>
+        </div>
       </div>
     </div>
   );

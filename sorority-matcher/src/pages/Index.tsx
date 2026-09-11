@@ -193,6 +193,10 @@ const Index = () => {
         <button onClick={() => navigate('/faq')} className="underline hover:text-black">
           FAQ
         </button>
+        <span aria-hidden="true">·</span>
+        <button onClick={() => navigate('/contact')} className="underline hover:text-black">
+          Contact Us
+        </button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, Compass, LucideIcon } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, Compass, Mail, LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMatching } from '../contexts/MatchingContext';
@@ -35,6 +35,7 @@ const ACCOUNT_LINKS: NavItemWithIcon[] = [
 const SITE_LINKS: NavItemWithIcon[] = [
   { label: 'How It Works', path: '/about', icon: BookOpen },
   { label: 'FAQ', path: '/faq', icon: HelpCircle },
+  { label: 'Contact Us', path: '/contact', icon: Mail },
 ];
 
 const SidePanel = () => {
