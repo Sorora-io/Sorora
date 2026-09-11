@@ -4,7 +4,7 @@ import { LayoutDashboard, User, LogOut, Check, BookOpen, HelpCircle, Compass, Lu
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMatching } from '../contexts/MatchingContext';
-import { groupLabel, isEffectiveAdmin, Membership } from '../lib/groups';
+import { isEffectiveAdmin, Membership } from '../lib/groups';
 
 interface NavItem {
   label: string;
@@ -151,8 +151,11 @@ const SidePanel = () => {
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-jade-800 truncate">
-                    {groupLabel(membership.group)}
+                    {membership.group.name}
                   </span>
+                  {membership.group.school && (
+                    <span className="block text-xs text-jade-500 truncate">{membership.group.school}</span>
+                  )}
                   <span className="block text-xs font-medium text-jade-600">
                     {membershipLabel(membership)}
                     {membership.status !== 'approved' && ` · ${membership.status}`}
@@ -208,7 +211,10 @@ const SidePanel = () => {
                           onClick={() => switchTo(m.group_id)}
                           className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-jade-50 transition-colors"
                         >
-                          <span className="block font-medium truncate">{groupLabel(m.group)}</span>
+                          <span className="block font-medium truncate">{m.group.name}</span>
+                          {m.group.school && (
+                            <span className="block text-xs text-gray-400 truncate">{m.group.school}</span>
+                          )}
                           <span className="block text-xs text-gray-500">
                             {membershipLabel(m)}
                             {m.status !== 'approved' && ` · ${m.status}`}
