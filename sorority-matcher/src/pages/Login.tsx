@@ -1,34 +1,77 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
 import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
 import Button from '../components/Button';
+import SceneShell from '../components/SceneShell';
+
+// The design canvas breaks signup into a set of one-question-per-scene
+// steps. This component owns that flow AND the plain email/password
+// sign-in scene, choosing which to render based on the URL params
+// (?mode=signup&path=join|create) and internal step state.
+type SignupPath = 'join' | 'create';
+type SignupStep =
+  | 'find-chapter'
+  | 'chapter-name'
+  | 'chapter-school'
+  | 'role'
+  | 'account';
+
+const Heading = ({ text, italic = false }: { text: string; italic?: boolean }) => (
+  <h1
+    className={`font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] whitespace-pre-line ${
+      italic ? 'italic' : ''
+    }`}
+  >
+    {text}
+  </h1>
+);
+
+const Sub = ({ text }: { text: string }) => (
+  <p className="mt-4 max-w-lg text-[color:var(--ss-ink-5)] text-base leading-relaxed whitespace-pre-line">
+    {text}
+  </p>
+);
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, continueAsGuest, sendPasswordReset } = useAuth();
   const [searchParams] = useSearchParams();
+  const { signIn, signUp, continueAsGuest, sendPasswordReset } = useAuth();
+
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
   const modeFromLink = searchParams.get('mode');
+  const pathFromLink = searchParams.get('path') as SignupPath | null;
 
   const [mode, setMode] = useState<'signin' | 'signup'>(
     joinCodeFromLink || modeFromLink === 'signup' ? 'signup' : 'signin'
   );
-  const [name, setName] = useState('');
+  const [path, setPath] = useState<SignupPath>(
+    pathFromLink === 'create' ? 'create' : joinCodeFromLink ? 'join' : pathFromLink ?? 'join'
+  );
+
+  const initialStep: SignupStep =
+    path === 'create' ? 'chapter-name' : joinCodeFromLink ? 'role' : 'find-chapter';
+  const [step, setStep] = useState<SignupStep>(initialStep);
+
+  // Form state
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const [joinCode, setJoinCode] = useState(joinCodeFromLink);
+  const [invitedGroupLabel, setInvitedGroupLabel] = useState('');
+  const [resolvedGroupId, setResolvedGroupId] = useState<string | undefined>();
+
+  const [groupName, setGroupName] = useState('');
+  const [school, setSchool] = useState('');
+  const [role, setRole] = useState<MembershipRole>('big');
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showGuestWarning, setShowGuestWarning] = useState(false);
-
-  const [groupMode, setGroupMode] = useState<'create' | 'join'>(joinCodeFromLink ? 'join' : 'create');
-  const [groupName, setGroupName] = useState('');
-  const [school, setSchool] = useState('');
-  const [joinCode, setJoinCode] = useState(joinCodeFromLink);
-  const [role, setRole] = useState<MembershipRole>('big');
-  const [invitedGroupLabel, setInvitedGroupLabel] = useState('');
 
   const [forgotMode, setForgotMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -43,373 +86,200 @@ const Login = () => {
     });
   }, [joinCodeFromLink]);
 
-  const handleContinueAsGuest = () => {
-    continueAsGuest();
-    navigate('/admin/enter-bigs');
+  const backTo = (target: SignupStep | 'exit') => () => {
+    setError('');
+    if (target === 'exit') navigate('/');
+    else setStep(target);
   };
 
-  const handleSendReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetLoading(true);
-    setResetError('');
-    const { error } = await sendPasswordReset(resetEmail.trim());
-    if (error) {
-      setResetError(error.message);
-    } else {
-      setResetSent(true);
+  const validateJoinCode = async () => {
+    if (!joinCode.trim()) {
+      setError('Please enter your chapter code.');
+      return false;
     }
-    setResetLoading(false);
+    setLoading(true);
+    const { group, error: codeError } = await findGroupByJoinCode(joinCode);
+    setLoading(false);
+    if (codeError || !group) {
+      setError(codeError ?? 'No chapter found with that code.');
+      return false;
+    }
+    setResolvedGroupId(group.id);
+    setInvitedGroupLabel(groupLabel(group));
+    return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submitAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccessMessage('');
-    setLoading(true);
-
-    if (mode === 'signup') {
-      if (groupMode === 'create' && groupName.trim() === '') {
-        setError('Please enter a name for your sorority group.');
-        setLoading(false);
-        return;
-      }
-      if (groupMode === 'create' && school.trim() === '') {
-        setError('Please enter the school this chapter is at.');
-        setLoading(false);
-        return;
-      }
-
-      let resolvedGroupId: string | undefined;
-      let resolvedGroupLabel: string | undefined;
-      if (groupMode === 'join') {
-        if (joinCode.trim() === '') {
-          setError("Please enter your group's join code.");
-          setLoading(false);
-          return;
-        }
-        const { group, error: codeError } = await findGroupByJoinCode(joinCode);
-        if (codeError || !group) {
-          setError(codeError ?? 'No group found with that code.');
-          setLoading(false);
-          return;
-        }
-        resolvedGroupId = group.id;
-        resolvedGroupLabel = groupLabel(group);
-      }
-
-      const { error } = await signUp(email, password, name);
-      if (error) {
-        setError(error.message);
-      } else {
-        stashPendingGroupAction(
-          groupMode === 'create'
-            ? { mode: 'create', groupName: groupName.trim(), school: school.trim() }
-            : { mode: 'join', groupId: resolvedGroupId, role }
-        );
-        setSuccessMessage(
-          groupMode === 'create'
-            ? 'Check your email to confirm your account. Once confirmed, your group will be created automatically.'
-            : `Check your email to confirm your account. Once confirmed, your request to join ${resolvedGroupLabel} will be submitted automatically.`
-        );
-        setMode('signin');
-      }
-    } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(error.message);
-      } else {
-        navigate('/group/onboarding');
-      }
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+      setError('Please fill in every field.');
+      return;
     }
-
+    setLoading(true);
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const { error: signUpError } = await signUp(email.trim(), password, displayName);
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+    stashPendingGroupAction(
+      path === 'create'
+        ? { mode: 'create', groupName: groupName.trim(), school: school.trim() }
+        : { mode: 'join', groupId: resolvedGroupId, role }
+    );
+    setSuccessMessage(
+      path === 'create'
+        ? 'Check your email to confirm your account. Once confirmed, your chapter will be created automatically.'
+        : `Check your email to confirm your account. Once confirmed, your request to join ${invitedGroupLabel} will be submitted automatically.`
+    );
+    setMode('signin');
     setLoading(false);
   };
 
-  const kicker = forgotMode
-    ? 'Reset your password'
-    : mode === 'signin'
-    ? 'Sign back in'
-    : groupMode === 'create'
-    ? 'Set up your chapter'
-    : 'Join your chapter';
+  const useSampleProfile = () => {
+    setFirstName('Jade');
+    setLastName('Leong');
+    setEmail('jade.leong@nyu.edu');
+    setPassword('SoraraPreview2026');
+  };
 
-  const heading = forgotMode
-    ? 'Send me a reset link.'
-    : mode === 'signin'
-    ? 'Welcome back to sorora.'
-    : "Make yourself at home.";
+  // -----------------------------------------------------------------------
+  // Forgot-password scene
+  // -----------------------------------------------------------------------
+  if (mode === 'signin' && forgotMode) {
+    const handleSendReset = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setResetLoading(true);
+      setResetError('');
+      const { error } = await sendPasswordReset(resetEmail.trim());
+      if (error) setResetError(error.message);
+      else setResetSent(true);
+      setResetLoading(false);
+    };
 
-  const subheading = forgotMode
-    ? "Enter your email and we'll send you a link to set a new password."
-    : mode === 'signin'
-    ? 'Sign in to jump back into your chapter.'
-    : 'Start with the basics. You can add more to your profile later.';
-
-  return (
-    <div className="min-h-screen w-full flex flex-col items-center px-6 py-10">
-      <header className="w-full max-w-xl mb-6 flex items-center justify-between">
-        <Link
-          to="/"
-          className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide"
-        >
-          sorora
-        </Link>
-        <Link to="/" className="text-sm text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] underline underline-offset-4">
-          Start over
-        </Link>
-      </header>
-
-      <section className="ss-frost w-full max-w-xl rounded-[24px] px-6 py-10 md:px-10 md:py-12 shadow-card">
-        <div className="ss-kicker">{kicker}</div>
-        <h1 className="font-display text-[32px] md:text-[38px] leading-[1.1] font-semibold text-[color:var(--ss-ink-1)] mb-2">
-          {heading}
-        </h1>
-        <p className="text-[color:var(--ss-ink-5)] mb-6">{subheading}</p>
-
-        {!forgotMode && invitedGroupLabel && (
-          <p className="mb-5 ss-surface text-[color:var(--ss-ink-2)] text-sm">
-            You've been invited to join <strong>{invitedGroupLabel}</strong>. Create an account below to request to join.
-          </p>
-        )}
-
-        {!forgotMode && successMessage && (
-          <p className="mb-5 ss-surface text-[color:var(--ss-ink-2)] text-sm">
-            {successMessage}
-          </p>
-        )}
-
-        {forgotMode ? (
+    return (
+      <SceneShell
+        topRightLabel="Back to sign in"
+        onTopRight={() => {
+          setForgotMode(false);
+          setResetSent(false);
+          setResetError('');
+        }}
+        footer={
           resetSent ? (
-            <div className="flex flex-col gap-4">
-              <p className="ss-surface text-[color:var(--ss-ink-2)] text-sm">
-                Check {resetEmail} for a link to set a new password.
-              </p>
-              <button
-                onClick={() => { setForgotMode(false); setResetSent(false); setResetEmail(''); }}
-                className="text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)] self-start"
-              >
-                Back to sign in
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSendReset} className="flex flex-col gap-4">
-              <div>
-                <label className="ss-label" htmlFor="reset-email">Email</label>
-                <input
-                  id="reset-email"
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="ss-input"
-                />
-              </div>
-              {resetError && <p className="text-[color:var(--ss-error)] text-sm">{resetError}</p>}
-              <Button type="submit" disabled={resetLoading} fullWidth>
-                {resetLoading ? '...' : 'Send reset link'}
-              </Button>
-              <button
-                type="button"
-                onClick={() => { setForgotMode(false); setResetError(''); }}
-                className="text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)] self-start"
-              >
-                Back to sign in
-              </button>
-            </form>
-          )
+            <button onClick={() => setForgotMode(false)} className="ss-link">
+              Back to sign in
+            </button>
+          ) : null
+        }
+      >
+        <Heading text="Send me a reset link." />
+        <Sub text="Enter your email and we'll send you a link to set a new password." />
+
+        {resetSent ? (
+          <p className="mt-8 ss-surface w-full max-w-md text-[color:var(--ss-ink-2)]">
+            Check {resetEmail} for a link to set a new password.
+          </p>
         ) : (
-          <>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {mode === 'signup' && (
-                <div>
-                  <label className="ss-label" htmlFor="name">Name</label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    className="ss-input"
-                  />
-                </div>
-              )}
-
-              {mode === 'signup' && (
-                <div className="ss-surface">
-                  <div className="ss-kicker">Your chapter</div>
-                  <div className="flex gap-2 mb-4 p-1 rounded-pill bg-white/50 border border-[color:var(--ss-input-border)]">
-                    <button
-                      type="button"
-                      onClick={() => setGroupMode('create')}
-                      className={`flex-1 py-2 rounded-pill text-sm font-medium transition-colors ${
-                        groupMode === 'create'
-                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'text-[color:var(--ss-ink-4)] hover:bg-white/50'
-                      }`}
-                    >
-                      Create a chapter
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGroupMode('join')}
-                      className={`flex-1 py-2 rounded-pill text-sm font-medium transition-colors ${
-                        groupMode === 'join'
-                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'text-[color:var(--ss-ink-4)] hover:bg-white/50'
-                      }`}
-                    >
-                      Join a chapter
-                    </button>
-                  </div>
-
-                  {groupMode === 'create' ? (
-                    <div className="flex flex-col gap-3">
-                      <div>
-                        <label className="ss-label" htmlFor="group-name">Sorority group name</label>
-                        <input
-                          id="group-name"
-                          type="text"
-                          value={groupName}
-                          onChange={(e) => setGroupName(e.target.value)}
-                          placeholder="e.g. Alpha Chi Omega"
-                          className="ss-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="ss-label" htmlFor="school">School</label>
-                        <input
-                          id="school"
-                          type="text"
-                          value={school}
-                          onChange={(e) => setSchool(e.target.value)}
-                          placeholder="e.g. New York University"
-                          className="ss-input"
-                        />
-                      </div>
-                      <p className="ss-caption">
-                        You'll become this chapter's admin and get a join code to share.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <div>
-                        <label className="ss-label" htmlFor="join-code">Chapter code</label>
-                        <input
-                          id="join-code"
-                          type="text"
-                          value={joinCode}
-                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                          placeholder="e.g. XK7P2QRT"
-                          className="ss-input uppercase tracking-widest"
-                        />
-                      </div>
-                      <div>
-                        <span className="ss-label">I'm a</span>
-                        <div className="flex gap-2">
-                          {(['big', 'little', 'admin'] as const).map(r => (
-                            <button
-                              key={r}
-                              type="button"
-                              onClick={() => setRole(r)}
-                              aria-pressed={role === r}
-                              className={`flex-1 py-2 rounded-pill text-sm font-medium border transition-colors ${
-                                role === r
-                                  ? 'bg-[color:var(--ss-jade-deep)] text-white border-transparent'
-                                  : 'bg-white/50 text-[color:var(--ss-ink-4)] border-[color:var(--ss-input-border)] hover:bg-white/70'
-                              }`}
-                            >
-                              {r === 'big' ? 'Big' : r === 'little' ? 'Little' : 'Admin'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <p className="ss-caption">
-                        The chapter's admin will need to approve you before you can rank.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="ss-label" htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="ss-input"
-                />
-              </div>
-
-              <div>
-                <label className="ss-label" htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  minLength={6}
-                  className="ss-input"
-                />
-                {mode === 'signin' && (
-                  <button
-                    type="button"
-                    onClick={() => { setForgotMode(true); setError(''); }}
-                    className="mt-2 text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
-                  >
-                    Forgot password?
-                  </button>
-                )}
-              </div>
-
-              {error && (
-                <p className="text-[color:var(--ss-error)] text-sm">{error}</p>
-              )}
-
-              <Button type="submit" disabled={loading} fullWidth>
-                {loading ? '...' : mode === 'signin' ? 'Sign in' : 'Create my profile'}
-              </Button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-[color:var(--ss-ink-5)]">
-              {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
-              <button
-                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setSuccessMessage(''); }}
-                className="underline underline-offset-4 font-medium text-[color:var(--ss-ink-2)]"
-              >
-                {mode === 'signin' ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </>
+          <form
+            onSubmit={handleSendReset}
+            className="mt-8 w-full max-w-md flex flex-col gap-4 text-left"
+          >
+            <div>
+              <label className="ss-label" htmlFor="reset-email">Email</label>
+              <input
+                id="reset-email"
+                type="email"
+                className="ss-input"
+                value={resetEmail}
+                onChange={e => setResetEmail(e.target.value)}
+                placeholder="you@university.edu"
+                required
+              />
+            </div>
+            {resetError && (
+              <p className="text-[color:var(--ss-error)] text-sm">{resetError}</p>
+            )}
+            <Button type="submit" size="lg" fullWidth disabled={resetLoading}>
+              {resetLoading ? '...' : 'Send reset link'}
+            </Button>
+          </form>
         )}
+      </SceneShell>
+    );
+  }
 
-        {!forgotMode && (
-          <div className="mt-8 pt-6 border-t border-[color:var(--ss-surface-border)]">
+  // -----------------------------------------------------------------------
+  // Sign-in scene (plain form)
+  // -----------------------------------------------------------------------
+  if (mode === 'signin') {
+    const handleSignIn = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError('');
+      setLoading(true);
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) setError(signInError.message);
+      else navigate('/group/onboarding');
+      setLoading(false);
+    };
+
+    return (
+      <SceneShell
+        topRightLabel="Start over"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setStep(joinCodeFromLink ? 'role' : 'find-chapter');
+                setPath(joinCodeFromLink ? 'join' : 'join');
+                setError('');
+                setSuccessMessage('');
+              }}
+              className="ss-link"
+            >
+              Don't have an account? Sign up
+            </button>
             {!showGuestWarning ? (
               <button
                 onClick={() => setShowGuestWarning(true)}
-                className="w-full text-center text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
+                className="text-xs text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
               >
                 Continue without an account
               </button>
             ) : (
-              <div className="ss-surface text-sm">
-                <h3 className="font-semibold mb-2 text-[color:var(--ss-ink-2)]">Continue without an account?</h3>
+              <div className="ss-surface w-full max-w-md text-left text-sm">
+                <h3 className="font-semibold mb-2 text-[color:var(--ss-ink-2)]">
+                  Continue without an account?
+                </h3>
                 <p className="text-[color:var(--ss-ink-5)] mb-4">
-                  Your progress stays on this device only. You won't be able to open it from another browser
-                  or recover it if this browser's data is cleared.
+                  Your progress stays on this device only. You won't be able to open it from
+                  another browser or recover it if this browser's data is cleared.
                 </p>
                 <div className="flex flex-col gap-2">
-                  <Button fullWidth size="sm" onClick={() => { setShowGuestWarning(false); setMode('signup'); }}>
+                  <Button
+                    fullWidth
+                    size="sm"
+                    onClick={() => {
+                      setShowGuestWarning(false);
+                      setMode('signup');
+                      setStep('find-chapter');
+                    }}
+                  >
                     Create an account and save my work
                   </Button>
-                  <Button fullWidth size="sm" variant="quiet" onClick={handleContinueAsGuest}>
+                  <Button
+                    fullWidth
+                    size="sm"
+                    variant="quiet"
+                    onClick={() => {
+                      continueAsGuest();
+                      navigate('/admin/enter-bigs');
+                    }}
+                  >
                     Continue on this device
                   </Button>
                   <button
@@ -421,10 +291,319 @@ const Login = () => {
                 </div>
               </div>
             )}
-          </div>
+          </>
+        }
+      >
+        <Heading text="Welcome back to sorora." />
+        <Sub text="Sign in to jump back into your chapter." />
+
+        {successMessage && (
+          <p className="mt-6 ss-surface w-full max-w-md text-[color:var(--ss-ink-2)] text-sm">
+            {successMessage}
+          </p>
         )}
-      </section>
-    </div>
+
+        <form
+          onSubmit={handleSignIn}
+          className="mt-8 w-full max-w-md flex flex-col gap-4 text-left"
+        >
+          <div>
+            <label className="ss-label" htmlFor="signin-email">Email</label>
+            <input
+              id="signin-email"
+              type="email"
+              className="ss-input"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@university.edu"
+              required
+            />
+          </div>
+          <div>
+            <label className="ss-label" htmlFor="signin-password">Password</label>
+            <input
+              id="signin-password"
+              type="password"
+              className="ss-input"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              minLength={6}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setForgotMode(true);
+                setError('');
+              }}
+              className="mt-2 text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
+            >
+              Forgot password?
+            </button>
+          </div>
+          {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
+          <Button type="submit" size="lg" fullWidth disabled={loading}>
+            {loading ? '...' : 'Sign in'}
+          </Button>
+        </form>
+      </SceneShell>
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Signup wizard scenes
+  // -----------------------------------------------------------------------
+
+  const BackLink = ({ target }: { target: SignupStep | 'exit' }) => (
+    <button type="button" onClick={backTo(target)} className="ss-link">
+      Back
+    </button>
+  );
+
+  if (step === 'find-chapter') {
+    const handleContinue = async () => {
+      setError('');
+      const ok = await validateJoinCode();
+      if (ok) setStep('role');
+    };
+    return (
+      <SceneShell
+        footer={
+          <>
+            <Button size="lg" onClick={handleContinue} disabled={loading}>
+              {loading ? '...' : 'Continue'}
+            </Button>
+            <BackLink target="exit" />
+          </>
+        }
+      >
+        <Heading text="Let’s find your chapter." />
+        <Sub text="Enter the code your chapter shared with you." />
+        <div className="mt-8 w-full max-w-md text-left">
+          <label className="ss-label" htmlFor="join-code">Chapter code</label>
+          <input
+            id="join-code"
+            type="text"
+            className="ss-input uppercase tracking-widest"
+            value={joinCode}
+            onChange={e => setJoinCode(e.target.value.toUpperCase())}
+            placeholder="e.g. XK7P2QRT"
+          />
+          <p className="ss-caption mt-3">
+            Don't have a code yet? <button type="button" onClick={() => { setPath('create'); setStep('chapter-name'); }} className="underline underline-offset-4">Create a chapter instead.</button>
+          </p>
+          {error && <p className="mt-3 text-[color:var(--ss-error)] text-sm">{error}</p>}
+        </div>
+      </SceneShell>
+    );
+  }
+
+  if (step === 'chapter-name') {
+    return (
+      <SceneShell
+        footer={
+          <>
+            <Button
+              size="lg"
+              onClick={() => {
+                if (!groupName.trim()) {
+                  setError('Please enter your chapter’s name.');
+                  return;
+                }
+                setError('');
+                setStep('chapter-school');
+              }}
+            >
+              Continue
+            </Button>
+            <BackLink target="exit" />
+          </>
+        }
+      >
+        <Heading text="What’s your sorority’s name?" italic />
+        <Sub text="Use the full name so members know they’re joining the right organization." />
+        <div className="mt-8 w-full max-w-md text-left">
+          <label className="ss-label" htmlFor="chapter-name-input">Sorority group name</label>
+          <input
+            id="chapter-name-input"
+            type="text"
+            className="ss-input"
+            value={groupName}
+            onChange={e => setGroupName(e.target.value)}
+            placeholder="e.g. Alpha Chi Omega"
+          />
+          {error && <p className="mt-3 text-[color:var(--ss-error)] text-sm">{error}</p>}
+        </div>
+      </SceneShell>
+    );
+  }
+
+  if (step === 'chapter-school') {
+    return (
+      <SceneShell
+        footer={
+          <>
+            <Button
+              size="lg"
+              onClick={() => {
+                if (!school.trim()) {
+                  setError('Please enter your school.');
+                  return;
+                }
+                setError('');
+                setRole('admin');
+                setStep('account');
+              }}
+            >
+              Continue
+            </Button>
+            <BackLink target="chapter-name" />
+          </>
+        }
+      >
+        <Heading text="Where’s your chapter?" />
+        <Sub text={groupName || 'Your sorority'} />
+        <div className="mt-8 w-full max-w-md text-left">
+          <label className="ss-label" htmlFor="school-input">School</label>
+          <input
+            id="school-input"
+            type="text"
+            className="ss-input"
+            value={school}
+            onChange={e => setSchool(e.target.value)}
+            placeholder="e.g. New York University"
+          />
+          {error && <p className="mt-3 text-[color:var(--ss-error)] text-sm">{error}</p>}
+        </div>
+      </SceneShell>
+    );
+  }
+
+  if (step === 'role') {
+    return (
+      <SceneShell
+        footer={
+          <>
+            <Button size="lg" onClick={() => setStep('account')}>
+              Continue
+            </Button>
+            <BackLink target="find-chapter" />
+          </>
+        }
+      >
+        <Heading text="Are you a Big or a Little?" />
+        <Sub
+          text={
+            invitedGroupLabel
+              ? `You’re joining ${invitedGroupLabel}.`
+              : 'Choose the role you’re joining as.'
+          }
+        />
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          {(['big', 'little', 'admin'] as const).map(r => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRole(r)}
+              aria-pressed={role === r}
+              className={`px-8 py-3 rounded-pill text-[15px] font-medium border transition-colors min-h-[48px] ${
+                role === r
+                  ? 'bg-[color:var(--ss-jade-deep)] text-white border-transparent'
+                  : 'bg-transparent text-[color:var(--ss-ink-2)] border-[color:var(--ss-jade-line)] hover:bg-white/60'
+              }`}
+            >
+              {r === 'big' ? "I'm a Big" : r === 'little' ? "I'm a Little" : "I'm an Admin"}
+            </button>
+          ))}
+        </div>
+      </SceneShell>
+    );
+  }
+
+  // step === 'account'
+  return (
+    <SceneShell
+      footer={
+        <>
+          <Button
+            size="lg"
+            type="submit"
+            form="account-form"
+            disabled={loading}
+          >
+            {loading ? '...' : 'Create my profile'}
+          </Button>
+          <BackLink target={path === 'create' ? 'chapter-school' : 'role'} />
+        </>
+      }
+    >
+      <Heading text="Make yourself at home." italic />
+      <Sub text="Start with the basics. You can add more to your profile later." />
+
+      <form
+        id="account-form"
+        onSubmit={submitAccount}
+        className="mt-8 w-full max-w-md flex flex-col gap-4 text-left"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ss-label" htmlFor="first-name">First name</label>
+            <input
+              id="first-name"
+              type="text"
+              className="ss-input"
+              value={firstName}
+              onChange={e => setFirstName(e.target.value)}
+              placeholder="Jade"
+              required
+            />
+          </div>
+          <div>
+            <label className="ss-label" htmlFor="last-name">Last name</label>
+            <input
+              id="last-name"
+              type="text"
+              className="ss-input"
+              value={lastName}
+              onChange={e => setLastName(e.target.value)}
+              placeholder="Leong"
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <label className="ss-label" htmlFor="signup-email">Email</label>
+          <input
+            id="signup-email"
+            type="email"
+            className="ss-input"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@university.edu"
+            required
+          />
+        </div>
+        <div>
+          <label className="ss-label" htmlFor="signup-password">Password</label>
+          <input
+            id="signup-password"
+            type="password"
+            className="ss-input"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Choose a password"
+            required
+            minLength={6}
+          />
+        </div>
+        <p className="ss-caption">Design preview only. Use sample details, not a real password.</p>
+        <button type="button" onClick={useSampleProfile} className="ss-link self-start">
+          Use sample profile
+        </button>
+        {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
+      </form>
+    </SceneShell>
   );
 };
 

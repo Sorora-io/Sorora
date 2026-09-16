@@ -130,81 +130,93 @@ const FAQ = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-4">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/"
+            className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            Back to home
+          </Link>
+        </header>
 
-      <div className="max-w-3xl w-full flex flex-col gap-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-1">Frequently Asked Questions</h2>
-          <p className="text-gray-500 text-sm">Pick the section that matches your role in your chapter.</p>
+        <div className="text-center mb-8">
+          <span className="ss-kicker">Frequently asked questions</span>
+          <h1 className="font-display text-[38px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+            A little help, whenever you need it.
+          </h1>
+          <p className="mt-3 ss-caption max-w-lg mx-auto">
+            Pick the section that matches your role in your chapter.
+          </p>
         </div>
 
-        <nav className="flex justify-center gap-2 flex-wrap">
+        <nav className="flex justify-center gap-1 flex-wrap mb-6">
           {SECTIONS.map(s => (
-            <a
-              key={s.id}
-              href={`#${s.id}`}
-              className="px-4 py-2 text-sm font-medium border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-            >
+            <a key={s.id} href={`#${s.id}`} className="ss-tab">
               {s.label}
             </a>
           ))}
         </nav>
 
-        {SECTIONS.map(section => (
-          <section
-            key={section.id}
-            id={section.id}
-            className="bg-white rounded-lg shadow-sm p-5 scroll-mt-8"
-          >
-            <h2 className="text-2xl font-semibold">{section.label}</h2>
-            <p className="text-gray-500 text-sm mb-6">{section.intro}</p>
+        <div className="flex flex-col gap-4">
+          {SECTIONS.map(section => (
+            <section key={section.id} id={section.id} className="ss-surface scroll-mt-8">
+              <h2 className="font-display text-[24px] font-medium text-[color:var(--ss-ink-1)]">
+                {section.label}
+              </h2>
+              <p className="ss-caption mb-4">{section.intro}</p>
 
-            <div className="flex flex-col">
-              {section.items.map((item, i) => {
-                const key = `${section.id}-${i}`;
-                const open = openKeys.has(key);
-                return (
-                  <div key={key} className="border-t border-gray-200 first:border-t-0">
-                    <button
-                      type="button"
-                      onClick={() => toggle(key)}
-                      aria-expanded={open}
-                      className="w-full flex items-center justify-between gap-4 py-4 text-left"
+              <div className="flex flex-col">
+                {section.items.map((item, i) => {
+                  const key = `${section.id}-${i}`;
+                  const open = openKeys.has(key);
+                  return (
+                    <div
+                      key={key}
+                      className="border-t border-[color:var(--ss-surface-border)] first:border-t-0"
                     >
-                      <span className="font-medium">{item.q}</span>
-                      <span
-                        className={`flex-shrink-0 text-jade-600 text-xl leading-none transition-transform ${
-                          open ? 'rotate-45' : ''
-                        }`}
+                      <button
+                        type="button"
+                        onClick={() => toggle(key)}
+                        aria-expanded={open}
+                        className="w-full flex items-center justify-between gap-4 py-4 text-left"
                       >
-                        +
-                      </span>
-                    </button>
-                    {open && (
-                      <p className="text-gray-700 leading-relaxed pb-4 pr-8">{item.a}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+                        <span className="font-medium text-[color:var(--ss-ink-2)]">{item.q}</span>
+                        <span
+                          className={`flex-shrink-0 text-[color:var(--ss-jade)] text-xl leading-none transition-transform ${
+                            open ? 'rotate-45' : ''
+                          }`}
+                        >
+                          +
+                        </span>
+                      </button>
+                      {open && (
+                        <p className="text-[color:var(--ss-ink-4)] leading-relaxed pb-4 pr-8">
+                          {item.a}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
 
-        <div className="text-center pt-2">
-          <p className="text-sm text-gray-500">
+        <div className="text-center mt-8">
+          <p className="ss-caption">
             Still have questions?{' '}
-            <Link to="/contact" className="underline text-jade-700 hover:text-jade-800 font-medium">
+            <Link to="/contact" className="underline underline-offset-4 text-[color:var(--ss-ink-2)] font-medium">
               Contact us
             </Link>
             .
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { MatchingProvider } from "./contexts/MatchingContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { GroupProvider, useGroup } from "./contexts/GroupContext";
@@ -21,6 +21,17 @@ import ErrorBoundary from "./components/ErrorBoundary";
 // for none of that code until they navigate somewhere that needs it.
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+
+// The sorora-story design shows the app as one centered column on a soft
+// mint background — no sidebar. We keep the SidePanel around only for the
+// guest / admin quick-match wizard, where its numbered checklist is the
+// primary navigation those pages need. Everywhere else the pages carry
+// their own top nav (see the Dashboard's 5-tab pill row).
+const SIDEBAR_ROUTES = ['/admin/'];
+const useShowSidebar = () => {
+  const { pathname } = useLocation();
+  return SIDEBAR_ROUTES.some(prefix => pathname.startsWith(prefix));
+};
 
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -76,14 +87,15 @@ const queryClient = new QueryClient({
 const AppShell = () => {
   const { loading: authLoading } = useAuth();
   const { initialized: groupInitialized } = useGroup();
+  const showSidebar = useShowSidebar();
 
   if (authLoading || !groupInitialized) {
     return <LoadingScreen />;
   }
 
   return (
-    <div className="md:flex">
-      <SidePanel />
+    <div className={showSidebar ? 'md:flex' : ''}>
+      {showSidebar && <SidePanel />}
       <div className="flex-1 min-w-0">
         <Suspense fallback={<LoadingScreen />}>
         <Routes>

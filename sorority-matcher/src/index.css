@@ -4,75 +4,86 @@
 
 @layer base {
   :root {
-    /* Sorora "sorora-story" jade design tokens. Kept in HSL for the shadcn/
-       radix components that read them as `hsl(var(--*))`, and mirrored as
-       raw hex tokens below for hand-written jade UI. */
-    --background: 120 8% 96%;
-    --foreground: 158 55% 9%;
+    /* shadcn/radix tokens (HSL). Mostly used only by the ui/* components. */
+    --background: 100 25% 96%;
+    --foreground: 152 55% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 158 55% 9%;
+    --card-foreground: 152 55% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 158 55% 9%;
-    --primary: 149 40% 16%;
+    --popover-foreground: 152 55% 9%;
+    --primary: 149 34% 18%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 120 22% 96%;
-    --secondary-foreground: 149 40% 16%;
-    --muted: 120 15% 90%;
+    --secondary: 108 22% 93%;
+    --secondary-foreground: 149 34% 18%;
+    --muted: 108 18% 88%;
     --muted-foreground: 143 15% 34%;
-    --accent: 120 22% 90%;
-    --accent-foreground: 149 40% 16%;
+    --accent: 108 22% 87%;
+    --accent-foreground: 149 34% 18%;
     --destructive: 8 60% 38%;
     --destructive-foreground: 0 0% 100%;
-    --border: 128 12% 72%;
-    --input: 143 15% 58%;
-    --ring: 150 40% 30%;
+    --border: 108 18% 78%;
+    --input: 108 18% 78%;
+    --ring: 150 30% 30%;
     --radius: 14px;
 
-    /* Design canvas — raw values so hand-written classes and inline styles
-       can reference them without going through HSL. Names match the
-       sorora-story stylesheet. */
-    --ss-ink-1: #0b241d;
-    --ss-ink-2: #102e23;
-    --ss-ink-3: #173829;
-    --ss-ink-4: #29493c;
-    --ss-ink-5: #476454;
-    --ss-ink-6: #647b6d;
-    --ss-jade-deep: #173e2a;
+    /* sorora-story design canvas tokens. Match the screenshots directly:
+       darkest ink = headings, then descending shades for subheads, labels,
+       captions, placeholders. */
+    --ss-ink-1: #0f2d20;
+    --ss-ink-2: #163c2b;
+    --ss-ink-3: #244734;
+    --ss-ink-4: #3d5548;
+    --ss-ink-5: #4f6a5b;
+    --ss-ink-6: #7a8d80;
+
+    /* Primary pill (Continue, Show me around, Start ranking). */
+    --ss-jade-deep: #163c2b;
     --ss-jade: #234e39;
     --ss-jade-soft: #2c5b3c;
     --ss-jade-line: #a2b9a3;
-    --ss-surface: #f3f7f2;
-    --ss-surface-border: rgba(112, 137, 116, 0.25);
-    --ss-input-bg: rgba(255, 255, 255, 0.5);
-    --ss-input-border: rgba(66, 94, 78, 0.25);
-    --ss-pill-bg: #e0ebdf;
+
+    /* Surfaces (inner cards, tour previews, dashboard cards). */
+    --ss-surface: #e6efe1;
+    --ss-surface-hi: #eef4ea;
+    --ss-surface-border: #c6d3c2;
+
+    /* Inputs (transparent-white with faint jade border). */
+    --ss-input-bg: rgba(255, 255, 255, 0.55);
+    --ss-input-border: #c6d3c2;
+
+    /* Small chip badge ("Big", "Deadline: TBD"). */
+    --ss-pill-bg: #dce7d9;
     --ss-pill-text: #244734;
-    --ss-meter-track: #dce6d9;
+
+    /* Meter (Big/Little submission bars in the admin dashboard). */
+    --ss-meter-track: #dce7d9;
+    --ss-meter-fill: #2c5b3c;
+
     --ss-error: #9a3025;
     --ss-radius-card: 14px;
     --ss-radius-input: 10px;
-    --ss-radius-pill: 25px;
+    --ss-radius-pill: 30px;
   }
 
   .dark {
-    --background: 158 55% 6%;
+    --background: 152 45% 7%;
     --foreground: 0 0% 98%;
-    --card: 158 40% 10%;
+    --card: 152 35% 11%;
     --card-foreground: 0 0% 98%;
-    --popover: 158 40% 10%;
+    --popover: 152 35% 11%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 158 40% 10%;
-    --secondary: 158 25% 14%;
+    --primary-foreground: 152 35% 11%;
+    --secondary: 152 20% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 158 20% 18%;
-    --muted-foreground: 128 12% 68%;
-    --accent: 158 25% 18%;
+    --muted: 152 20% 18%;
+    --muted-foreground: 108 15% 68%;
+    --accent: 152 20% 18%;
     --accent-foreground: 0 0% 98%;
     --destructive: 8 60% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 158 20% 22%;
-    --input: 158 20% 22%;
+    --border: 152 20% 22%;
+    --input: 152 20% 22%;
     --ring: 150 40% 60%;
   }
 }
@@ -88,22 +99,26 @@
     min-height: 100%;
   }
 
+  /* Body background = the design canvas's soft mint-and-cream haze. Two
+     radial glows over a linear tint give the same slightly warm gradient
+     the screenshots show; kept fixed so it doesn't scroll away. */
   body {
     color: var(--ss-ink-2);
     font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background:
-      radial-gradient(115% 90% at 12% 4%, rgba(220, 235, 217, 0.55), transparent 55%),
-      radial-gradient(120% 100% at 90% 8%, rgba(226, 216, 178, 0.35), transparent 60%),
-      radial-gradient(90% 60% at 80% 100%, rgba(207, 225, 205, 0.55), transparent 65%),
-      linear-gradient(160deg, #eef4ec 0%, #f4f7f0 55%, #e8efe4 100%);
+      radial-gradient(65% 55% at 8% 0%, rgba(214, 231, 210, 0.85), transparent 65%),
+      radial-gradient(70% 60% at 100% 18%, rgba(232, 220, 190, 0.55), transparent 70%),
+      radial-gradient(75% 65% at 90% 100%, rgba(207, 224, 205, 0.75), transparent 70%),
+      linear-gradient(180deg, #f4f7f0 0%, #edf3e8 60%, #e7efe1 100%);
     background-attachment: fixed;
   }
 
-  /* Frosted overlay that the design uses to soften the background. Applied
-     via `.ss-frost` on major page shells so every page inherits the same
-     lift without changing its own layout. */
+  /* Diagonal shine sweep the design uses across its scene panels. Applied
+     via `.ss-frost` on major page wrappers. */
   .ss-frost {
     position: relative;
     isolation: isolate;
@@ -114,96 +129,104 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    border-radius: inherit;
     background: linear-gradient(
       115deg,
-      rgba(255, 255, 255, 0.42),
+      rgba(255, 255, 255, 0.45),
       rgba(255, 255, 255, 0.08) 42%,
-      rgba(255, 255, 255, 0.38) 43%,
-      rgba(255, 255, 255, 0.11) 69%,
-      rgba(255, 255, 255, 0.45)
+      rgba(255, 255, 255, 0.42) 43%,
+      rgba(255, 255, 255, 0.1) 68%,
+      rgba(255, 255, 255, 0.48)
     );
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
   }
 }
 
 @layer components {
-  /* Section-scale surface — soft green card the design uses everywhere. */
+  /* Section-scale sage card. Padding kept modest so the same class works
+     for the tour "preview" cards inside a scene AND the two dashboard
+     cards side by side. */
   .ss-surface {
     background: var(--ss-surface);
     border: 1px solid var(--ss-surface-border);
     border-radius: var(--ss-radius-card);
-    padding: 23px;
+    padding: 22px 24px;
+    text-align: left;
+  }
+  .ss-surface-hi {
+    background: var(--ss-surface-hi);
+    border: 1px solid var(--ss-surface-border);
+    border-radius: var(--ss-radius-card);
+    padding: 22px 24px;
     text-align: left;
   }
 
-  /* Small uppercase-esque section label sitting above headings. */
+  /* Uppercase kicker sitting above the scene heading ("YOUR TOUR · 1 / 4
+     · PROFILE", "ALPHA CHI OMEGA · BIG"). Letter-spaced, ink-3. */
   .ss-kicker {
-    display: inline-block;
+    display: block;
     font-size: 12px;
     line-height: 1.4;
-    letter-spacing: 0.02em;
-    color: var(--ss-ink-5);
-    margin-bottom: 6px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ss-ink-4);
+    margin-bottom: 10px;
+    font-weight: 500;
   }
 
-  /* Rounded chip badge for role/status. */
+  /* Small chip — "Big", "Deadline: TBD", "Example member". */
   .ss-pill {
     display: inline-block;
     font-size: 11px;
     line-height: 1;
-    padding: 5px 8px;
-    border-radius: 5px;
+    padding: 6px 10px;
+    border-radius: 6px;
     background: var(--ss-pill-bg);
     color: var(--ss-pill-text);
     font-weight: 500;
   }
 
-  /* Soft caption text used under form fields and headings. */
+  /* Caption text used under a heading or a preview card. */
   .ss-caption {
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.55;
     color: var(--ss-ink-5);
   }
 
-  /* Thin horizontal progress bar. Nest a <span> with width:%. */
+  /* Thin horizontal progress bar (admin: Bigs/Littles submitted). */
   .ss-meter {
     height: 6px;
     background: var(--ss-meter-track);
-    border-radius: 4px;
+    border-radius: 999px;
     overflow: hidden;
   }
   .ss-meter > span {
     display: block;
     height: 100%;
-    background: var(--ss-jade-soft);
+    background: var(--ss-meter-fill);
     border-radius: inherit;
     transition: width 240ms ease;
   }
 
-  /* Sample/quiet inline anchor button — used by "Use sample profile" and
-     similar low-emphasis actions in the design. */
-  .ss-sample {
+  /* Underlined "sample profile" / "Replay the tour" link. */
+  .ss-link {
     border: 0;
     background: none;
-    color: #375b49;
-    padding: 10px;
-    font-size: 12px;
+    color: var(--ss-ink-3);
+    font-size: 14px;
     text-decoration: underline;
     text-underline-offset: 4px;
   }
-  .ss-sample:hover {
-    color: var(--ss-jade-deep);
+  .ss-link:hover {
+    color: var(--ss-ink-1);
   }
 
-  /* Field styling matching the design's frosted inputs. Apply to inputs
-     and textareas directly. */
+  /* Frosted input matching the screenshots exactly. */
   .ss-input {
     width: 100%;
-    min-height: 47px;
-    padding: 13px 15px;
+    min-height: 52px;
+    padding: 14px 18px;
     font-size: 16px;
-    color: var(--ss-ink-2);
+    color: var(--ss-ink-1);
     background: var(--ss-input-bg);
     border: 1px solid var(--ss-input-border);
     border-radius: var(--ss-radius-input);
@@ -217,25 +240,63 @@
   .ss-input:focus,
   .ss-input:focus-visible {
     border-color: var(--ss-jade);
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.78);
     box-shadow: 0 0 0 3px rgba(35, 78, 57, 0.14);
   }
 
+  /* Field label above every input. */
   .ss-label {
     display: block;
-    font-size: 13px;
-    color: var(--ss-ink-4);
+    font-size: 14px;
+    color: var(--ss-ink-3);
     margin: 0 0 8px;
     font-weight: 500;
   }
 
-  /* Chapter code display — large, letter-spaced digits used on the invite
-     screen. */
-  .ss-invite-code {
-    font: 500 40px/1.2 'Manrope', 'Segoe UI', sans-serif;
-    letter-spacing: 7px;
-    text-align: center;
+  /* 5-tab pill nav — used on the member dashboard (Dashboard/Profile/
+     Rankings/Roster/FAQ). Active tab gets the jade-deep pill, inactive
+     tabs are transparent with ink-3 text. */
+  .ss-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 22px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ss-ink-3);
+    background: transparent;
+    border: 0;
+    border-radius: var(--ss-radius-pill);
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .ss-tab:hover {
     color: var(--ss-ink-1);
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .ss-tab[aria-current='page'],
+  .ss-tab.is-active {
+    background: var(--ss-jade-deep);
+    color: #fff;
+  }
+  .ss-tab-underline {
+    border-bottom: 1px solid var(--ss-surface-border);
+  }
+
+  /* Dot indicator row under Continue on multi-step scenes. */
+  .ss-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+  .ss-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ss-surface-border);
+  }
+  .ss-dots span.is-active {
+    background: var(--ss-ink-3);
   }
 }
 

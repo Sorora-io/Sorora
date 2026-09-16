@@ -18,7 +18,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        display: ['"Bodoni Moda"', 'Didot', 'Georgia', 'serif'],
+        display: ['"Playfair Display"', '"Bodoni Moda"', 'Georgia', 'serif'],
         sans: ['Manrope', '"Segoe UI"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"SFMono-Regular"', 'Consolas', 'monospace'],
       },
