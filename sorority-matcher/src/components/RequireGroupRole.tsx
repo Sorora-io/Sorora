@@ -24,11 +24,11 @@ const hasAnyRole = (membership: RoleLike, allow: MembershipRole[]) =>
 export const homeForRole = (membership: RoleLike) =>
   isEffectiveAdmin(membership) ? '/group/approvals' : '/group/submit-ranking';
 
-// Gates a /group/* page behind: signed in with a real account (not guest),
-// has an approved membership, and their role is one of `allow`. Anything
-// short of that redirects to wherever they actually belong.
+// Gates a /group/* page behind: signed in, has an approved membership,
+// and their role is one of `allow`. Anything short of that redirects to
+// wherever they actually belong.
 const RequireGroupRole = ({ allow, children }: Props) => {
-  const { user, loading: authLoading, isGuest } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { membership, initialized } = useGroup();
 
   if (authLoading || !initialized) {
@@ -36,7 +36,6 @@ const RequireGroupRole = ({ allow, children }: Props) => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (isGuest) return <Navigate to="/admin/enter-bigs" replace />;
   if (!membership) return <Navigate to="/group/onboarding" replace />;
   if (membership.status !== 'approved') return <Navigate to="/group/pending" replace />;
   if (!hasAnyRole(membership, allow)) return <Navigate to={homeForRole(membership)} replace />;

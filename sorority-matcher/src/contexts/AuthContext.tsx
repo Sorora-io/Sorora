@@ -6,35 +6,14 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  isGuest: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  continueAsGuest: () => void;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   sendPasswordReset: (email: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const GUEST_KEY = 'sorora-guest';
-
-function readGuestFlag(): boolean {
-  try {
-    return localStorage.getItem(GUEST_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function writeGuestFlag(value: boolean) {
-  try {
-    if (value) localStorage.setItem(GUEST_KEY, 'true');
-    else localStorage.removeItem(GUEST_KEY);
-  } catch {
-    // localStorage unavailable — guest mode just won't survive a refresh
-  }
-}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -46,7 +25,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(readGuestFlag);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -79,13 +57,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setIsGuest(false);
-    writeGuestFlag(false);
-  };
-
-  const continueAsGuest = () => {
-    setIsGuest(true);
-    writeGuestFlag(true);
   };
 
   const updatePassword = async (newPassword: string) => {
@@ -103,8 +74,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <AuthContext.Provider
       value={{
-        user, session, loading, isGuest,
-        signUp, signIn, signOut, continueAsGuest, updatePassword, sendPasswordReset,
+        user, session, loading,
+        signUp, signIn, signOut, updatePassword, sendPasswordReset,
       }}
     >
       {children}

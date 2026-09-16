@@ -3,18 +3,17 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingScreen from './LoadingScreen';
 
-// Guests use the old localStorage-backed /admin/* sandbox, not the
-// group/database-backed flow — so guests get redirected away from here
-// rather than falling through to onboarding.
+// Historical name — kept the same as the route wiring so the App shell
+// diff stays readable. Same job as ProtectedRoute now that guest mode is
+// gone: block unsigned-in visitors.
 const RequireRealAccount = ({ children }: { children: React.ReactElement }) => {
-  const { user, loading, isGuest } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (isGuest) return <Navigate to="/admin/enter-bigs" replace />;
 
   return children;
 };

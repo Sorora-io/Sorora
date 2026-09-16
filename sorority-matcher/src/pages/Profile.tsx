@@ -12,7 +12,7 @@ const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, isGuest, signOut, signIn, updatePassword } = useAuth();
+  const { user, signOut, signIn, updatePassword } = useAuth();
   const { membership, memberships, setActiveGroupId, refresh } = useGroup();
 
   const [oldPassword, setOldPassword] = useState('');
@@ -69,10 +69,6 @@ const Profile = () => {
   const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
-    if (isGuest) {
-      setProfileLoading(false);
-      return;
-    }
     (async () => {
       const { profile } = await getMyProfile();
       if (profile) {
@@ -86,7 +82,7 @@ const Profile = () => {
       }
       setProfileLoading(false);
     })();
-  }, [isGuest]);
+  }, []);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -223,24 +219,14 @@ const Profile = () => {
         </Link>
       </header>
 
-      {!isGuest && (
-        <div className="max-w-5xl w-full mb-2">
-          <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black">
-            <ArrowLeft size={14} /> Back to Dashboard
-          </Link>
-        </div>
-      )}
+      <div className="max-w-5xl w-full mb-2">
+        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black">
+          <ArrowLeft size={14} /> Back to Dashboard
+        </Link>
+      </div>
 
-      {isGuest ? (
-        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
-          <h2 className="text-2xl font-semibold mb-4">Profile</h2>
-          <p className="text-gray-600">
-            You're browsing as a guest, so there's no account to manage here. Sign in or create an
-            account to set a password or join a sorority group.
-          </p>
-        </div>
-      ) : (
-        <div className="max-w-5xl w-full">
+      <div className="max-w-5xl w-full">
+
           <h2 className="text-2xl font-semibold mb-6">Profile</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -578,7 +564,6 @@ const Profile = () => {
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 };

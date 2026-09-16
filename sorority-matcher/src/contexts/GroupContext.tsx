@@ -76,7 +76,7 @@ export const useGroup = () => {
 };
 
 export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isGuest, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [memberships, setMemberships] = useState<MembershipWithGroup[]>([]);
   const [activeGroupId, setActiveGroupIdState] = useState<string | null>(readActiveGroupId);
   const [loading, setLoading] = useState(true);
@@ -146,7 +146,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // browser sees this user with no orgs yet (i.e. right after email
   // confirmation on the same device/browser they signed up with).
   useEffect(() => {
-    if (isGuest || !user || loading || memberships.length > 0 || autoSubmitAttempted.current) return;
+    if (!user || loading || memberships.length > 0 || autoSubmitAttempted.current) return;
 
     const action = readPendingGroupAction();
     if (!action) return;
@@ -161,7 +161,7 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       clearPendingGroupAction();
       await refresh();
     })();
-  }, [isGuest, user, loading, memberships, refresh]);
+  }, [user, loading, memberships, refresh]);
 
   // Pick the "active" org: whichever matches the stored id, if it still
   // exists among this user's memberships; otherwise the first one.

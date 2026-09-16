@@ -3,35 +3,22 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { MatchingProvider } from "./contexts/MatchingContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { GroupProvider, useGroup } from "./contexts/GroupContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RequireRealAccount from "./components/RequireRealAccount";
 import RequireGroupRole from "./components/RequireGroupRole";
-import SidePanel from "./components/SidePanel";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
 // Index and Login stay eager — they're the two pages a fresh visitor is
 // actually likely to land on first, so loading them shouldn't cost an
 // extra chunk-fetch round trip. Everything else (chapter-scoped pages a
-// visitor needs a real membership to ever reach, the guest-only quick
-// -match wizard, account settings) is lazy — a first-time visitor pays
-// for none of that code until they navigate somewhere that needs it.
+// visitor needs a real membership to ever reach, account settings) is
+// lazy — a first-time visitor pays for none of that code until they
+// navigate somewhere that needs it.
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-
-// The sorora-story design shows the app as one centered column on a soft
-// mint background — no sidebar. We keep the SidePanel around only for the
-// guest / admin quick-match wizard, where its numbered checklist is the
-// primary navigation those pages need. Everywhere else the pages carry
-// their own top nav (see the Dashboard's 5-tab pill row).
-const SIDEBAR_ROUTES = ['/admin/'];
-const useShowSidebar = () => {
-  const { pathname } = useLocation();
-  return SIDEBAR_ROUTES.some(prefix => pathname.startsWith(prefix));
-};
 
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -39,14 +26,6 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const About = lazy(() => import("./pages/About"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
-const EnterBigs = lazy(() => import("./pages/admin/EnterBigs"));
-const EnterLittles = lazy(() => import("./pages/admin/EnterLittles"));
-const Twins = lazy(() => import("./pages/admin/Twins"));
-const RankingRequirements = lazy(() => import("./pages/admin/RankingRequirements"));
-const RankPreferences = lazy(() => import("./pages/admin/RankPreferences"));
-const RankBigs = lazy(() => import("./pages/admin/RankBigs"));
-const ReviewSummary = lazy(() => import("./pages/admin/ReviewSummary"));
-const Pairings = lazy(() => import("./pages/admin/Pairings"));
 const GroupOnboarding = lazy(() => import("./pages/group/Onboarding"));
 const GroupPending = lazy(() => import("./pages/group/Pending"));
 const GroupApprovals = lazy(() => import("./pages/group/Approvals"));
@@ -55,7 +34,6 @@ const GroupSubmitRanking = lazy(() => import("./pages/group/SubmitRanking"));
 const GroupStatus = lazy(() => import("./pages/group/Status"));
 const GroupPairings = lazy(() => import("./pages/group/Pairings"));
 const GroupRoster = lazy(() => import("./pages/group/Roster"));
-const GroupNotes = lazy(() => import("./pages/group/Notes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // A page that fetches its own data on every mount (the old pattern here)
@@ -87,17 +65,14 @@ const queryClient = new QueryClient({
 const AppShell = () => {
   const { loading: authLoading } = useAuth();
   const { initialized: groupInitialized } = useGroup();
-  const showSidebar = useShowSidebar();
 
   if (authLoading || !groupInitialized) {
     return <LoadingScreen />;
   }
 
   return (
-    <div className={showSidebar ? 'md:flex' : ''}>
-      {showSidebar && <SidePanel />}
-      <div className="flex-1 min-w-0">
-        <Suspense fallback={<LoadingScreen />}>
+    <div>
+      <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
@@ -107,14 +82,6 @@ const AppShell = () => {
           <Route path="/about" element={<About />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/admin/enter-bigs" element={<ProtectedRoute><EnterBigs /></ProtectedRoute>} />
-          <Route path="/admin/enter-littles" element={<ProtectedRoute><EnterLittles /></ProtectedRoute>} />
-          <Route path="/admin/twins" element={<ProtectedRoute><Twins /></ProtectedRoute>} />
-          <Route path="/admin/ranking-requirements" element={<ProtectedRoute><RankingRequirements /></ProtectedRoute>} />
-          <Route path="/admin/rank-preferences" element={<ProtectedRoute><RankPreferences /></ProtectedRoute>} />
-          <Route path="/admin/rank-bigs" element={<ProtectedRoute><RankBigs /></ProtectedRoute>} />
-          <Route path="/admin/review-summary" element={<ProtectedRoute><ReviewSummary /></ProtectedRoute>} />
-          <Route path="/admin/pairings" element={<ProtectedRoute><Pairings /></ProtectedRoute>} />
           <Route path="/group/onboarding" element={<RequireRealAccount><GroupOnboarding /></RequireRealAccount>} />
           <Route path="/group/pending" element={<RequireRealAccount><GroupPending /></RequireRealAccount>} />
           <Route path="/group/approvals" element={<RequireGroupRole allow={['admin']}><GroupApprovals /></RequireGroupRole>} />
@@ -123,12 +90,10 @@ const AppShell = () => {
           <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
           <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
           <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
-          <Route path="/group/notes" element={<RequireGroupRole allow={['big', 'little']}><GroupNotes /></RequireGroupRole>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </Suspense>
-      </div>
+      </Suspense>
     </div>
   );
 };
@@ -140,13 +105,11 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <GroupProvider>
-          <MatchingProvider>
-            <BrowserRouter>
-              <ErrorBoundary>
-                <AppShell />
-              </ErrorBoundary>
-            </BrowserRouter>
-          </MatchingProvider>
+          <BrowserRouter>
+            <ErrorBoundary>
+              <AppShell />
+            </ErrorBoundary>
+          </BrowserRouter>
         </GroupProvider>
       </AuthProvider>
     </TooltipProvider>

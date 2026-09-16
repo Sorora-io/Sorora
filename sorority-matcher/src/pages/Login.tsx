@@ -37,7 +37,7 @@ const Sub = ({ text }: { text: string }) => (
 const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signIn, signUp, continueAsGuest, sendPasswordReset } = useAuth();
+  const { signIn, signUp, sendPasswordReset } = useAuth();
 
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
   const modeFromLink = searchParams.get('mode');
@@ -71,7 +71,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [showGuestWarning, setShowGuestWarning] = useState(false);
 
   const [forgotMode, setForgotMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -229,69 +228,19 @@ const Login = () => {
       <SceneShell
         topRightLabel="Start over"
         footer={
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup');
-                setStep(joinCodeFromLink ? 'role' : 'find-chapter');
-                setPath(joinCodeFromLink ? 'join' : 'join');
-                setError('');
-                setSuccessMessage('');
-              }}
-              className="ss-link"
-            >
-              Don't have an account? Sign up
-            </button>
-            {!showGuestWarning ? (
-              <button
-                onClick={() => setShowGuestWarning(true)}
-                className="text-xs text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
-              >
-                Continue without an account
-              </button>
-            ) : (
-              <div className="ss-surface w-full max-w-md text-left text-sm">
-                <h3 className="font-semibold mb-2 text-[color:var(--ss-ink-2)]">
-                  Continue without an account?
-                </h3>
-                <p className="text-[color:var(--ss-ink-5)] mb-4">
-                  Your progress stays on this device only. You won't be able to open it from
-                  another browser or recover it if this browser's data is cleared.
-                </p>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    fullWidth
-                    size="sm"
-                    onClick={() => {
-                      setShowGuestWarning(false);
-                      setMode('signup');
-                      setStep('find-chapter');
-                    }}
-                  >
-                    Create an account and save my work
-                  </Button>
-                  <Button
-                    fullWidth
-                    size="sm"
-                    variant="quiet"
-                    onClick={() => {
-                      continueAsGuest();
-                      navigate('/admin/enter-bigs');
-                    }}
-                  >
-                    Continue on this device
-                  </Button>
-                  <button
-                    onClick={() => setShowGuestWarning(false)}
-                    className="text-[color:var(--ss-ink-5)] text-sm hover:text-[color:var(--ss-ink-2)]"
-                  >
-                    Go back
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('signup');
+              setStep(joinCodeFromLink ? 'role' : 'find-chapter');
+              setPath(joinCodeFromLink ? 'join' : 'join');
+              setError('');
+              setSuccessMessage('');
+            }}
+            className="ss-link"
+          >
+            Don't have an account? Sign up
+          </button>
         }
       >
         <Heading text="Welcome back to sorora." />

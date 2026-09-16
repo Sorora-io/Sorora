@@ -4,13 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import LoadingScreen from './LoadingScreen';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const { user, loading, isGuest } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
   }
 
-  if (!user && !isGuest) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
