@@ -47,20 +47,41 @@ const formatDeadline = (iso: string | null) =>
 const initial = (name: string | null | undefined, email?: string) =>
   (name || email || '?').charAt(0).toUpperCase();
 
-const Heading = ({ text, italic = false }: { text: string; italic?: boolean }) => (
+// Design canvas deliberately drops the Georgia serif once the visitor is
+// past onboarding — the dashboard headings are Arial-family sans, 30px,
+// -0.9px tracking, 600 weight. Same content, quieter voice; the switch
+// is what makes the intro scenes feel like a moment and the dashboard
+// feel like work you're already doing.
+const Heading = ({ text }: { text: string }) => (
   <h1
-    className={`font-display text-[32px] md:text-[42px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] whitespace-pre-line ${
-      italic ? 'italic' : ''
-    }`}
+    className="font-sans text-[color:var(--ss-ink-1)] whitespace-pre-line"
+    style={{
+      fontSize: 30,
+      fontWeight: 600,
+      lineHeight: 1.2,
+      letterSpacing: '-0.9px',
+    }}
   >
     {text}
   </h1>
 );
 
 const Sub = ({ text }: { text: string }) => (
-  <p className="mt-3 text-[color:var(--ss-ink-5)] text-base leading-relaxed max-w-2xl">
+  <p className="mt-2 text-[color:var(--ss-ink-5)] text-[14px] leading-[1.6] max-w-2xl">
     {text}
   </p>
+);
+
+// Section headings inside dashboard cards ("My littles rankings",
+// "Chapter progress"). Also sans, 17px, matching the canvas's
+// .ss-dash h3 rule.
+const SectionHeading = ({ children }: { children: React.ReactNode }) => (
+  <h2
+    className="font-sans text-[color:var(--ss-ink-1)]"
+    style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.35, margin: 0 }}
+  >
+    {children}
+  </h2>
 );
 
 // ---------------------------------------------------------------------------
@@ -102,7 +123,7 @@ const DashboardTab = ({
 
   return (
     <div>
-      <Heading text="Your chapter, at your pace." italic />
+      <Heading text="Your chapter, at your pace." />
       <Sub
         text={
           isRanker
@@ -114,9 +135,9 @@ const DashboardTab = ({
       <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
         {isRanker && (
           <section className="ss-surface flex flex-col gap-3">
-            <h2 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+            <SectionHeading>
               My {targetPlural} rankings
-            </h2>
+            </SectionHeading>
             <p className="ss-caption">
               {submitted
                 ? `You've submitted ${rankedIds!.length} ${
@@ -140,9 +161,9 @@ const DashboardTab = ({
             <div className="ss-kicker" style={{ marginBottom: 0 }}>
               01 · Needs attention
             </div>
-            <h2 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+            <SectionHeading>
               Chapter progress
-            </h2>
+            </SectionHeading>
             {bigs.length + littles.length === 0 ? (
               <p className="ss-caption">No Bigs or Littles approved yet.</p>
             ) : (
@@ -182,9 +203,9 @@ const DashboardTab = ({
         )}
 
         <section className="ss-surface flex flex-col gap-3">
-          <h2 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+          <SectionHeading>
             A little more about you
-          </h2>
+          </SectionHeading>
           <p className="ss-caption">
             Add a photo and a few details so your chapter can find you.
           </p>
@@ -269,9 +290,9 @@ const ProfileTab = ({
           )}
         </div>
         <div className="min-w-0">
-          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)] truncate">
+          <SectionHeading>
             {profile?.name || 'Your name'}
-          </h3>
+          </SectionHeading>
           <span className="ss-pill mt-1">{roleLabel(membership)}</span>
         </div>
       </div>
@@ -393,9 +414,9 @@ const RankingsTab = ({
       <div className="mt-8 ss-surface max-w-xl">
         {empty ? (
           <>
-            <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+            <SectionHeading>
               No rankings yet.
-            </h3>
+            </SectionHeading>
             <p className="ss-caption mt-2">
               Member eligibility, minimum rankings, and deadline are set by your chapter admin.
             </p>
@@ -408,9 +429,9 @@ const RankingsTab = ({
           </>
         ) : (
           <>
-            <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+            <SectionHeading>
               My {targetPlural.toLowerCase()} rankings
-            </h3>
+            </SectionHeading>
             <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
               {rankedList.map((r, i) => (
                 <div
@@ -480,9 +501,9 @@ const RosterTab = ({
           <p className="ss-caption">Loading your chapter…</p>
         ) : grouped.length === 0 ? (
           <>
-            <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+            <SectionHeading>
               No members yet.
-            </h3>
+            </SectionHeading>
             <p className="ss-caption mt-2">
               Share your chapter code so members can request to join.
             </p>
@@ -538,9 +559,9 @@ const FaqTab = () => (
     <Heading text="A little help, whenever you need it." />
     <Sub text="Visit the FAQ whenever you need help with rankings, submissions, or what happens next." />
     <div className="mt-8 ss-surface max-w-xl">
-      <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+      <SectionHeading>
         Frequently asked questions
-      </h3>
+      </SectionHeading>
       <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
         {[
           'Can I update my rankings?',
@@ -660,7 +681,7 @@ const Dashboard = () => {
               Sign out
             </button>
           </header>
-          <Heading text="Your chapter starts here." italic />
+          <Heading text="Your chapter starts here." />
           <Sub text="You're signed in but not part of a chapter yet. Join one with a code, or set yours up." />
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" variant="outline" onClick={() => navigate('/login?mode=signup&path=join')}>

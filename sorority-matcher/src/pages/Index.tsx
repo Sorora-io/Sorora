@@ -8,10 +8,10 @@ import { queryKeys } from '../lib/queryKeys';
 import Button from '../components/Button';
 import SceneShell, { SceneDots } from '../components/SceneShell';
 
-// The 4-slide intro from the design canvas: three "value prop" slides
-// followed by a "join or create" choice. Signed-in visitors skip the
-// carousel entirely and land on a welcome slide with a shortcut to their
-// dashboard.
+// The design canvas opens on a huge Georgia-serif "sorora" wordmark with
+// a single quiet "Meet sorora ↓" begin button — a moment of stillness
+// before the 3 value-prop slides and the join/create choice. `step === 0`
+// is that opening; `step 1..4` are the four intro slides.
 interface Slide {
   heading: string;
   body: string;
@@ -42,19 +42,35 @@ const Heading = ({ text }: { text: string }) => (
   </h1>
 );
 
+// The opening scene: nothing but the huge serif wordmark, resting on the
+// glass. No kicker, no subhead. Georgia is deliberate — everything on
+// this scene is one big letterform choice.
+const OpeningWordmark = () => (
+  <h1
+    className="font-display text-[color:var(--ss-ink-1)] leading-none"
+    style={{
+      fontSize: 'clamp(72px, 15vw, 136px)',
+      letterSpacing: '-7px',
+      fontWeight: 500,
+    }}
+  >
+    sorora
+  </h1>
+);
+
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const { memberships } = useGroup();
   const [step, setStep] = useState(0);
 
   const { data: profile } = useQuery({
     queryKey: queryKeys.myProfile(),
     queryFn: () => getMyProfile().then(({ profile: p }) => p),
-    enabled: !!user && !isGuest,
+    enabled: !!user,
   });
 
-  const signedIn = !!user && !isGuest;
+  const signedIn = !!user;
 
   // Signed-in visitors get a single "welcome back" scene that points them
   // to their dashboard — the intro pitch would be a step backwards for
@@ -64,18 +80,9 @@ const Index = () => {
       <SceneShell
         topRightLabel={null}
         footer={
-          <>
-            <Button size="lg" onClick={() => navigate('/dashboard')}>
-              Go to my dashboard
-            </Button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/enter-bigs')}
-              className="ss-link"
-            >
-              Or run a one-off quick match
-            </button>
-          </>
+          <Button size="lg" onClick={() => navigate('/dashboard')}>
+            Go to my dashboard
+          </Button>
         }
       >
         <Heading
@@ -94,24 +101,50 @@ const Index = () => {
     );
   }
 
-  const slide = SLIDES[step];
-  const isLast = step === SLIDES.length - 1;
-  const isFirst = step === 0;
+  // step 0 = opening wordmark; step 1..SLIDES.length = the intro slides.
+  // Keeping the wordmark as step 0 (not a separate route) means "Start
+  // over" can dump the visitor right back to that quiet first breath.
+  const onOpening = step === 0;
+  const slideIndex = step - 1;
+  const slide = SLIDES[slideIndex];
+  const isLastSlide = step === SLIDES.length;
 
-  const continueLabel = isLast ? null : 'Continue';
+  if (onOpening) {
+    return (
+      <SceneShell
+        topRightLabel={null}
+        footer={
+          <>
+            <Button size="lg" variant="ghost" onClick={() => setStep(1)}>
+              Meet sorora ↓
+            </Button>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="ss-link"
+            >
+              I already have an account
+            </button>
+          </>
+        }
+      >
+        <OpeningWordmark />
+      </SceneShell>
+    );
+  }
 
   return (
     <SceneShell
-      topRightLabel={isFirst ? null : 'Start over'}
+      topRightLabel="Start over"
       onTopRight={() => setStep(0)}
       footer={
         <>
-          {continueLabel && (
+          {!isLastSlide && (
             <Button size="lg" onClick={() => setStep(step + 1)}>
-              {continueLabel}
+              Continue
             </Button>
           )}
-          {isLast && (
+          {isLastSlide && (
             <div className="flex flex-col sm:flex-row gap-3 items-center">
               <Button
                 size="lg"
@@ -129,28 +162,18 @@ const Index = () => {
               </Button>
             </div>
           )}
-          <SceneDots current={step} total={SLIDES.length} />
-          {!isFirst && (
-            <button
-              type="button"
-              onClick={() => setStep(step - 1)}
-              className="ss-link"
-            >
-              Back
-            </button>
-          )}
-          {isFirst && (
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="ss-link"
-            >
-              I already have an account
-            </button>
-          )}
+          <SceneDots current={slideIndex} total={SLIDES.length} />
+          <button
+            type="button"
+            onClick={() => setStep(step - 1)}
+            className="ss-link"
+          >
+            Back
+          </button>
         </>
       }
     >
+      <div className="ss-kicker">{`${step} / ${SLIDES.length}`}</div>
       <Heading text={slide.heading} />
       <p className="mt-6 max-w-xl text-[color:var(--ss-ink-5)] text-lg leading-relaxed">
         {slide.body}

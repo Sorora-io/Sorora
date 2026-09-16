@@ -26,37 +26,38 @@
     --ring: 150 30% 30%;
     --radius: 14px;
 
-    /* sorora-story design canvas tokens. Match the screenshots directly:
-       darkest ink = headings, then descending shades for subheads, labels,
-       captions, placeholders. */
-    --ss-ink-1: #0f2d20;
-    --ss-ink-2: #163c2b;
+    /* sorora-story design canvas tokens — the latest override iteration
+       from the ChatGPT canvas: heavier, darker headlines against the
+       glass; slightly lighter mint surfaces so cards read as gentle
+       elevations, not saturated shelves. */
+    --ss-ink-1: #0b2921;
+    --ss-ink-2: #173829;
     --ss-ink-3: #244734;
-    --ss-ink-4: #3d5548;
-    --ss-ink-5: #4f6a5b;
-    --ss-ink-6: #7a8d80;
+    --ss-ink-4: #29493c;
+    --ss-ink-5: #425e53;
+    --ss-ink-6: #647b6d;
 
     /* Primary pill (Continue, Show me around, Start ranking). */
-    --ss-jade-deep: #163c2b;
+    --ss-jade-deep: #173e2a;
     --ss-jade: #234e39;
     --ss-jade-soft: #2c5b3c;
     --ss-jade-line: #a2b9a3;
 
     /* Surfaces (inner cards, tour previews, dashboard cards). */
-    --ss-surface: #e6efe1;
-    --ss-surface-hi: #eef4ea;
-    --ss-surface-border: #c6d3c2;
+    --ss-surface: #f3f7f2;
+    --ss-surface-hi: #f7faf6;
+    --ss-surface-border: rgba(112, 137, 116, 0.25);
 
     /* Inputs (transparent-white with faint jade border). */
-    --ss-input-bg: rgba(255, 255, 255, 0.55);
-    --ss-input-border: #c6d3c2;
+    --ss-input-bg: rgba(255, 255, 255, 0.5);
+    --ss-input-border: rgba(66, 94, 78, 0.25);
 
     /* Small chip badge ("Big", "Deadline: TBD"). */
-    --ss-pill-bg: #dce7d9;
+    --ss-pill-bg: #e0ebdf;
     --ss-pill-text: #244734;
 
     /* Meter (Big/Little submission bars in the admin dashboard). */
-    --ss-meter-track: #dce7d9;
+    --ss-meter-track: #dce6d9;
     --ss-meter-fill: #2c5b3c;
 
     --ss-error: #9a3025;
@@ -132,12 +133,22 @@
     border-radius: inherit;
     background: linear-gradient(
       115deg,
-      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0.42),
       rgba(255, 255, 255, 0.08) 42%,
-      rgba(255, 255, 255, 0.42) 43%,
-      rgba(255, 255, 255, 0.1) 68%,
-      rgba(255, 255, 255, 0.48)
+      rgba(255, 255, 255, 0.38) 43%,
+      rgba(255, 255, 255, 0.11) 69%,
+      rgba(255, 255, 255, 0.45)
     );
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+  }
+
+  /* Serif headings sitting on the frosted glass carry a faint white
+     shadow the design added in its last pass — it lifts the darker ink
+     off the mint-and-cream haze without adding weight. */
+  .ss-frost h1,
+  .ss-frost h2 {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
   }
 }
 
