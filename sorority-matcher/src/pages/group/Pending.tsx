@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGroup } from '../../contexts/GroupContext';
 import { homeForRole } from '../../components/RequireGroupRole';
 import { groupLabel } from '../../lib/groups';
 import Button from '../../components/Button';
+import SceneShell from '../../components/SceneShell';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -25,51 +26,38 @@ const Pending = () => {
   const rejected = membership?.status === 'rejected';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <header className="mb-12">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
-
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5 text-center">
-        {rejected ? (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Request not approved</h2>
-            <p className="text-gray-600 mb-6">
-              Your request to join{' '}
-              <span className="font-medium">
-                {membership && groupLabel(membership.group)}
-              </span>{' '}
-              as{' '}
-              {roleLabel[membership?.role ?? '']} was not approved. Contact your chapter's admin if you
-              think this is a mistake.
-            </p>
-          </>
-        ) : (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Waiting on approval</h2>
-            <p className="text-gray-600 mb-6">
-              Your request to join{' '}
-              <span className="font-medium">
-                {membership && groupLabel(membership.group)}
-              </span>{' '}
-              as{' '}
-              {roleLabel[membership?.role ?? '']} is waiting on your chapter admin to approve it. Check
-              back soon.
-            </p>
-          </>
-        )}
-        <div className="flex flex-col gap-3">
-          <Button variant="outline" fullWidth onClick={refresh}>
+    <SceneShell
+      topRightLabel="Sign out"
+      onTopRight={() => signOut()}
+      footer={
+        <>
+          <Button variant="outline" onClick={refresh}>
             Check again
           </Button>
-          <Button fullWidth onClick={signOut}>
-            Sign out
-          </Button>
+        </>
+      }
+    >
+      <span className="ss-kicker">Chapter membership</span>
+      <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+        {rejected ? 'Request not approved.' : 'Waiting on your admin.'}
+      </h1>
+      <p className="mt-4 max-w-lg text-[color:var(--ss-ink-5)] text-base leading-relaxed">
+        {rejected
+          ? "Your request to join wasn't approved. Contact your chapter's admin if you think this is a mistake."
+          : "We'll let you know as soon as your chapter admin reviews your request."}
+      </p>
+      {membership && (
+        <div className="mt-6 ss-surface w-full max-w-md text-left">
+          <div className="ss-kicker" style={{ marginBottom: 4 }}>You requested to join</div>
+          <p className="text-[color:var(--ss-ink-1)] font-medium text-lg">
+            {groupLabel(membership.group)}
+          </p>
+          <p className="ss-caption mt-1">
+            As {roleLabel[membership.role] ?? membership.role}
+          </p>
         </div>
-      </div>
-    </div>
+      )}
+    </SceneShell>
   );
 };
 

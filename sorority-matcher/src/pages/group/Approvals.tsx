@@ -116,226 +116,237 @@ const Approvals = () => {
 
   if (!group) return null;
 
+  const rowClass =
+    'flex items-center justify-between gap-3 border-b border-[color:var(--ss-surface-border)] last:border-b-0 py-3';
+  const primaryBtn =
+    'px-4 py-2 rounded-pill text-sm bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors';
+  const quietBtn =
+    'px-4 py-2 rounded-pill text-sm border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-white/60 transition-colors';
+  const dangerBtn =
+    'px-4 py-2 rounded-pill text-sm bg-brick text-white hover:bg-brick-600 transition-colors disabled:opacity-50';
+  const dangerOutlineBtn =
+    'px-4 py-2 rounded-pill text-sm border border-brick text-brick bg-transparent hover:bg-brick-50 transition-colors';
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-2xl w-full">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-      </div>
+        <span className="ss-kicker">01 · Needs attention</span>
+        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+          Approvals
+        </h1>
+        <p className="mt-2 ss-caption">{group.name}{group.school && ` · ${group.school}`}</p>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mb-6">
-        <h2 className="text-2xl font-semibold mb-1">{group.name}</h2>
-        {group.school && <p className="text-gray-500 text-sm mb-1">{group.school}</p>}
-        {group.description && <p className="text-gray-600 text-sm mb-2">{group.description}</p>}
-        <p className="text-gray-500 text-sm mb-4">Share this with your chapter so they can join</p>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 w-20">Join code</span>
-            <code className="flex-1 bg-gray-100 rounded-md px-3 py-2 font-mono tracking-widest">
-              {group.join_code}
-            </code>
-            <button
-              onClick={() => copy(group.join_code, 'code')}
-              className="px-3 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
-            >
-              {copied === 'code' ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 w-20">Join link</span>
-            <code className="flex-1 bg-gray-100 rounded-md px-3 py-2 text-sm truncate">{joinLink}</code>
-            <button
-              onClick={() => copy(joinLink, 'link')}
-              className="px-3 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
-            >
-              {copied === 'link' ? 'Copied' : 'Copy'}
-            </button>
+        {/* Invite share */}
+        <div className="mt-8 ss-surface">
+          <div className="ss-kicker" style={{ marginBottom: 8 }}>Invite your chapter</div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[color:var(--ss-ink-5)] w-20">Chapter code</span>
+              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg px-3 py-2 font-mono tracking-widest text-[color:var(--ss-ink-1)]">
+                {group.join_code}
+              </code>
+              <button onClick={() => copy(group.join_code, 'code')} className={quietBtn}>
+                {copied === 'code' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[color:var(--ss-ink-5)] w-20">Join link</span>
+              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg px-3 py-2 text-sm truncate text-[color:var(--ss-ink-3)]">
+                {joinLink}
+              </code>
+              <button onClick={() => copy(joinLink, 'link')} className={quietBtn}>
+                {copied === 'link' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
-        <h3 className="text-xl font-semibold mb-4">Pending requests</h3>
+        {/* Pending requests */}
+        <div className="mt-6 ss-surface">
+          <div className="ss-kicker" style={{ marginBottom: 8 }}>Pending requests</div>
 
-        {error && <p className="text-brick text-sm mb-4">{error}</p>}
+          {error && <p className="text-[color:var(--ss-error)] text-sm mb-3">{error}</p>}
 
-        {loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : pending.length === 0 ? (
-          <p className="text-gray-500">No pending requests right now.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {pending.map(m => (
-              <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
-                <div>
-                  <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
-                  <p className="text-sm text-gray-500">
-                    {m.profile?.email} · wants to join as {roleLabel[m.role]}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleDecision(m.id, 'rejected')}
-                    className="px-4 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleDecision(m.id, 'approved')}
-                    className="px-4 py-2 bg-jade-600 text-white rounded-md text-sm hover:bg-jade-700 transition-colors"
-                  >
-                    Approve
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {roleChanges.length > 0 && (
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
-          <h3 className="text-xl font-semibold mb-4">Role change requests</h3>
-          <div className="flex flex-col gap-3">
-            {roleChanges.map(r => (
-              <div key={r.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
-                <div>
-                  <p className="font-medium">{r.profile?.name || r.profile?.email || 'Unknown'}</p>
-                  <p className="text-sm text-gray-500">
-                    {roleLabel[r.role]} → wants to become {roleLabel[r.requested_role!]}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleRoleDecision(r, false)}
-                    className="px-4 py-2 border border-jade-300 rounded-md text-sm hover:bg-jade-50 transition-colors"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleRoleDecision(r, true)}
-                    className="px-4 py-2 bg-jade-600 text-white rounded-md text-sm hover:bg-jade-700 transition-colors"
-                  >
-                    Approve
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
-        <h3 className="text-xl font-semibold mb-1">Admin access</h3>
-        <p className="text-gray-500 text-sm mb-4">
-          Grant admin access to a Big or Little without changing their role — they'll keep ranking as
-          normal and also get admin pages.
-        </p>
-
-        {adminError && <p className="text-brick text-sm mb-3">{adminError}</p>}
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {members
-              .filter(m => m.role === 'big' || m.role === 'little')
-              .map(m => (
-                <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
-                  <div>
-                    <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
-                    <p className="text-sm text-gray-500">
-                      {roleLabel[m.role]}
-                      {m.is_admin && ' + Admin'}
+          {loading ? (
+            <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+              <LoadingLogo size={20} /> Loading…
+            </div>
+          ) : pending.length === 0 ? (
+            <p className="ss-caption">No pending requests right now.</p>
+          ) : (
+            <div className="flex flex-col">
+              {pending.map(m => (
+                <div key={m.id} className={rowClass}>
+                  <div className="min-w-0">
+                    <p className="font-medium text-[color:var(--ss-ink-2)] truncate">
+                      {m.profile?.name || m.profile?.email || 'Unknown'}
+                    </p>
+                    <p className="text-sm text-[color:var(--ss-ink-5)] truncate">
+                      {m.profile?.email} · wants to join as {roleLabel[m.role]}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleToggleAdmin(m)}
-                    disabled={adminSavingId === m.id}
-                    className={`px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50 ${
-                      m.is_admin
-                        ? 'border border-brick text-brick hover:bg-brick-50'
-                        : 'bg-jade-600 text-white hover:bg-jade-700'
-                    }`}
-                  >
-                    {adminSavingId === m.id ? '...' : m.is_admin ? 'Revoke Admin' : 'Make Admin'}
-                  </button>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleDecision(m.id, 'rejected')} className={quietBtn}>
+                      Reject
+                    </button>
+                    <button onClick={() => handleDecision(m.id, 'approved')} className={primaryBtn}>
+                      Approve
+                    </button>
+                  </div>
                 </div>
               ))}
-            {members.filter(m => m.role === 'big' || m.role === 'little').length === 0 && (
-              <p className="text-gray-500 text-sm">No Bigs or Littles yet.</p>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 mt-6">
-        <h3 className="text-xl font-semibold mb-1">Members</h3>
-        <p className="text-gray-500 text-sm mb-4">
-          Remove someone who's graduated or left — this only removes them from this chapter, not their
-          Sorora account, and clears their rankings/pairings/notes for it.
-        </p>
-
-        {removeError && <p className="text-brick text-sm mb-3">{removeError}</p>}
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {members.map(m => {
-              const isOwner = m.user_id === group.owner_id;
-              const isSelf = m.user_id === membership?.user_id;
-              return (
-                <div key={m.id} className="flex items-center justify-between border border-gray-200 rounded-md p-3">
-                  <div>
-                    <p className="font-medium">{m.profile?.name || m.profile?.email || 'Unknown'}</p>
-                    <p className="text-sm text-gray-500">
-                      {roleLabel[m.role]}
-                      {m.is_admin && m.role !== 'admin' && ' + Admin'}
-                      {isOwner && ' · Owner'}
-                      {isSelf && ' · You'}
+        {/* Role change requests */}
+        {roleChanges.length > 0 && (
+          <div className="mt-6 ss-surface">
+            <div className="ss-kicker" style={{ marginBottom: 8 }}>Role change requests</div>
+            <div className="flex flex-col">
+              {roleChanges.map(r => (
+                <div key={r.id} className={rowClass}>
+                  <div className="min-w-0">
+                    <p className="font-medium text-[color:var(--ss-ink-2)] truncate">
+                      {r.profile?.name || r.profile?.email || 'Unknown'}
+                    </p>
+                    <p className="text-sm text-[color:var(--ss-ink-5)] truncate">
+                      {roleLabel[r.role]} → wants to become {roleLabel[r.requested_role!]}
                     </p>
                   </div>
-                  {isOwner || isSelf ? null : removeConfirmId === m.id ? (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-sm text-gray-500">Remove?</span>
-                      <button
-                        onClick={() => handleRemove(m.id)}
-                        disabled={removeSavingId === m.id}
-                        className="px-3 py-2 bg-brick text-white rounded-md text-sm hover:bg-brick-600 transition-colors disabled:opacity-50"
-                      >
-                        {removeSavingId === m.id ? '...' : 'Yes, remove'}
-                      </button>
-                      <button
-                        onClick={() => setRemoveConfirmId(null)}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-100 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setRemoveConfirmId(m.id)}
-                      className="px-4 py-2 border border-brick text-brick rounded-md text-sm hover:bg-brick-50 transition-colors flex-shrink-0"
-                    >
-                      Remove
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleRoleDecision(r, false)} className={quietBtn}>
+                      Reject
                     </button>
-                  )}
+                    <button onClick={() => handleRoleDecision(r, true)} className={primaryBtn}>
+                      Approve
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
-            {members.length === 0 && <p className="text-gray-500 text-sm">No approved members yet.</p>}
+              ))}
+            </div>
           </div>
         )}
-      </div>
+
+        {/* Admin access */}
+        <div className="mt-6 ss-surface">
+          <div className="ss-kicker" style={{ marginBottom: 4 }}>Admin access</div>
+          <p className="ss-caption mb-4">
+            Grant admin access to a Big or Little without changing their role — they'll keep ranking as
+            normal and also get admin pages.
+          </p>
+
+          {adminError && <p className="text-[color:var(--ss-error)] text-sm mb-3">{adminError}</p>}
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+              <LoadingLogo size={20} /> Loading…
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {members
+                .filter(m => m.role === 'big' || m.role === 'little')
+                .map(m => (
+                  <div key={m.id} className={rowClass}>
+                    <div className="min-w-0">
+                      <p className="font-medium text-[color:var(--ss-ink-2)] truncate">
+                        {m.profile?.name || m.profile?.email || 'Unknown'}
+                      </p>
+                      <p className="text-sm text-[color:var(--ss-ink-5)]">
+                        {roleLabel[m.role]}
+                        {m.is_admin && ' · Admin'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleAdmin(m)}
+                      disabled={adminSavingId === m.id}
+                      className={m.is_admin ? dangerOutlineBtn : primaryBtn}
+                    >
+                      {adminSavingId === m.id ? '…' : m.is_admin ? 'Revoke admin' : 'Make admin'}
+                    </button>
+                  </div>
+                ))}
+              {members.filter(m => m.role === 'big' || m.role === 'little').length === 0 && (
+                <p className="ss-caption">No Bigs or Littles yet.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Members / remove */}
+        <div className="mt-6 ss-surface">
+          <div className="ss-kicker" style={{ marginBottom: 4 }}>Members</div>
+          <p className="ss-caption mb-4">
+            Remove someone who's graduated or left — this only removes them from this chapter, not their
+            Sorora account, and clears their rankings/pairings/notes for it.
+          </p>
+
+          {removeError && <p className="text-[color:var(--ss-error)] text-sm mb-3">{removeError}</p>}
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+              <LoadingLogo size={20} /> Loading…
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {members.map(m => {
+                const isOwner = m.user_id === group.owner_id;
+                const isSelf = m.user_id === membership?.user_id;
+                return (
+                  <div key={m.id} className={rowClass}>
+                    <div className="min-w-0">
+                      <p className="font-medium text-[color:var(--ss-ink-2)] truncate">
+                        {m.profile?.name || m.profile?.email || 'Unknown'}
+                      </p>
+                      <p className="text-sm text-[color:var(--ss-ink-5)]">
+                        {roleLabel[m.role]}
+                        {m.is_admin && m.role !== 'admin' && ' · Admin'}
+                        {isOwner && ' · Owner'}
+                        {isSelf && ' · You'}
+                      </p>
+                    </div>
+                    {isOwner || isSelf ? null : removeConfirmId === m.id ? (
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-sm text-[color:var(--ss-ink-5)]">Remove?</span>
+                        <button
+                          onClick={() => handleRemove(m.id)}
+                          disabled={removeSavingId === m.id}
+                          className={dangerBtn}
+                        >
+                          {removeSavingId === m.id ? '…' : 'Yes, remove'}
+                        </button>
+                        <button onClick={() => setRemoveConfirmId(null)} className={quietBtn}>
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setRemoveConfirmId(m.id)}
+                        className={`${dangerOutlineBtn} flex-shrink-0`}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {members.length === 0 && <p className="ss-caption">No approved members yet.</p>}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

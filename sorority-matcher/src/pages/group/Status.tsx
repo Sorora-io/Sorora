@@ -74,76 +74,99 @@ const Status = () => {
   if (!group) return null;
 
   const renderList = (label: string, list: SubmissionStatusRow[]) => (
-    <div>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+    <div className="ss-surface">
+      <div className="ss-kicker" style={{ marginBottom: 8 }}>
         {label} ({list.filter(r => r.submitted).length}/{list.length} submitted)
-      </h3>
-      <div className="flex flex-col gap-1">
-        {list.map(r => (
-          <div key={r.userId} className="flex items-center justify-between px-3 py-2 border border-gray-100 rounded-md">
-            <span>{r.name || r.email}</span>
-            <span className={r.submitted ? 'text-jade-700 text-sm' : 'text-gray-400 text-sm'}>
-              {r.submitted ? 'Submitted' : 'Waiting'}
-            </span>
-          </div>
-        ))}
-        {list.length === 0 && <p className="text-gray-400 text-sm">No one approved yet.</p>}
       </div>
+      {list.length === 0 ? (
+        <p className="ss-caption">No one approved yet.</p>
+      ) : (
+        <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+          {list.map(r => (
+            <div key={r.userId} className="flex items-center justify-between py-2.5">
+              <span className="text-[color:var(--ss-ink-2)] truncate">{r.name || r.email}</span>
+              <span
+                className={
+                  r.submitted
+                    ? 'text-[color:var(--ss-jade)] text-sm font-medium'
+                    : 'text-[color:var(--ss-ink-5)] text-sm'
+                }
+              >
+                {r.submitted ? 'Submitted' : 'Waiting'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-2xl w-full">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-      </div>
-
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
-        <h2 className="text-2xl font-semibold mb-6">Submission Status</h2>
+        <span className="ss-kicker">02 · Preference collection</span>
+        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+          Submission status
+        </h1>
+        <p className="mt-3 ss-caption max-w-lg">
+          See who's submitted their rankings and remind anyone who hasn't yet.
+        </p>
 
         {!cycleId ? (
-          <p className="text-gray-500 text-sm">
+          <p className="mt-8 ss-caption">
             No active cycle yet — start one from Group Settings before collecting rankings.
           </p>
         ) : loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
+          <div className="mt-8 flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+            <LoadingLogo size={20} /> Loading…
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
             {renderList('Bigs', bigs)}
             {renderList('Littles', littles)}
           </div>
         )}
 
-        {error && <p className="text-brick text-sm mb-4">{error}</p>}
+        {error && <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>}
 
         {cycleId && !allSubmitted && !loading && (
-          <div className="mb-4">
-            <p className="text-gold-700 text-sm mb-2">
+          <div className="mt-6 ss-surface">
+            <p className="text-[color:var(--ss-ink-3)] text-sm mb-3">
               Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
               members will be treated as having no preferences.
             </p>
             <Button variant="outline" size="sm" onClick={handleRemind} disabled={reminding}>
-              {reminding ? 'Sending...' : 'Send reminder emails'}
+              {reminding ? 'Sending…' : 'Send reminder emails'}
             </Button>
-            {reminderMessage && <p className="text-jade-700 text-sm mt-2">{reminderMessage}</p>}
-            {reminderError && <p className="text-brick text-sm mt-2">{reminderError}</p>}
+            {reminderMessage && (
+              <p className="text-[color:var(--ss-jade)] text-sm mt-2">{reminderMessage}</p>
+            )}
+            {reminderError && (
+              <p className="text-[color:var(--ss-error)] text-sm mt-2">{reminderError}</p>
+            )}
           </div>
         )}
 
         {cycleId && (
-          <Button fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0}>
-            {running ? 'Running...' : 'Run Matching'}
-          </Button>
+          <div className="mt-8">
+            <Button size="lg" fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0}>
+              {running ? 'Running…' : 'Run matching'}
+            </Button>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

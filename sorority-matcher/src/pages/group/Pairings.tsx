@@ -54,21 +54,39 @@ const Pairings = () => {
   if (!group) return null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <h2 className="text-2xl font-semibold">Pairings</h2>
+        <span className="ss-kicker">03 · After collection</span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+              Pairings
+            </h1>
+            {cycles.length > 0 && selectedCycleId && (
+              <p className="mt-2 ss-caption">
+                {cycles.find(c => c.id === selectedCycleId)?.ended_at
+                  ? `Ended ${formatDate(cycles.find(c => c.id === selectedCycleId)!.ended_at!)}`
+                  : 'Currently active'}
+              </p>
+            )}
+          </div>
           {cycles.length > 1 && (
             <select
               value={selectedCycleId ?? ''}
               onChange={e => setSelectedCycleId(e.target.value)}
-              className="flex-shrink-0 text-sm border border-jade-300 rounded-md px-2 py-1.5 focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+              className="flex-shrink-0 text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill px-4 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
             >
               {cycles.map(c => (
                 <option key={c.id} value={c.id}>
@@ -80,31 +98,34 @@ const Pairings = () => {
           )}
         </div>
 
-        {cycles.length > 0 && selectedCycleId && (
-          <p className="text-xs text-gray-400 -mt-4 mb-6">
-            {cycles.find(c => c.id === selectedCycleId)?.ended_at
-              ? `Ended ${formatDate(cycles.find(c => c.id === selectedCycleId)!.ended_at!)}`
-              : 'Currently active'}
-          </p>
-        )}
+        {error && <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>}
 
-        {error && <p className="text-brick text-sm mb-4">{error}</p>}
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : byBig.size === 0 ? (
-          <p className="text-gray-500">No pairings yet — run matching from the Status page.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {Array.from(byBig.values()).map(({ bigName, littles }) => (
-              <div key={bigName} className="flex justify-between px-4 py-2.5 border border-gray-200 rounded-md">
-                <span className="font-medium">{bigName}</span>
-                <span className="text-gray-600">{littles.join(', ')}</span>
+        <div className="mt-8">
+          {loading ? (
+            <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+              <LoadingLogo size={20} /> Loading…
+            </div>
+          ) : byBig.size === 0 ? (
+            <div className="ss-surface">
+              <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+                No pairings yet.
+              </h3>
+              <p className="ss-caption mt-2">Run matching from the Status page to generate this cycle's pairings.</p>
+            </div>
+          ) : (
+            <div className="ss-surface">
+              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+                {Array.from(byBig.values()).map(({ bigName, littles }) => (
+                  <div key={bigName} className="flex justify-between items-center gap-4 py-3">
+                    <span className="font-medium text-[color:var(--ss-ink-2)] truncate">{bigName}</span>
+                    <span className="text-[color:var(--ss-ink-4)] text-right truncate">{littles.join(', ')}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

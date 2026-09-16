@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
+import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import { homeForRole } from '../components/RequireGroupRole';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
-import { getSubmissionStatus, getMyRanking } from '../lib/rankings';
-import { getMyProfile } from '../lib/profile';
+import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
+import { getMyProfile, updateMyProfile, MyProfile } from '../lib/profile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys } from '../lib/queryKeys';
 
 // Dashboard = the sorora-story canvas's five-tab member view (Dashboard /
-// Profile / Rankings / Roster / FAQ). One centered scene per tab, sitting
-// on the same soft mint background as the rest of the app; no sidebar.
-// The multi-chapter switcher hides in a small link above the tab row,
-// since the design assumes one active chapter at a time.
+// Profile / Rankings / Roster / FAQ). Every tab lives on the same soft
+// mint background under a shared top nav; no sidebar. The multi-chapter
+// switcher hides in a small link above the tab row.
 
 type TabId = 'dashboard' | 'profile' | 'rankings' | 'roster' | 'faq';
 
@@ -29,29 +29,27 @@ const TABS: { id: TabId; label: string }[] = [
 
 const roleLabel = (m: MembershipWithGroup) => {
   const base =
-    m.role === 'admin'
-      ? 'Admin'
-      : m.role === 'big'
-      ? 'Big'
-      : m.role === 'little'
-      ? 'Little'
-      : m.role;
+    m.role === 'admin' ? 'Admin' : m.role === 'big' ? 'Big' : m.role === 'little' ? 'Little' : m.role;
   return m.is_admin && m.role !== 'admin' ? `${base} + Admin` : base;
 };
 
 const opposite = (role: string) => (role === 'big' ? 'little' : 'big');
-
 const percent = (a: number, b: number) => (b === 0 ? 0 : Math.round((a / b) * 100));
 
-const Heading = ({
-  text,
-  italic = false,
-}: {
-  text: string;
-  italic?: boolean;
-}) => (
+const formatDeadline = (iso: string | null) =>
+  iso
+    ? new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'TBD';
+
+const initial = (name: string | null | undefined, email?: string) =>
+  (name || email || '?').charAt(0).toUpperCase();
+
+const Heading = ({ text, italic = false }: { text: string; italic?: boolean }) => (
   <h1
-    className={`font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] whitespace-pre-line ${
+    className={`font-display text-[32px] md:text-[42px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] whitespace-pre-line ${
       italic ? 'italic' : ''
     }`}
   >
@@ -66,7 +64,7 @@ const Sub = ({ text }: { text: string }) => (
 );
 
 // ---------------------------------------------------------------------------
-// Per-tab content
+// Dashboard tab (two-card layout from the design)
 // ---------------------------------------------------------------------------
 
 const DashboardTab = ({
@@ -81,6 +79,7 @@ const DashboardTab = ({
   const isRanker = membership.role === 'big' || membership.role === 'little';
   const isAdmin = isEffectiveAdmin(membership);
   const cycleId = membership.group.active_cycle_id;
+  const targetPlural = opposite(membership.role) === 'big' ? 'Bigs' : 'littles';
 
   const { data: rankedIds } = useQuery({
     queryKey: queryKeys.myRanking(cycleId ?? ''),
@@ -90,14 +89,12 @@ const DashboardTab = ({
 
   const { data: statusRows } = useQuery({
     queryKey: queryKeys.submissionStatus(cycleId ?? ''),
-    queryFn: () => getSubmissionStatus(membership.group_id, cycleId).then(({ rows }) => rows),
+    queryFn: () =>
+      getSubmissionStatus(membership.group_id, cycleId).then(({ rows }) => rows),
     enabled: isAdmin && !!cycleId,
   });
 
   const submitted = (rankedIds?.length ?? 0) > 0;
-  const target = opposite(membership.role);
-  const targetPlural = `${target === 'big' ? 'Bigs' : 'littles'}`;
-
   const bigs = (statusRows ?? []).filter(r => r.role === 'big');
   const littles = (statusRows ?? []).filter(r => r.role === 'little');
   const bigsDone = bigs.filter(r => r.submitted).length;
@@ -128,11 +125,7 @@ const DashboardTab = ({
                 : "You haven't started a list yet."}
             </p>
             <span className="ss-pill w-fit">
-              {membership.group.ranking_deadline
-                ? `Deadline: ${new Date(
-                    membership.group.ranking_deadline + 'T00:00:00'
-                  ).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`
-                : 'Deadline: TBD'}
+              Deadline: {formatDeadline(membership.group.ranking_deadline)}
             </span>
             <div className="mt-2">
               <Button onClick={() => onNavigate('/group/submit-ranking')}>
@@ -144,7 +137,9 @@ const DashboardTab = ({
 
         {isAdmin && (
           <section className="ss-surface flex flex-col gap-3">
-            <div className="ss-kicker">01 · Needs attention</div>
+            <div className="ss-kicker" style={{ marginBottom: 0 }}>
+              01 · Needs attention
+            </div>
             <h2 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
               Chapter progress
             </h2>
@@ -205,41 +200,139 @@ const DashboardTab = ({
         <button type="button" onClick={onReplayTour} className="ss-link">
           Replay the tour
         </button>
-        <p className="ss-caption">
-          Interactive preview · Membership approval and account verification are wired up.
-        </p>
       </div>
     </div>
   );
 };
 
-const ProfileTab = ({ profile, membership }: { profile: any; membership: MembershipWithGroup }) => {
+// ---------------------------------------------------------------------------
+// Profile tab — inline form matching design (Major / Year / Bio + Save)
+// ---------------------------------------------------------------------------
+
+const ProfileTab = ({
+  profile,
+  membership,
+}: {
+  profile: MyProfile | null | undefined;
+  membership: MembershipWithGroup;
+}) => {
+  const qc = useQueryClient();
+  const [major, setMajor] = useState(profile?.major ?? '');
+  const [year, setYear] = useState(profile?.year ?? '');
+  const [bio, setBio] = useState(profile?.bio ?? '');
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setMajor(profile.major ?? '');
+      setYear(profile.year ?? '');
+      setBio(profile.bio ?? '');
+    }
+  }, [profile?.id, profile?.major, profile?.year, profile?.bio]);
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setStatus('saving');
+    setErrorMsg('');
+    const { error } = await updateMyProfile(
+      profile.name ?? '',
+      bio,
+      profile.avatar_url ?? null,
+      major,
+      profile.college ?? '',
+      year,
+      profile.hometown ?? ''
+    );
+    if (error) {
+      setErrorMsg(error);
+      setStatus('error');
+      return;
+    }
+    setStatus('saved');
+    qc.invalidateQueries({ queryKey: queryKeys.myProfile() });
+    setTimeout(() => setStatus('idle'), 1800);
+  };
+
   return (
     <div>
       <Heading text="Make your profile yours." />
       <Sub text="Add a photo and a few details so your chapter can find you and put a face to your name." />
 
-      <div className="mt-8 ss-surface max-w-2xl">
-        <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-          {profile?.name || 'Your name'}
-        </h3>
-        <span className="ss-pill mt-1">{roleLabel(membership)}</span>
-        <p className="ss-caption mt-3">
-          Photo, major, year, a short bio. Add these whenever you're ready.
-        </p>
+      <div className="mt-8 ss-surface max-w-xl flex items-start gap-4">
+        <div className="w-14 h-14 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-lg font-medium">
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+          ) : (
+            initial(profile?.name, profile?.email)
+          )}
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)] truncate">
+            {profile?.name || 'Your name'}
+          </h3>
+          <span className="ss-pill mt-1">{roleLabel(membership)}</span>
+        </div>
       </div>
 
-      <div className="mt-6">
-        <Link
-          to="/profile"
-          className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
-        >
-          Open my profile
-        </Link>
-      </div>
+      <form onSubmit={save} className="mt-6 max-w-xl flex flex-col gap-4">
+        <div>
+          <label className="ss-label" htmlFor="major">Major</label>
+          <input
+            id="major"
+            className="ss-input"
+            type="text"
+            value={major}
+            onChange={e => setMajor(e.target.value)}
+            placeholder="e.g. Computer Science"
+          />
+        </div>
+        <div>
+          <label className="ss-label" htmlFor="year">Year</label>
+          <input
+            id="year"
+            className="ss-input"
+            type="text"
+            value={year}
+            onChange={e => setYear(e.target.value)}
+            placeholder="e.g. Junior"
+          />
+        </div>
+        <div>
+          <label className="ss-label" htmlFor="bio">A little about me</label>
+          <textarea
+            id="bio"
+            className="ss-input"
+            rows={5}
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            placeholder="Something you'd like your chapter to know…"
+            style={{ resize: 'vertical', minHeight: 120 }}
+          />
+        </div>
+        {status === 'error' && errorMsg && (
+          <p className="text-[color:var(--ss-error)] text-sm">{errorMsg}</p>
+        )}
+        <div className="flex items-center gap-3">
+          <Button type="submit" disabled={status === 'saving'}>
+            {status === 'saving' ? 'Saving…' : 'Save profile'}
+          </Button>
+          {status === 'saved' && (
+            <span className="text-sm text-[color:var(--ss-jade)]">Saved.</span>
+          )}
+          <Link to="/profile" className="ss-link">
+            More profile settings
+          </Link>
+        </div>
+      </form>
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Rankings tab — real numbered list, matching the design's tour preview
+// ---------------------------------------------------------------------------
 
 const RankingsTab = ({
   membership,
@@ -251,27 +344,54 @@ const RankingsTab = ({
   const isRanker = membership.role === 'big' || membership.role === 'little';
   const target = opposite(membership.role);
   const targetPlural = target === 'big' ? 'Bigs' : 'littles';
+  const cycleId = membership.group.active_cycle_id;
 
   const { data: rankedIds } = useQuery({
-    queryKey: queryKeys.myRanking(membership.group.active_cycle_id ?? ''),
-    queryFn: () =>
-      getMyRanking(membership.group.active_cycle_id).then(({ rankedIds: ids }) => ids),
-    enabled: isRanker && !!membership.group.active_cycle_id,
+    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
+    enabled: isRanker && !!cycleId,
   });
+
+  const { data: roster } = useQuery({
+    queryKey: queryKeys.fullRoster(membership.group_id),
+    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+    enabled: isRanker,
+  });
+
+  // Join ranked ids against roster so we can show real names in the list —
+  // the design's preview shows names, not opaque user ids.
+  const rankedList = useMemo(() => {
+    if (!rankedIds || !roster) return [];
+    const byId = new Map(roster.map(r => [r.userId, r] as const));
+    return rankedIds
+      .map(id => byId.get(id))
+      .filter((r): r is RosterEntry => !!r);
+  }, [rankedIds, roster]);
+
+  if (!isRanker) {
+    return (
+      <div>
+        <Heading text="Rankings" />
+        <Sub text="Rankings are visible to members with a Big or Little role." />
+      </div>
+    );
+  }
+
+  const empty = rankedList.length === 0;
 
   return (
     <div>
-      <Heading text={`My ${targetPlural} rankings`} />
+      <Heading text={`My ${targetPlural.toLowerCase()} rankings`} />
       <Sub
         text={
-          isRanker
+          empty
             ? `Your list starts here. Rank the ${targetPlural.toLowerCase()} you've met when you're ready.`
-            : 'Rankings are visible to members with a Big or Little role.'
+            : 'You can reopen your list any time before the deadline.'
         }
       />
 
-      <div className="mt-8 ss-surface">
-        {(!rankedIds || rankedIds.length === 0) ? (
+      <div className="mt-8 ss-surface max-w-xl">
+        {empty ? (
           <>
             <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
               No rankings yet.
@@ -280,11 +400,7 @@ const RankingsTab = ({
               Member eligibility, minimum rankings, and deadline are set by your chapter admin.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              {isRanker && (
-                <Button onClick={() => onNavigate('/group/submit-ranking')}>
-                  Start ranking
-                </Button>
-              )}
+              <Button onClick={() => onNavigate('/group/submit-ranking')}>Start ranking</Button>
               <Button variant="outline" onClick={() => onNavigate('/group/roster')}>
                 See the chapter roster
               </Button>
@@ -293,17 +409,33 @@ const RankingsTab = ({
         ) : (
           <>
             <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-              You've ranked {rankedIds.length}
-              {' '}
-              {rankedIds.length === 1 ? 'person' : 'people'}.
+              My {targetPlural.toLowerCase()} rankings
             </h3>
-            <p className="ss-caption mt-2">
-              You can reopen your list any time before the deadline.
+            <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+              {rankedList.map((r, i) => (
+                <div
+                  key={r.userId}
+                  className="flex items-center gap-3 py-3 text-[color:var(--ss-ink-2)]"
+                >
+                  <span className="w-6 text-right text-[color:var(--ss-ink-5)] tabular-nums">
+                    {i + 1}
+                  </span>
+                  <span className="w-8 h-8 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
+                    {r.avatarUrl ? (
+                      <img src={r.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      initial(r.name, r.email)
+                    )}
+                  </span>
+                  <span className="min-w-0 truncate">{r.name ?? r.email}</span>
+                </div>
+              ))}
+            </div>
+            <p className="ss-caption mt-4">
+              Ranking deadline: {formatDeadline(membership.group.ranking_deadline)}
             </p>
-            <div className="mt-4">
-              <Button onClick={() => onNavigate('/group/submit-ranking')}>
-                Update my rankings
-              </Button>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button onClick={() => onNavigate('/group/submit-ranking')}>Update rankings</Button>
             </div>
           </>
         )}
@@ -312,30 +444,116 @@ const RankingsTab = ({
   );
 };
 
+// ---------------------------------------------------------------------------
+// Roster tab — real member list with role pills
+// ---------------------------------------------------------------------------
+
 const RosterTab = ({
   membership,
   onNavigate,
 }: {
   membership: MembershipWithGroup;
   onNavigate: (p: string) => void;
-}) => (
-  <div>
-    <Heading text="Your chapter roster" />
-    <Sub text={groupLabel(membership.group)} />
-    <div className="mt-8">
-      <Button onClick={() => onNavigate('/group/roster')}>Open full roster</Button>
+}) => {
+  const { data: roster, isLoading } = useQuery({
+    queryKey: queryKeys.fullRoster(membership.group_id),
+    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+  });
+
+  const grouped = useMemo(() => {
+    const list = roster ?? [];
+    const order: Record<string, number> = { admin: 0, big: 1, little: 2 };
+    return [...list].sort(
+      (a, b) =>
+        (order[a.role] ?? 9) - (order[b.role] ?? 9) ||
+        (a.name ?? a.email).localeCompare(b.name ?? b.email)
+    );
+  }, [roster]);
+
+  return (
+    <div>
+      <Heading text="Your chapter roster" />
+      <Sub text={groupLabel(membership.group)} />
+
+      <div className="mt-8 ss-surface max-w-xl">
+        {isLoading ? (
+          <p className="ss-caption">Loading your chapter…</p>
+        ) : grouped.length === 0 ? (
+          <>
+            <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+              No members yet.
+            </h3>
+            <p className="ss-caption mt-2">
+              Share your chapter code so members can request to join.
+            </p>
+          </>
+        ) : (
+          <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+            {grouped.map(m => (
+              <div key={m.userId} className="flex items-center gap-3 py-3">
+                <span className="w-9 h-9 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
+                  {m.avatarUrl ? (
+                    <img src={m.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    initial(m.name, m.email)
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[color:var(--ss-ink-2)] truncate">
+                    {m.name ?? m.email}
+                  </div>
+                  {m.major && (
+                    <div className="text-xs text-[color:var(--ss-ink-5)] truncate">{m.major}</div>
+                  )}
+                </div>
+                <span className="ss-pill">
+                  {m.role === 'admin'
+                    ? 'Admin'
+                    : m.role === 'big'
+                    ? 'Big'
+                    : 'Little'}
+                  {m.isAdmin && m.role !== 'admin' && ' · Admin'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6">
+        <Button variant="outline" onClick={() => onNavigate('/group/roster')}>
+          Open full roster
+        </Button>
+      </div>
     </div>
-    <p className="ss-caption mt-4">
-      The roster is where you can see everyone in your chapter. Open a profile to learn who's who.
-    </p>
-  </div>
-);
+  );
+};
+
+// ---------------------------------------------------------------------------
+// FAQ tab — the design's summarized preview; full FAQ lives at /faq
+// ---------------------------------------------------------------------------
 
 const FaqTab = () => (
   <div>
     <Heading text="A little help, whenever you need it." />
     <Sub text="Visit the FAQ whenever you need help with rankings, submissions, or what happens next." />
-    <div className="mt-8">
+    <div className="mt-8 ss-surface max-w-xl">
+      <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
+        Frequently asked questions
+      </h3>
+      <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+        {[
+          'Can I update my rankings?',
+          'Who can see my preferences?',
+          'When will matches be announced?',
+        ].map(q => (
+          <p key={q} className="py-3 text-[color:var(--ss-ink-2)]">
+            {q}
+          </p>
+        ))}
+      </div>
+    </div>
+    <div className="mt-6">
       <Link
         to="/faq"
         className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
@@ -360,6 +578,7 @@ const Dashboard = () => {
   const [tab, setTab] = useState<TabId>(tabFromUrl);
   const [switchOpen, setSwitchOpen] = useState(false);
   const [signOutConfirming, setSignOutConfirming] = useState(false);
+  const [tourActive, setTourActive] = useState(false);
 
   useEffect(() => {
     if (tab !== tabFromUrl) setTab(tabFromUrl);
@@ -386,23 +605,41 @@ const Dashboard = () => {
     [memberships, membership]
   );
 
+  // First-time approved member sees the welcome + tour. Also flipped on
+  // manually by "Replay the tour".
+  useEffect(() => {
+    if (
+      membership?.status === 'approved' &&
+      !hasTourSeen(WELCOME_TOUR_KEY) &&
+      searchParams.get('tour') !== '1'
+    ) {
+      setTourActive(true);
+    }
+  }, [membership?.status, searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('tour') === '1' && membership) {
+      setTourActive(true);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('tour');
+        return next;
+      }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, membership?.id]);
+
+  const finishTour = () => {
+    markTourSeen(WELCOME_TOUR_KEY);
+    setTourActive(false);
+  };
+
   const onNavigate = (path: string) => {
     if (membership) setActiveGroupId(membership.group_id);
     navigate(path);
   };
 
-  // First-time member: replay-tour hint fires the standalone tour flow.
-  const onReplayTour = () => {
-    markTourSeen('dashboard');
-    navigate('/dashboard?tab=dashboard');
-  };
-  useEffect(() => {
-    if (memberships.length > 0 && !hasTourSeen('dashboard')) {
-      // No-op for now — the tour lives in the sign-up flow. Marking it as
-      // seen prevents the old modal from resurfacing.
-      markTourSeen('dashboard');
-    }
-  }, [memberships.length]);
+  const onReplayTour = () => setTourActive(true);
 
   // -----------------------------------------------------------------------
   // Empty state — signed in but not in any chapter
@@ -449,6 +686,7 @@ const Dashboard = () => {
   // Signed-in member scene
   // -----------------------------------------------------------------------
   const kicker = `${membership.group.name.toUpperCase()} · ${roleLabel(membership).toUpperCase()}`;
+  const firstName = (profile?.name ?? '').split(' ')[0] ?? '';
 
   const renderTab = () => {
     switch (tab) {
@@ -545,24 +783,34 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <nav className="flex flex-wrap gap-1 justify-center mb-4">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTab(t.id)}
-              aria-current={tab === t.id ? 'page' : undefined}
-              className="ss-tab"
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div className="ss-tab-underline mb-8" />
+        {tourActive ? (
+          <WelcomeTour
+            membership={membership}
+            firstName={firstName}
+            onFinish={finishTour}
+          />
+        ) : (
+          <>
+            <nav className="flex flex-wrap gap-1 justify-center mb-4">
+              {TABS.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setActiveTab(t.id)}
+                  aria-current={tab === t.id ? 'page' : undefined}
+                  className="ss-tab"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+            <div className="ss-tab-underline mb-8" />
 
-        <div className="ss-kicker text-center md:text-left">{kicker}</div>
+            <div className="ss-kicker text-center md:text-left">{kicker}</div>
 
-        <div className="text-left">{renderTab()}</div>
+            <div className="text-left">{renderTab()}</div>
+          </>
+        )}
       </section>
     </div>
   );

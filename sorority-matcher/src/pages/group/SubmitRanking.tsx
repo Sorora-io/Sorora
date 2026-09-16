@@ -104,44 +104,49 @@ const SubmitRanking = () => {
   if (!group || !role) return null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-3xl w-full">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-      </div>
-
-      <div className="max-w-3xl w-full bg-white rounded-lg shadow-sm p-5">
-        <h2 className="text-2xl font-semibold mb-1">Rank your {oppositeLabel}</h2>
-        <p className="text-gray-500 text-sm mb-6">
+        <span className="ss-kicker">Your rankings</span>
+        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+          Rank your {oppositeLabel.toLowerCase()}.
+        </h1>
+        <p className="mt-2 ss-caption">
           {groupLabel(group)} · rank at least {minRequired}, most preferred first
         </p>
 
         {!cycleId ? (
-          <p className="text-gray-500 text-sm">
+          <p className="mt-8 ss-caption">
             No active cycle yet — check back once your chapter admin starts one.
           </p>
         ) : loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
+          <div className="mt-8 flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+            <LoadingLogo size={20} /> Loading…
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Available</h3>
-              <div className="flex flex-col gap-2 min-h-[100px]">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="ss-surface">
+              <div className="ss-kicker" style={{ marginBottom: 8 }}>Available</div>
+              <div className="flex flex-col gap-2 min-h-[120px]">
                 {available.length === 0 && (
-                  <p className="text-gray-400 text-sm">Everyone's been ranked.</p>
+                  <p className="ss-caption">Everyone's been ranked.</p>
                 )}
                 {available.map(m => (
                   <button
                     key={m.userId}
                     onClick={() => addToRanking(m.userId)}
-                    className="text-left px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                    className="text-left px-3 py-2 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg hover:bg-white/85 transition-colors text-[color:var(--ss-ink-2)]"
                   >
                     {m.name || m.email}
                   </button>
@@ -149,35 +154,42 @@ const SubmitRanking = () => {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            <div className="ss-surface">
+              <div className="ss-kicker" style={{ marginBottom: 8 }}>
                 Your ranking ({rankedIds.length})
-              </h3>
-              <div className="flex flex-col gap-2 min-h-[100px]">
+              </div>
+              <div className="flex flex-col gap-2 min-h-[120px]">
                 {rankedIds.length === 0 && (
-                  <p className="text-gray-400 text-sm">Click a name on the left to add them.</p>
+                  <p className="ss-caption">Click a name on the left to add them.</p>
                 )}
                 {rankedIds.map((id, idx) => (
                   <div
                     key={id}
-                    className="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-md bg-gray-50"
+                    className="flex items-center justify-between px-3 py-2 bg-white/75 border border-[color:var(--ss-input-border)] rounded-lg"
                   >
-                    <span>
-                      <span className="text-gray-400 mr-2">{idx + 1}.</span>
+                    <span className="text-[color:var(--ss-ink-2)]">
+                      <span className="text-[color:var(--ss-ink-5)] mr-2 tabular-nums">{idx + 1}.</span>
                       {rosterById.get(id)?.name || rosterById.get(id)?.email || 'Unknown'}
                     </span>
                     <span className="flex gap-1">
-                      <button onClick={() => moveUp(idx)} disabled={idx === 0} className="px-2 disabled:opacity-30">
+                      <button
+                        onClick={() => moveUp(idx)}
+                        disabled={idx === 0}
+                        className="px-2 text-[color:var(--ss-ink-4)] disabled:opacity-30"
+                      >
                         ↑
                       </button>
                       <button
                         onClick={() => moveDown(idx)}
                         disabled={idx === rankedIds.length - 1}
-                        className="px-2 disabled:opacity-30"
+                        className="px-2 text-[color:var(--ss-ink-4)] disabled:opacity-30"
                       >
                         ↓
                       </button>
-                      <button onClick={() => removeFromRanking(id)} className="px-2 text-brick">
+                      <button
+                        onClick={() => removeFromRanking(id)}
+                        className="px-2 text-brick"
+                      >
                         ×
                       </button>
                     </span>
@@ -189,24 +201,26 @@ const SubmitRanking = () => {
         )}
 
         {role === 'big' && (
-          <label className="flex items-center gap-2 mt-6 text-sm">
+          <label className="flex items-center gap-2 mt-6 text-sm text-[color:var(--ss-ink-3)]">
             <input
               type="checkbox"
               checked={willingToTakeTwins}
-              onChange={(e) => setWillingToTakeTwins(e.target.checked)}
-              className="accent-jade-600 w-4 h-4"
+              onChange={e => setWillingToTakeTwins(e.target.checked)}
+              className="accent-[color:var(--ss-jade-deep)] w-4 h-4"
             />
             I'm willing to take two Littles (twins)
           </label>
         )}
 
-        {error && <p className="text-brick text-sm mt-4">{error}</p>}
-        {saved && <p className="text-jade-700 text-sm mt-4">Ranking saved.</p>}
+        {error && <p className="text-[color:var(--ss-error)] text-sm mt-4">{error}</p>}
+        {saved && <p className="text-[color:var(--ss-jade)] text-sm mt-4">Ranking saved.</p>}
 
-        <Button className="mt-6" fullWidth onClick={handleSave} disabled={saving || loading || !cycleId}>
-          {saving ? '...' : 'Save Ranking'}
-        </Button>
-      </div>
+        <div className="mt-8">
+          <Button size="lg" fullWidth onClick={handleSave} disabled={saving || loading || !cycleId}>
+            {saving ? '…' : 'Save ranking'}
+          </Button>
+        </div>
+      </section>
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import { homeForRole } from '../../components/RequireGroupRole';
 import AddOrganizationForm from '../../components/AddOrganizationForm';
+import SceneShell from '../../components/SceneShell';
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -17,27 +18,27 @@ const Onboarding = () => {
   }, [groupLoading, membership, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <header className="mb-12">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
-
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
-        <h2 className="text-2xl font-semibold mb-6">Get started</h2>
+    <SceneShell topRightLabel={null}>
+      <span className="ss-kicker">Add a chapter</span>
+      <h1 className="font-display italic text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+        Your chapter starts here.
+      </h1>
+      <p className="mt-4 max-w-lg text-[color:var(--ss-ink-5)] text-base leading-relaxed">
+        Joining an existing chapter, or setting yours up?
+      </p>
+      <div className="mt-8 w-full max-w-md ss-surface text-left">
         <AddOrganizationForm
-          onCreated={(groupId) => {
+          onCreated={groupId => {
             setActiveGroupId(groupId);
-            navigate('/group/approvals');
+            navigate('/dashboard');
           }}
-          onJoined={(groupId) => {
+          onJoined={groupId => {
             setActiveGroupId(groupId);
             navigate('/group/pending');
           }}
         />
       </div>
-    </div>
+    </SceneShell>
   );
 };
 

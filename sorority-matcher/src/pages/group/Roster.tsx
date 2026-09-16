@@ -8,6 +8,10 @@ import { groupLabel, MembershipRole } from '../../lib/groups';
 import { queryKeys } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
+// Design canvas: roster shows a single sage ss-surface with rows of
+// "Avatar · Name · Role pill". This page keeps the existing sort + view
+// toggles (useful for large chapters), but drops them into the same
+// frosted centered frame the rest of the app uses.
 type View = 'card' | 'list';
 const VIEW_KEY = 'sorora-roster-view';
 
@@ -15,13 +19,9 @@ type SortMode = 'role' | 'az' | 'za';
 const SORT_KEY = 'sorora-roster-sort';
 
 const displayName = (r: RosterEntry) => r.name || r.email;
+const initial = (r: RosterEntry) => (r.name || r.email || '?').charAt(0).toUpperCase();
 
-const roleLabel: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
-const roleBadgeClasses: Record<MembershipRole, string> = {
-  admin: 'bg-jade-100 text-jade-700',
-  big: 'bg-gold-100 text-gold-700',
-  little: 'bg-gray-100 text-gray-600',
-};
+const roleWord: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Roster = () => {
   const { membership } = useGroup();
@@ -29,9 +29,9 @@ const Roster = () => {
 
   const [view, setView] = useState<View>(() => {
     try {
-      return (localStorage.getItem(VIEW_KEY) as View) || 'card';
+      return (localStorage.getItem(VIEW_KEY) as View) || 'list';
     } catch {
-      return 'card';
+      return 'list';
     }
   });
 
@@ -40,7 +40,7 @@ const Roster = () => {
     try {
       localStorage.setItem(VIEW_KEY, v);
     } catch {
-      // ignore — per-device preference only, fine to lose
+      // ignore — per-device preference only
     }
   };
 
@@ -57,7 +57,7 @@ const Roster = () => {
     try {
       localStorage.setItem(SORT_KEY, s);
     } catch {
-      // ignore — per-device preference only, fine to lose
+      // ignore
     }
   };
 
@@ -67,10 +67,11 @@ const Roster = () => {
     error: queryError,
   } = useQuery({
     queryKey: queryKeys.fullRoster(group?.id ?? ''),
-    queryFn: () => getFullRoster(group!.id).then(({ roster: r, error: loadError }) => {
-      if (loadError) throw new Error(loadError);
-      return r;
-    }),
+    queryFn: () =>
+      getFullRoster(group!.id).then(({ roster: r, error: loadError }) => {
+        if (loadError) throw new Error(loadError);
+        return r;
+      }),
     enabled: !!group,
   });
   const error = queryError ? (queryError as Error).message : '';
@@ -82,168 +83,191 @@ const Roster = () => {
   const littles = roster.filter(r => r.role === 'little');
 
   const sortedRoster = [...roster].sort((a, b) =>
-    sortMode === 'za' ? displayName(b).localeCompare(displayName(a)) : displayName(a).localeCompare(displayName(b))
+    sortMode === 'za'
+      ? displayName(b).localeCompare(displayName(a))
+      : displayName(a).localeCompare(displayName(b))
   );
 
-  const renderCard = (r: RosterEntry) => {
-    const details = [
-      r.major && `${r.major}`,
-      r.college,
-      r.year && `Class of ${r.year}`,
-      r.hometown,
-    ].filter(Boolean) as string[];
+  // -------------------------- Row + card renderers -----------------------
+  const rolePill = (r: RosterEntry) => (
+    <span className="ss-pill flex-shrink-0">
+      {roleWord[r.role]}
+      {r.isAdmin && r.role !== 'admin' && ' · Admin'}
+    </span>
+  );
 
+  const avatar = (r: RosterEntry, size: 'sm' | 'md' = 'sm') => (
+    <span
+      className={`${
+        size === 'md' ? 'w-12 h-12 text-lg' : 'w-9 h-9 text-sm'
+      } flex-shrink-0 rounded-full overflow-hidden bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center font-medium`}
+    >
+      {r.avatarUrl ? (
+        <img src={r.avatarUrl} alt={displayName(r)} className="w-full h-full object-cover" />
+      ) : (
+        initial(r)
+      )}
+    </span>
+  );
+
+  const renderRow = (r: RosterEntry) => {
+    const details = [r.major, r.college, r.year && `Class of ${r.year}`, r.hometown]
+      .filter(Boolean)
+      .join(' · ');
     return (
-      <div key={r.userId} className="bg-white rounded-lg shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
-            {r.avatarUrl ? (
-              <img src={r.avatarUrl} alt={r.name ?? r.email} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-lg font-display font-semibold text-jade-700">
-                {(r.name || r.email || '?').charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold truncate">{r.name || r.email}</p>
-            <p className="text-xs text-gray-500 truncate">{r.email}</p>
-          </div>
-          <span className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClasses[r.role]}`}>
-            {roleLabel[r.role]}
-            {r.isAdmin && r.role !== 'admin' && ' + Admin'}
-          </span>
+      <div
+        key={r.userId}
+        className="flex items-center gap-3 py-3"
+      >
+        {avatar(r)}
+        <div className="min-w-0 flex-1">
+          <p className="text-[color:var(--ss-ink-2)] truncate font-medium">{displayName(r)}</p>
+          {details ? (
+            <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{details}</p>
+          ) : (
+            <p className="text-xs text-[color:var(--ss-ink-6)] truncate">
+              {r.email !== displayName(r) ? r.email : 'No details added yet.'}
+            </p>
+          )}
         </div>
-
-        {details.length > 0 ? (
-          <p className="text-sm text-gray-600">{details.join(' · ')}</p>
-        ) : (
-          <p className="text-sm text-gray-400">No details added yet.</p>
-        )}
+        {rolePill(r)}
       </div>
     );
   };
 
-  const renderRow = (r: RosterEntry) => {
-    const details = [
-      r.major && `${r.major}`,
-      r.college,
-      r.year && `Class of ${r.year}`,
-      r.hometown,
-    ].filter(Boolean) as string[];
-
+  const renderCard = (r: RosterEntry) => {
+    const details = [r.major, r.college, r.year && `Class of ${r.year}`, r.hometown]
+      .filter(Boolean)
+      .join(' · ');
     return (
-      <div key={r.userId} className="bg-white rounded-lg shadow-sm px-4 py-3 flex items-center gap-3">
-        <div className="w-9 h-9 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
-          {r.avatarUrl ? (
-            <img src={r.avatarUrl} alt={r.name ?? r.email} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-sm font-display font-semibold text-jade-700">
-              {(r.name || r.email || '?').charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1 flex items-center gap-3">
-          <div className="min-w-0 flex-shrink-0 w-48">
-            <p className="font-semibold truncate">{r.name || r.email}</p>
-            <p className="text-xs text-gray-500 truncate">{r.email}</p>
+      <div
+        key={r.userId}
+        className="bg-white/60 border border-[color:var(--ss-surface-border)] rounded-2xl p-4 flex flex-col gap-3"
+      >
+        <div className="flex items-center gap-3">
+          {avatar(r, 'md')}
+          <div className="min-w-0 flex-1">
+            <p className="text-[color:var(--ss-ink-2)] font-medium truncate">{displayName(r)}</p>
+            <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{r.email}</p>
           </div>
-          <p className="text-sm text-gray-600 truncate flex-1 min-w-0">
-            {details.length > 0 ? details.join(' · ') : <span className="text-gray-400">No details added yet.</span>}
-          </p>
+          {rolePill(r)}
         </div>
-        <span className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${roleBadgeClasses[r.role]}`}>
-          {roleLabel[r.role]}
-          {r.isAdmin && r.role !== 'admin' && ' + Admin'}
-        </span>
+        <p className="text-sm text-[color:var(--ss-ink-4)]">
+          {details || <span className="text-[color:var(--ss-ink-6)]">No details added yet.</span>}
+        </p>
       </div>
     );
   };
 
   const renderSection = (label: string, list: RosterEntry[]) => (
     <div>
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+      <div className="ss-kicker">
         {label} ({list.length})
-      </h3>
+      </div>
       {list.length === 0 ? (
-        <p className="text-gray-400 text-sm">No one here yet.</p>
+        <p className="ss-caption">No one here yet.</p>
       ) : view === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{list.map(renderCard)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{list.map(renderCard)}</div>
       ) : (
-        <div className="flex flex-col gap-2">{list.map(renderRow)}</div>
+        <div className="ss-surface">
+          <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+            {list.map(renderRow)}
+          </div>
+        </div>
       )}
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-4xl w-full">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
+        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
+          Your chapter roster
+        </h1>
+        <p className="mt-2 ss-caption">{groupLabel(group)}</p>
 
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold mb-1">Roster</h2>
-            <p className="text-gray-500 text-sm">{groupLabel(group)}</p>
-          </div>
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <select
-              value={sortMode}
-              onChange={(e) => changeSort(e.target.value as SortMode)}
-              className="text-sm border border-jade-300 rounded-md px-2 py-1.5 focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+        <div className="mt-6 flex items-center justify-end gap-2 flex-wrap">
+          <select
+            value={sortMode}
+            onChange={e => changeSort(e.target.value as SortMode)}
+            className="text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill px-4 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
+          >
+            <option value="role">By member type</option>
+            <option value="az">Name (A–Z)</option>
+            <option value="za">Name (Z–A)</option>
+          </select>
+          <div className="inline-flex items-center gap-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill p-1">
+            <button
+              type="button"
+              onClick={() => changeView('list')}
+              aria-label="List view"
+              aria-pressed={view === 'list'}
+              className={`p-1.5 rounded-pill transition-colors ${
+                view === 'list'
+                  ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                  : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
+              }`}
             >
-              <option value="role">By member type</option>
-              <option value="az">Name (A–Z)</option>
-              <option value="za">Name (Z–A)</option>
-            </select>
-            <div className="flex items-center gap-1 bg-gray-100 rounded-md p-1">
-              <button
-                type="button"
-                onClick={() => changeView('card')}
-                aria-label="Card view"
-                aria-pressed={view === 'card'}
-                className={`p-1.5 rounded ${view === 'card' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                <LayoutGrid size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => changeView('list')}
-                aria-label="List view"
-                aria-pressed={view === 'list'}
-                className={`p-1.5 rounded ${view === 'list' ? 'bg-white shadow-sm text-jade-700' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                <List size={16} />
-              </button>
-            </div>
+              <List size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => changeView('card')}
+              aria-label="Card view"
+              aria-pressed={view === 'card'}
+              className={`p-1.5 rounded-pill transition-colors ${
+                view === 'card'
+                  ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                  : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
+              }`}
+            >
+              <LayoutGrid size={16} />
+            </button>
           </div>
         </div>
 
-        {error && <p className="text-brick text-sm mb-4">{error}</p>}
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-gray-500"><LoadingLogo size={20} /> Loading...</div>
-        ) : sortMode === 'role' ? (
-          <div className="flex flex-col gap-8">
-            {renderSection('Bigs', bigs)}
-            {renderSection('Littles', littles)}
-            {renderSection('Admins', admins)}
-          </div>
-        ) : sortedRoster.length === 0 ? (
-          <p className="text-gray-400 text-sm">No one here yet.</p>
-        ) : view === 'card' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{sortedRoster.map(renderCard)}</div>
-        ) : (
-          <div className="flex flex-col gap-2">{sortedRoster.map(renderRow)}</div>
+        {error && (
+          <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>
         )}
-      </div>
+
+        <div className="mt-6">
+          {loading ? (
+            <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
+              <LoadingLogo size={20} /> Loading…
+            </div>
+          ) : sortMode === 'role' ? (
+            <div className="flex flex-col gap-6">
+              {renderSection('Bigs', bigs)}
+              {renderSection('Littles', littles)}
+              {renderSection('Admins', admins)}
+            </div>
+          ) : sortedRoster.length === 0 ? (
+            <p className="ss-caption">No one here yet.</p>
+          ) : view === 'card' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {sortedRoster.map(renderCard)}
+            </div>
+          ) : (
+            <div className="ss-surface">
+              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+                {sortedRoster.map(renderRow)}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

@@ -200,21 +200,24 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <header className="mb-12">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
+    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <header className="flex items-center justify-between mb-8">
+          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
+            sorora
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+          >
+            <ArrowLeft size={14} /> Back to dashboard
+          </Link>
+        </header>
 
-      <div className="max-w-md w-full">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black mb-4">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-      </div>
-
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
-        <h2 className="text-2xl font-semibold mb-6">Group Settings</h2>
+        <span className="ss-kicker">Chapter</span>
+        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] mb-8">
+          Group settings
+        </h1>
 
         <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
           <div>
@@ -450,12 +453,12 @@ const Settings = () => {
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[color:var(--ss-ink-4)]">
               Owner: {owner?.profile?.name || owner?.profile?.email || 'Unknown'}
             </p>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 };
