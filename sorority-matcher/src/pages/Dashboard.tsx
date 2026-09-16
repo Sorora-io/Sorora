@@ -59,8 +59,8 @@ const formatDeadline = (iso: string) => {
 
 const ADMIN_ACTIONS = [
   { label: 'Approvals', path: '/group/approvals' },
-  { label: 'Submission Status', path: '/group/status' },
-  { label: 'Group Settings', path: '/group/settings' },
+  { label: 'Submissions', path: '/group/status' },
+  { label: 'Settings', path: '/group/settings' },
   { label: 'Pairings', path: '/group/pairings' },
 ];
 
@@ -70,6 +70,8 @@ interface AdminProgress {
   littlesSubmitted: number;
   littlesTotal: number;
 }
+
+const percent = (a: number, b: number) => (b === 0 ? 0 : Math.round((a / b) * 100));
 
 const OrgCard = ({
   m,
@@ -83,12 +85,6 @@ const OrgCard = ({
   const isApproved = m.status === 'approved';
   const isAdmin = isApproved && isEffectiveAdmin(m);
   const isRanker = isApproved && (m.role === 'big' || m.role === 'little');
-
-  // Cached per group under react-query — so a card that was already shown
-  // once (here, or on the Status/SubmitRanking pages that fetch the same
-  // data) renders its real numbers immediately instead of a skeleton, and
-  // a genuinely-stale beat is a quiet background refetch, not a blocking
-  // loading state.
   const cycleId = m.group.active_cycle_id;
 
   const { data: statusRows, isLoading: progressLoading } = useQuery({
@@ -114,65 +110,79 @@ const OrgCard = ({
   const mySubmission = rankedIds ? rankedIds.length > 0 : null;
 
   const skeletonLine = (width: string) => (
-    <span className={`inline-block h-3 ${width} bg-gray-100 rounded animate-pulse`} />
+    <span className={`inline-block h-3 ${width} bg-[color:var(--ss-meter-track)] rounded animate-pulse`} />
   );
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm p-5 border ${active ? 'border-jade-600' : 'border-transparent'}`}
+      className={`ss-surface transition-shadow ${active ? 'ring-2 ring-[color:var(--ss-jade-deep)]/60' : ''}`}
     >
       <button
         type="button"
         onClick={() => goTo(m.group_id, m.status === 'approved' ? homeForRole(m) : '/group/pending')}
-        className="w-full flex items-start justify-between mb-4 text-left hover:opacity-70 transition-opacity"
+        className="w-full flex items-start justify-between mb-4 text-left hover:opacity-80 transition-opacity"
       >
-        <div>
-          <h3 className="text-lg font-semibold">{m.group.name}</h3>
-          {m.group.school && <p className="text-sm text-gray-500">{m.group.school}</p>}
+        <div className="min-w-0">
+          <div className="ss-kicker">{roleLabel[m.role]}{m.is_admin && m.role !== 'admin' && ' · Admin'}{m.status !== 'approved' && ` · ${m.status}`}</div>
+          <h3 className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] leading-snug truncate">
+            {m.group.name}
+          </h3>
+          {m.group.school && <p className="text-sm text-[color:var(--ss-ink-5)] truncate">{m.group.school}</p>}
         </div>
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {roleLabel[m.role]}
-          {m.is_admin && m.role !== 'admin' && ' + Admin'}
-          {m.status !== 'approved' && ` · ${m.status}`}
-        </span>
+        <span className="flex-shrink-0 text-[color:var(--ss-ink-5)] ml-3">→</span>
       </button>
 
       {m.group.description && (
-        <p className="text-sm text-gray-600 mb-4 -mt-2">{m.group.description}</p>
+        <p className="text-sm text-[color:var(--ss-ink-4)] mb-4">{m.group.description}</p>
       )}
 
       {m.status === 'approved' && isEffectiveAdmin(m) && (
-        <div className="mb-4 -mt-2 flex flex-col gap-1">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Matching progress</p>
+        <div className="mb-4">
+          <div className="ss-kicker">02 · Preference collection</div>
           {progressLoading || !adminProgress ? (
-            <>{skeletonLine('w-40')}{skeletonLine('w-36')}</>
+            <div className="flex flex-col gap-1">
+              {skeletonLine('w-40')}
+              {skeletonLine('w-36')}
+            </div>
           ) : adminProgress.bigsTotal === 0 && adminProgress.littlesTotal === 0 ? (
-            <p className="text-sm text-gray-500">No Bigs or Littles approved yet.</p>
+            <p className="text-sm text-[color:var(--ss-ink-5)]">No Bigs or Littles approved yet.</p>
           ) : (
-            <>
-              <p className="text-sm text-gray-700">
-                {adminProgress.bigsSubmitted} of {adminProgress.bigsTotal} Bigs submitted
-              </p>
-              <p className="text-sm text-gray-700">
-                {adminProgress.littlesSubmitted} of {adminProgress.littlesTotal} Littles submitted
-              </p>
-            </>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-sm text-[color:var(--ss-ink-3)]">
+                <span>Bigs</span>
+                <span className="tabular-nums">
+                  {adminProgress.bigsSubmitted} / {adminProgress.bigsTotal} submitted
+                </span>
+              </div>
+              <div className="ss-meter">
+                <span style={{ width: `${percent(adminProgress.bigsSubmitted, adminProgress.bigsTotal)}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-sm text-[color:var(--ss-ink-3)]">
+                <span>Littles</span>
+                <span className="tabular-nums">
+                  {adminProgress.littlesSubmitted} / {adminProgress.littlesTotal} submitted
+                </span>
+              </div>
+              <div className="ss-meter">
+                <span style={{ width: `${percent(adminProgress.littlesSubmitted, adminProgress.littlesTotal)}%` }} />
+              </div>
+            </div>
           )}
         </div>
       )}
 
       {m.status === 'approved' && (m.role === 'big' || m.role === 'little') && (
-        <div className="mb-4 -mt-2">
+        <div className="mb-4">
           {rankingLoading || mySubmission === null ? (
             skeletonLine('w-56')
           ) : (
             <p
               className={`text-sm ${
                 !mySubmission && m.group.ranking_deadline && m.group.ranking_deadline < todayISO
-                  ? 'text-brick'
+                  ? 'text-[color:var(--ss-error)]'
                   : mySubmission
-                  ? 'text-jade-700'
-                  : 'text-gold-700'
+                  ? 'text-[color:var(--ss-jade)]'
+                  : 'text-[color:var(--ss-ink-4)]'
               }`}
             >
               {mySubmission
@@ -191,30 +201,30 @@ const OrgCard = ({
         <div className="flex flex-wrap gap-2">
           {(m.role === 'big' || m.role === 'little') && (
             <>
-              <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/submit-ranking')}>
+              <Button variant="quiet" size="sm" onClick={() => goTo(m.group_id, '/group/submit-ranking')}>
                 {rankingLoading || mySubmission === null
                   ? 'Rankings'
                   : mySubmission
-                  ? 'Update Rankings'
-                  : `Start Ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
+                  ? 'Update rankings'
+                  : `Start ranking ${m.role === 'big' ? 'Littles' : 'Bigs'}`}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/notes')}>
+              <Button variant="quiet" size="sm" onClick={() => goTo(m.group_id, '/group/notes')}>
                 Notes
               </Button>
             </>
           )}
           {isEffectiveAdmin(m) &&
             ADMIN_ACTIONS.map(a => (
-              <Button key={a.path} variant="outline" size="sm" onClick={() => goTo(m.group_id, a.path)}>
+              <Button key={a.path} variant="quiet" size="sm" onClick={() => goTo(m.group_id, a.path)}>
                 {a.label}
               </Button>
             ))}
-          <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/roster')}>
+          <Button variant="quiet" size="sm" onClick={() => goTo(m.group_id, '/group/roster')}>
             Roster
           </Button>
         </div>
       ) : (
-        <Button variant="outline" size="sm" onClick={() => goTo(m.group_id, '/group/pending')}>
+        <Button variant="quiet" size="sm" onClick={() => goTo(m.group_id, '/group/pending')}>
           {m.status === 'pending' ? 'View request status' : 'View details'}
         </Button>
       )}
@@ -237,9 +247,6 @@ const Dashboard = () => {
   const avatarUrl = profile?.avatar_url ?? null;
   const name = profile?.name ?? null;
 
-  // First time a member with at least one org lands here, walk them
-  // through the dashboard automatically; "Take a tour" (here, and in the
-  // sidebar's Explore section via ?tour=1) lets anyone replay it later.
   useEffect(() => {
     if (memberships.length > 0 && !hasTourSeen(DASHBOARD_TOUR_ID)) {
       setTourActive(true);
@@ -249,7 +256,6 @@ const Dashboard = () => {
   useEffect(() => {
     if (searchParams.get('tour') === '1' && memberships.length > 0) {
       setTourActive(true);
-      // Strip the param so refreshing the page doesn't re-trigger the tour.
       setSearchParams(prev => {
         const next = new URLSearchParams(prev);
         next.delete('tour');
@@ -270,45 +276,48 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
+    <div className="min-h-screen w-full flex flex-col items-center px-6 py-10">
+      <header className="w-full max-w-3xl mb-6 flex items-center justify-between">
+        <Link
+          to="/"
+          className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide"
+        >
+          sorora
         </Link>
+        {memberships.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setTourActive(true)}
+            className="text-sm text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] underline underline-offset-4"
+          >
+            Take the tour
+          </button>
+        )}
       </header>
 
-      <div className="max-w-2xl w-full flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3" data-tour="dashboard-header">
-            <div className="w-10 h-10 flex-shrink-0 rounded-full overflow-hidden bg-jade-100 flex items-center justify-center">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm font-display font-semibold text-jade-700">
-                  {(name || user?.email || '?').charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold leading-tight">Your Organizations</h2>
-              {name && <p className="text-sm text-gray-500">{name}</p>}
-            </div>
+      <section className="ss-frost w-full max-w-3xl rounded-[24px] px-6 py-10 md:px-12 md:py-12 shadow-card">
+        <div className="flex items-center gap-4 mb-8" data-tour="dashboard-header">
+          <div className="w-14 h-14 flex-shrink-0 rounded-full overflow-hidden bg-[color:var(--ss-pill-bg)] flex items-center justify-center border border-[color:var(--ss-surface-border)]">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-display font-semibold text-[color:var(--ss-jade-deep)]">
+                {(name || user?.email || '?').charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
-          {memberships.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setTourActive(true)}
-              className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 underline"
-            >
-              Take a tour
-            </button>
-          )}
+          <div className="min-w-0">
+            <div className="ss-kicker">Your chapters</div>
+            <h1 className="font-display text-[32px] md:text-[40px] leading-[1.05] font-semibold text-[color:var(--ss-ink-1)]">
+              {name ? `Hi, ${name.split(' ')[0]}.` : 'Your chapters, at a glance.'}
+            </h1>
+          </div>
         </div>
 
         {memberships.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-5 text-center text-gray-600">
-            You're not part of any organization yet.{' '}
-            <Link to="/group/onboarding" className="underline font-medium text-black">
+          <div className="ss-surface text-center text-[color:var(--ss-ink-4)] mb-6">
+            You're not part of any chapter yet.{' '}
+            <Link to="/group/onboarding" className="underline underline-offset-4 font-medium text-[color:var(--ss-ink-2)]">
               Get started
             </Link>
             .
@@ -321,20 +330,22 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-5" data-tour="dashboard-addorg">
+        <div className="mt-6" data-tour="dashboard-addorg">
           {showAddOrg ? (
-            <AddOrganizationForm
-              onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
-              onJoined={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
-              onCancel={() => setShowAddOrg(false)}
-            />
+            <div className="ss-surface">
+              <AddOrganizationForm
+                onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+                onJoined={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
+                onCancel={() => setShowAddOrg(false)}
+              />
+            </div>
           ) : (
-            <Button variant="outline" size="sm" fullWidth onClick={() => setShowAddOrg(true)}>
-              + Add Organization
+            <Button variant="quiet" size="sm" fullWidth onClick={() => setShowAddOrg(true)}>
+              + Add another chapter
             </Button>
           )}
         </div>
-      </div>
+      </section>
 
       <OnboardingTour steps={DASHBOARD_TOUR_STEPS} active={tourActive} onFinish={finishTour} />
     </div>

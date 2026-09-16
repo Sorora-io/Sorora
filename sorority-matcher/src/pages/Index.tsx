@@ -5,11 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { getMyProfile } from '../lib/profile';
 import { queryKeys } from '../lib/queryKeys';
+import Button from '../components/Button';
 
 const STEPS = [
-  'Add or invite your members',
-  'Collect everyone’s preferences',
-  'Review and generate pairings',
+  { kicker: '01', label: 'Add or invite your members' },
+  { kicker: '02', label: 'Collect everyone’s preferences' },
+  { kicker: '03', label: 'Review and generate pairings' },
 ];
 
 const Index = () => {
@@ -19,185 +20,158 @@ const Index = () => {
   const [signOutConfirming, setSignOutConfirming] = useState(false);
   const [logoSpinning, setLogoSpinning] = useState(false);
 
-  // Shares its cache key with Dashboard, so a signed-in visitor lands on a
-  // warm cache instead of triggering a fresh fetch just to say their name.
   const { data: profile } = useQuery({
     queryKey: queryKeys.myProfile(),
     queryFn: () => getMyProfile().then(({ profile: p }) => p),
     enabled: !!user && !isGuest,
   });
 
+  const signedIn = !!user && !isGuest;
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-12 w-full max-w-2xl flex items-center justify-between">
-        <h1 className="text-4xl font-display font-semibold text-jade-800">Sorora</h1>
-        {user ? (
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user.email}</span>
+    <div className="min-h-screen w-full flex flex-col items-center px-6 py-10">
+      <header className="w-full max-w-3xl mb-8 flex items-center justify-between">
+        <span className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide">
+          sorora
+        </span>
+        {signedIn ? (
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-sm text-[color:var(--ss-ink-5)]">{user!.email}</span>
             {signOutConfirming ? (
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">Sign out?</span>
+                <span className="text-[color:var(--ss-ink-5)]">Sign out?</span>
                 <button onClick={() => signOut()} className="font-medium text-brick hover:underline">
                   Yes
                 </button>
-                <button onClick={() => setSignOutConfirming(false)} className="text-gray-500 hover:underline">
+                <button onClick={() => setSignOutConfirming(false)} className="text-[color:var(--ss-ink-5)] hover:underline">
                   Cancel
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setSignOutConfirming(true)}
-                className="px-4 py-2 border border-jade-600 rounded-md hover:bg-jade-50 transition-colors text-sm"
-              >
+              <Button variant="quiet" size="sm" onClick={() => setSignOutConfirming(true)}>
                 Sign out
-              </button>
+              </Button>
             )}
           </div>
         ) : (
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors text-sm"
-          >
+          <Button variant="quiet" size="sm" onClick={() => navigate('/login')}>
             Sign in
-          </button>
+          </Button>
         )}
       </header>
 
-      {user && !isGuest ? (
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 md:p-10 text-center">
-          <svg
-            width="56" height="32" viewBox="0 0 72 40" fill="none"
-            className="mx-auto mb-4 cursor-pointer"
-            role="button"
-            aria-label="Spin the Sorora logo"
-            onClick={() => setLogoSpinning(true)}
+      <section className="ss-frost w-full max-w-3xl rounded-[28px] px-6 py-14 md:px-16 md:py-20 text-center shadow-card">
+        <svg
+          width="72" height="40" viewBox="0 0 72 40" fill="none"
+          className="mx-auto mb-8 cursor-pointer"
+          role="button"
+          aria-label="Spin the Sorora logo"
+          onClick={() => setLogoSpinning(true)}
+        >
+          <g
+            className={logoSpinning ? 'animate-logo-spin-once' : ''}
+            style={{ transformOrigin: '36px 20px' }}
+            onAnimationEnd={() => setLogoSpinning(false)}
           >
-            <g
-              className={logoSpinning ? 'animate-logo-spin-once' : ''}
-              style={{ transformOrigin: '36px 20px' }}
-              onAnimationEnd={() => setLogoSpinning(false)}
-            >
-              <circle cx="24" cy="20" r="14" fill="#DCEDE8" />
-              <circle cx="48" cy="20" r="14" fill="#F2E6C6" />
-            </g>
-            <circle cx="36" cy="20" r="6" fill="#296F62" />
-          </svg>
-          <h2 className="text-2xl font-display font-semibold mb-2 text-jade-800">
-            Welcome back{profile?.name ? `, ${profile.name}` : ''}.
-          </h2>
-          <p className="text-gray-600 mb-8">
-            {memberships.length > 0
-              ? `You're part of ${memberships.length} ${memberships.length === 1 ? 'chapter' : 'chapters'}.`
-              : "You're not part of a chapter yet."}
-          </p>
+            <circle cx="24" cy="20" r="14" fill="#DCEDE8" />
+            <circle cx="48" cy="20" r="14" fill="#F2E6C6" />
+          </g>
+          <circle cx="36" cy="20" r="6" fill="#173e2a" />
+        </svg>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-2">
+        {signedIn ? (
+          <>
+            <h1 className="font-display text-[44px] md:text-[56px] leading-[1.05] font-semibold text-[color:var(--ss-ink-1)] mb-4">
+              Welcome back{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''}.
+            </h1>
+            <p className="text-[color:var(--ss-ink-5)] text-lg mb-10 max-w-md mx-auto">
+              {memberships.length > 0
+                ? `You're part of ${memberships.length} ${memberships.length === 1 ? 'chapter' : 'chapters'}. Everything you need is a click away.`
+                : "You haven't joined a chapter yet. Start below."}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => navigate('/dashboard')}>
+                Go to my dashboard
+              </Button>
+              <Button variant="link" onClick={() => navigate('/admin/enter-bigs')}>
+                Or run a one-off quick match
+              </Button>
+            </div>
+
+            {memberships.length > 0 && (
+              <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left max-w-xl mx-auto">
+                {memberships.slice(0, 4).map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => navigate('/dashboard')}
+                    className="ss-surface hover:bg-white/60 transition-colors flex items-center justify-between gap-3"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium text-[color:var(--ss-ink-2)]">
+                        {m.group.name}
+                      </span>
+                      {m.group.school && (
+                        <span className="block text-xs text-[color:var(--ss-ink-5)] truncate">
+                          {m.group.school}
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex-shrink-0 text-[color:var(--ss-ink-5)]">→</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <h1 className="font-display text-[54px] md:text-[76px] leading-[0.95] font-semibold text-[color:var(--ss-ink-1)] mb-6 tracking-tight">
+              sorora
+            </h1>
+            <p className="text-[color:var(--ss-ink-4)] text-lg md:text-xl mb-10 max-w-lg mx-auto">
+              Big–Little matching for your chapter, without the spreadsheets.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Button onClick={() => navigate('/login?mode=signup')}>
+                Meet sorora ↓
+              </Button>
+              <Button variant="quiet" onClick={() => navigate('/admin/enter-bigs')}>
+                Run a quick match
+              </Button>
+            </div>
             <button
-              onClick={() => navigate('/dashboard')}
-              className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
+              onClick={() => navigate('/login')}
+              className="mt-6 text-sm text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] underline underline-offset-4"
             >
-              Go to Dashboard
+              I already have an account
             </button>
-          </div>
-          <button
-            onClick={() => navigate('/admin/enter-bigs')}
-            className="text-sm text-gray-500 underline hover:text-black"
-          >
-            Or run a one-off quick match
-          </button>
 
-          {memberships.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col gap-1 text-left max-w-sm mx-auto">
-              {memberships.slice(0, 4).map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-jade-50 transition-colors"
-                >
-                  <span className="min-w-0 text-left">
-                    <span className="block truncate">{m.group.name}</span>
-                    {m.group.school && <span className="block text-xs text-gray-400 truncate">{m.group.school}</span>}
-                  </span>
-                  <span className="flex-shrink-0 text-gray-400">→</span>
-                </button>
+            <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+              {STEPS.map(step => (
+                <div key={step.kicker} className="ss-surface">
+                  <div className="ss-kicker">{step.kicker}</div>
+                  <p className="text-[color:var(--ss-ink-2)] font-medium leading-snug">
+                    {step.label}
+                  </p>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-5 md:p-10 text-center">
-          <svg
-            width="72" height="40" viewBox="0 0 72 40" fill="none"
-            className="mx-auto mb-4 cursor-pointer"
-            role="button"
-            aria-label="Spin the Sorora logo"
-            onClick={() => setLogoSpinning(true)}
-          >
-            <g
-              className={logoSpinning ? 'animate-logo-spin-once' : ''}
-              style={{ transformOrigin: '36px 20px' }}
-              onAnimationEnd={() => setLogoSpinning(false)}
-            >
-              <circle cx="24" cy="20" r="14" fill="#DCEDE8" />
-              <circle cx="48" cy="20" r="14" fill="#F2E6C6" />
-            </g>
-            <circle cx="36" cy="20" r="6" fill="#296F62" />
-          </svg>
-          <h2 className="text-3xl font-display font-semibold mb-3 text-jade-800">
-            Big–Little matching, without the spreadsheets.
-          </h2>
-          <p className="text-gray-600 text-lg mb-8">
-            Collect preferences, account for twins, and create thoughtful matches for your chapter.
-          </p>
+          </>
+        )}
+      </section>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
-            <button
-              onClick={() => navigate('/login?mode=signup')}
-              className="px-6 py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors font-medium"
-            >
-              Set up my chapter
-            </button>
-            <button
-              onClick={() => navigate('/admin/enter-bigs')}
-              className="px-6 py-2.5 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors font-medium"
-            >
-              Run a quick match
-            </button>
-          </div>
-
-          <button
-            onClick={() => navigate('/login')}
-            className="text-sm text-gray-500 underline hover:text-black"
-          >
-            I already have an account
-          </button>
-
-          <div className="mt-10 pt-8 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-            {STEPS.map((step, i) => (
-              <div key={step} className="flex gap-3 items-start">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-jade-100 text-jade-700 text-sm font-semibold flex items-center justify-center">
-                  {i + 1}
-                </span>
-                <p className="text-sm text-gray-600">{step}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-6 flex gap-4 text-sm text-gray-500">
-        <button onClick={() => navigate('/about')} className="underline hover:text-black">
+      <nav className="mt-8 flex gap-5 text-sm text-[color:var(--ss-ink-5)]">
+        <button onClick={() => navigate('/about')} className="underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]">
           How It Works
         </button>
         <span aria-hidden="true">·</span>
-        <button onClick={() => navigate('/faq')} className="underline hover:text-black">
+        <button onClick={() => navigate('/faq')} className="underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]">
           FAQ
         </button>
         <span aria-hidden="true">·</span>
-        <button onClick={() => navigate('/contact')} className="underline hover:text-black">
+        <button onClick={() => navigate('/contact')} className="underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]">
           Contact Us
         </button>
-      </div>
+      </nav>
     </div>
   );
 };

@@ -98,10 +98,10 @@ const SidePanel = () => {
   const wizardStarted = location.pathname.startsWith('/admin/') || hasBigs || hasLittles;
 
   const linkClasses = (path: string) =>
-    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+    `flex items-center gap-2 px-3 py-2 rounded-pill text-sm font-medium transition-colors ${
       location.pathname === path
-        ? 'bg-jade-600 text-white'
-        : 'text-gray-700 hover:bg-jade-50'
+        ? 'bg-[color:var(--ss-jade-deep)] text-white'
+        : 'text-[color:var(--ss-ink-4)] hover:bg-white/60 hover:text-[color:var(--ss-ink-2)]'
     }`;
 
   return (
@@ -112,11 +112,11 @@ const SidePanel = () => {
         type="button"
         onClick={() => setMobileOpen(true)}
         aria-label="Open navigation"
-        className="md:hidden fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-md bg-white border border-jade-300 shadow-sm hover:bg-gray-50"
+        className="md:hidden fixed top-4 left-4 z-40 w-10 h-10 flex flex-col items-center justify-center gap-1 rounded-pill bg-white/80 backdrop-blur border border-[color:var(--ss-surface-border)] shadow-surface hover:bg-white"
       >
-        <span className="block w-5 h-0.5 bg-black" />
-        <span className="block w-5 h-0.5 bg-black" />
-        <span className="block w-5 h-0.5 bg-black" />
+        <span className="block w-5 h-0.5 bg-[color:var(--ss-ink-2)]" />
+        <span className="block w-5 h-0.5 bg-[color:var(--ss-ink-2)]" />
+        <span className="block w-5 h-0.5 bg-[color:var(--ss-ink-2)]" />
       </button>
 
       {mobileOpen && (
@@ -124,19 +124,19 @@ const SidePanel = () => {
       )}
 
       <aside
-        className={`fixed md:sticky top-0 left-0 h-screen w-72 flex-shrink-0 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto md:translate-x-0 ${
+        className={`fixed md:sticky top-0 left-0 h-screen w-72 flex-shrink-0 bg-white/60 backdrop-blur-xl border-r border-[color:var(--ss-surface-border)] z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto md:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <Link to="/" onClick={closeMobile} className="text-xl font-display font-semibold text-jade-800">
-            Sorora
+        <div className="flex items-center justify-between p-4 border-b border-[color:var(--ss-surface-border)]">
+          <Link to="/" onClick={closeMobile} className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide">
+            sorora
           </Link>
           <button
             type="button"
             onClick={closeMobile}
             aria-label="Close navigation"
-            className="md:hidden text-gray-500 hover:text-black text-2xl leading-none"
+            className="md:hidden text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] text-2xl leading-none"
           >
             &times;
           </button>
@@ -148,30 +148,30 @@ const SidePanel = () => {
               <button
                 type="button"
                 onClick={() => setMenuOpen(o => !o)}
-                className="w-full flex items-center justify-between gap-2 text-left bg-jade-50 border border-jade-100 rounded-md px-3 py-2 hover:bg-jade-100 transition-colors"
+                className="w-full flex items-center justify-between gap-2 text-left bg-[color:var(--ss-surface)] border border-[color:var(--ss-surface-border)] rounded-2xl px-3 py-2.5 hover:bg-white/60 transition-colors"
               >
                 <span className="min-w-0">
-                  <span className="block text-sm font-bold text-jade-800 truncate">
+                  <span className="block text-sm font-semibold text-[color:var(--ss-ink-1)] truncate">
                     {membership.group.name}
                   </span>
                   {membership.group.school && (
-                    <span className="block text-xs text-jade-500 truncate">{membership.group.school}</span>
+                    <span className="block text-xs text-[color:var(--ss-ink-5)] truncate">{membership.group.school}</span>
                   )}
-                  <span className="block text-xs font-medium text-jade-600">
+                  <span className="block text-xs font-medium text-[color:var(--ss-jade)]">
                     {membershipLabel(membership)}
                     {membership.status !== 'approved' && ` · ${membership.status}`}
                   </span>
                 </span>
                 <svg
                   width="12" height="8" viewBox="0 0 12 8" fill="none"
-                  className={`flex-shrink-0 text-jade-700 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
+                  className={`flex-shrink-0 text-[color:var(--ss-jade)] transition-transform ${menuOpen ? 'rotate-180' : ''}`}
                 >
                   <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </button>
 
               {menuOpen && (
-                <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white border border-gray-200 rounded-md shadow-sm p-1 z-10 flex flex-col gap-0.5">
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white/95 backdrop-blur-xl border border-[color:var(--ss-surface-border)] rounded-2xl shadow-card p-1.5 z-10 flex flex-col gap-0.5">
                   {membership.status !== 'approved' ? (
                     <button type="button" onClick={() => goTo('/group/pending')} className={linkClasses('/group/pending')}>
                       {membership.status === 'pending' ? 'View request status' : 'View details'}
@@ -202,7 +202,7 @@ const SidePanel = () => {
 
                   {otherMemberships.length > 0 && (
                     <>
-                      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-[color:var(--ss-ink-5)] uppercase tracking-wide">
                         Switch chapter
                       </p>
                       {otherMemberships.map(m => (
@@ -210,13 +210,13 @@ const SidePanel = () => {
                           key={m.group_id}
                           type="button"
                           onClick={() => switchTo(m.group_id)}
-                          className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-jade-50 transition-colors"
+                          className="w-full text-left px-3 py-2 rounded-pill text-sm hover:bg-[color:var(--ss-surface)] transition-colors"
                         >
-                          <span className="block font-medium truncate">{m.group.name}</span>
+                          <span className="block font-medium truncate text-[color:var(--ss-ink-2)]">{m.group.name}</span>
                           {m.group.school && (
-                            <span className="block text-xs text-gray-400 truncate">{m.group.school}</span>
+                            <span className="block text-xs text-[color:var(--ss-ink-5)] truncate">{m.group.school}</span>
                           )}
-                          <span className="block text-xs text-gray-500">
+                          <span className="block text-xs text-[color:var(--ss-ink-4)]">
                             {membershipLabel(m)}
                             {m.status !== 'approved' && ` · ${m.status}`}
                           </span>
@@ -230,8 +230,8 @@ const SidePanel = () => {
           )}
 
           {user && !isGuest && (
-            <div className={membership ? 'pt-2 border-t border-gray-200' : ''} data-tour="sidepanel-account">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            <div className={membership ? 'pt-3 border-t border-[color:var(--ss-surface-border)]' : ''} data-tour="sidepanel-account">
+              <p className="text-[11px] font-semibold text-[color:var(--ss-ink-5)] uppercase tracking-wide mb-2 px-3">
                 Account
               </p>
               <div className="flex flex-col gap-1">
@@ -245,10 +245,10 @@ const SidePanel = () => {
           )}
 
           <div
-            className={user ? 'pt-2 border-t border-gray-200' : ''}
+            className={user ? 'pt-3 border-t border-[color:var(--ss-surface-border)]' : ''}
             data-tour="sidepanel-explore"
           >
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            <p className="text-[11px] font-semibold text-[color:var(--ss-ink-5)] uppercase tracking-wide mb-2 px-3">
               Explore
             </p>
             <div className="flex flex-col gap-1">
@@ -261,7 +261,7 @@ const SidePanel = () => {
                 <Link
                   to="/dashboard?tour=1"
                   onClick={closeMobile}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-jade-50 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 rounded-pill text-sm font-medium text-[color:var(--ss-ink-4)] hover:bg-white/60 hover:text-[color:var(--ss-ink-2)] transition-colors"
                 >
                   <Compass size={15} /> Take a tour
                 </Link>
@@ -270,11 +270,11 @@ const SidePanel = () => {
           </div>
 
           {(!user || memberships.length === 0) && (
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-3 border-t border-[color:var(--ss-surface-border)]">
               {wizardStarted ? (
                 <>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                    Quick Match Setup
+                  <p className="text-[11px] font-semibold text-[color:var(--ss-ink-5)] uppercase tracking-wide mb-2 px-3">
+                    Quick match setup
                   </p>
                   <div className="flex flex-col gap-1">
                     {wizardSteps.map((step, i) => {
@@ -283,7 +283,7 @@ const SidePanel = () => {
                         return (
                           <span
                             key={step.path}
-                            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-300 cursor-not-allowed"
+                            className="flex items-center gap-2 px-3 py-2 rounded-pill text-sm text-[color:var(--ss-ink-5)]/50 cursor-not-allowed"
                           >
                             <span className="flex-shrink-0 w-4 text-center">{i + 1}.</span>
                             {step.label}
@@ -295,13 +295,15 @@ const SidePanel = () => {
                           key={step.path}
                           type="button"
                           onClick={() => goTo(step.path)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-left transition-colors ${
-                            active ? 'bg-jade-600 text-white' : 'text-gray-700 hover:bg-jade-50'
+                          className={`flex items-center gap-2 px-3 py-2 rounded-pill text-sm font-medium text-left transition-colors ${
+                            active
+                              ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                              : 'text-[color:var(--ss-ink-4)] hover:bg-white/60 hover:text-[color:var(--ss-ink-2)]'
                           }`}
                         >
                           <span className="flex-shrink-0 w-4 text-center">
                             {step.done ? (
-                              <Check size={14} className={active ? 'text-white' : 'text-jade-600'} />
+                              <Check size={14} className={active ? 'text-white' : 'text-[color:var(--ss-jade)]'} />
                             ) : (
                               `${i + 1}.`
                             )}
@@ -316,20 +318,20 @@ const SidePanel = () => {
                 <Link
                   to="/"
                   onClick={closeMobile}
-                  className="block text-center px-3 py-2 rounded-md text-sm font-medium bg-jade-600 text-white hover:bg-jade-700 transition-colors"
+                  className="block text-center px-4 py-2.5 rounded-pill text-sm font-medium bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
                 >
-                  Get Started
+                  Get started
                 </Link>
               )}
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-200 text-sm">
+        <div className="p-4 border-t border-[color:var(--ss-surface-border)] text-sm">
           {user ? (
             signOutConfirming ? (
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">Sign out?</span>
+                <span className="text-[color:var(--ss-ink-5)]">Sign out?</span>
                 <button
                   type="button"
                   onClick={() => { signOut(); closeMobile(); navigate('/login'); }}
@@ -340,7 +342,7 @@ const SidePanel = () => {
                 <button
                   type="button"
                   onClick={() => setSignOutConfirming(false)}
-                  className="text-gray-500 hover:underline"
+                  className="text-[color:var(--ss-ink-5)] hover:underline"
                 >
                   Cancel
                 </button>
@@ -349,21 +351,21 @@ const SidePanel = () => {
               <button
                 type="button"
                 onClick={() => setSignOutConfirming(true)}
-                className="flex items-center gap-2 text-left text-gray-600 hover:text-black"
+                className="flex items-center gap-2 text-left text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]"
               >
                 <LogOut size={15} /> Sign out
               </button>
             )
           ) : isGuest ? (
             <div className="flex flex-col gap-2">
-              <p className="text-gold-700">Guest session · Saved on this device only</p>
-              <Link to="/login" onClick={closeMobile} className="underline text-gray-600 hover:text-black">
+              <p className="text-[color:var(--ss-ink-4)]">Guest session · Saved on this device only</p>
+              <Link to="/login" onClick={closeMobile} className="underline text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]">
                 Create an account
               </Link>
             </div>
           ) : (
             <Link to="/login" onClick={closeMobile} className={linkClasses('/login')}>
-              Sign In / Sign Up
+              Sign in / Sign up
             </Link>
           )}
         </div>

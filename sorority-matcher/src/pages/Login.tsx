@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
 import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
+import Button from '../components/Button';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -82,7 +83,7 @@ const Login = () => {
       let resolvedGroupLabel: string | undefined;
       if (groupMode === 'join') {
         if (joinCode.trim() === '') {
-          setError('Please enter your group\'s join code.');
+          setError("Please enter your group's join code.");
           setLoading(false);
           return;
         }
@@ -117,8 +118,6 @@ const Login = () => {
       if (error) {
         setError(error.message);
       } else {
-        // Onboarding redirects onward to /group/pending or the right
-        // dashboard once membership status is known.
         navigate('/group/onboarding');
       }
     }
@@ -126,27 +125,55 @@ const Login = () => {
     setLoading(false);
   };
 
+  const kicker = forgotMode
+    ? 'Reset your password'
+    : mode === 'signin'
+    ? 'Sign back in'
+    : groupMode === 'create'
+    ? 'Set up your chapter'
+    : 'Join your chapter';
+
+  const heading = forgotMode
+    ? 'Send me a reset link.'
+    : mode === 'signin'
+    ? 'Welcome back to sorora.'
+    : "Make yourself at home.";
+
+  const subheading = forgotMode
+    ? "Enter your email and we'll send you a link to set a new password."
+    : mode === 'signin'
+    ? 'Sign in to jump back into your chapter.'
+    : 'Start with the basics. You can add more to your profile later.';
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <header className="mb-12">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
+    <div className="min-h-screen w-full flex flex-col items-center px-6 py-10">
+      <header className="w-full max-w-xl mb-6 flex items-center justify-between">
+        <Link
+          to="/"
+          className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide"
+        >
+          sorora
+        </Link>
+        <Link to="/" className="text-sm text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] underline underline-offset-4">
+          Start over
         </Link>
       </header>
 
-      <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
-        <h2 className="text-2xl font-semibold mb-6">
-          {forgotMode ? 'Reset Password' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-        </h2>
+      <section className="ss-frost w-full max-w-xl rounded-[24px] px-6 py-10 md:px-10 md:py-12 shadow-card">
+        <div className="ss-kicker">{kicker}</div>
+        <h1 className="font-display text-[32px] md:text-[38px] leading-[1.1] font-semibold text-[color:var(--ss-ink-1)] mb-2">
+          {heading}
+        </h1>
+        <p className="text-[color:var(--ss-ink-5)] mb-6">{subheading}</p>
 
         {!forgotMode && invitedGroupLabel && (
-          <p className="mb-4 text-blue-700 bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-            You've been invited to join <strong>{invitedGroupLabel}</strong>! Create an account below to request to join.
+          <p className="mb-5 ss-surface text-[color:var(--ss-ink-2)] text-sm">
+            You've been invited to join <strong>{invitedGroupLabel}</strong>. Create an account below to request to join.
           </p>
         )}
 
         {!forgotMode && successMessage && (
-          <p className="mb-4 text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
+          <p className="mb-5 ss-surface text-[color:var(--ss-ink-2)] text-sm">
             {successMessage}
           </p>
         )}
@@ -154,244 +181,249 @@ const Login = () => {
         {forgotMode ? (
           resetSent ? (
             <div className="flex flex-col gap-4">
-              <p className="text-jade-700 bg-jade-50 border border-jade-200 rounded-md p-3 text-sm">
+              <p className="ss-surface text-[color:var(--ss-ink-2)] text-sm">
                 Check {resetEmail} for a link to set a new password.
               </p>
               <button
                 onClick={() => { setForgotMode(false); setResetSent(false); setResetEmail(''); }}
-                className="text-sm text-gray-600 underline hover:text-black"
+                className="text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)] self-start"
               >
                 Back to sign in
               </button>
             </div>
           ) : (
             <form onSubmit={handleSendReset} className="flex flex-col gap-4">
-              <p className="text-sm text-gray-600">
-                Enter your email and we'll send you a link to set a new password.
-              </p>
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label className="ss-label" htmlFor="reset-email">Email</label>
                 <input
+                  id="reset-email"
                   type="email"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                  className="ss-input"
                 />
               </div>
-              {resetError && <p className="text-brick text-sm">{resetError}</p>}
-              <button
-                type="submit"
-                disabled={resetLoading}
-                className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-              >
-                {resetLoading ? '...' : 'Send Reset Link'}
-              </button>
+              {resetError && <p className="text-[color:var(--ss-error)] text-sm">{resetError}</p>}
+              <Button type="submit" disabled={resetLoading} fullWidth>
+                {resetLoading ? '...' : 'Send reset link'}
+              </Button>
               <button
                 type="button"
                 onClick={() => { setForgotMode(false); setResetError(''); }}
-                className="text-sm text-gray-600 underline hover:text-black"
+                className="text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)] self-start"
               >
                 Back to sign in
               </button>
             </form>
           )
         ) : (
-        <>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {mode === 'signup' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-              />
-            </div>
-          )}
-
-          {mode === 'signup' && (
-            <div className="border border-gray-200 rounded-md p-4">
-              <div className="flex gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={() => setGroupMode('create')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                    groupMode === 'create' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  Create a group
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGroupMode('join')}
-                  className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                    groupMode === 'join' ? 'bg-jade-600 text-white' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  Join a group
-                </button>
-              </div>
-
-              {groupMode === 'create' ? (
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Sorority group name</label>
-                    <input
-                      type="text"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="e.g. Alpha Beta Chapter"
-                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">School</label>
-                    <input
-                      type="text"
-                      value={school}
-                      onChange={(e) => setSchool(e.target.value)}
-                      placeholder="e.g. New York University"
-                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    You'll become this group's admin and get a join code to share.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Join code</label>
-                    <input
-                      type="text"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      placeholder="e.g. XK7P2QRT"
-                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 uppercase"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">I am a</label>
-                    <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value as MembershipRole)}
-                      className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                    >
-                      <option value="big">Big</option>
-                      <option value="little">Little</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    The group's admin will need to approve your request before you can rank.
-                  </p>
+          <>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {mode === 'signup' && (
+                <div>
+                  <label className="ss-label" htmlFor="name">Name</label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="ss-input"
+                  />
                 </div>
               )}
-            </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-            />
-          </div>
+              {mode === 'signup' && (
+                <div className="ss-surface">
+                  <div className="ss-kicker">Your chapter</div>
+                  <div className="flex gap-2 mb-4 p-1 rounded-pill bg-white/50 border border-[color:var(--ss-input-border)]">
+                    <button
+                      type="button"
+                      onClick={() => setGroupMode('create')}
+                      className={`flex-1 py-2 rounded-pill text-sm font-medium transition-colors ${
+                        groupMode === 'create'
+                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                          : 'text-[color:var(--ss-ink-4)] hover:bg-white/50'
+                      }`}
+                    >
+                      Create a chapter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGroupMode('join')}
+                      className={`flex-1 py-2 rounded-pill text-sm font-medium transition-colors ${
+                        groupMode === 'join'
+                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                          : 'text-[color:var(--ss-ink-4)] hover:bg-white/50'
+                      }`}
+                    >
+                      Join a chapter
+                    </button>
+                  </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-            />
-            {mode === 'signin' && (
+                  {groupMode === 'create' ? (
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="ss-label" htmlFor="group-name">Sorority group name</label>
+                        <input
+                          id="group-name"
+                          type="text"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                          placeholder="e.g. Alpha Chi Omega"
+                          className="ss-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="ss-label" htmlFor="school">School</label>
+                        <input
+                          id="school"
+                          type="text"
+                          value={school}
+                          onChange={(e) => setSchool(e.target.value)}
+                          placeholder="e.g. New York University"
+                          className="ss-input"
+                        />
+                      </div>
+                      <p className="ss-caption">
+                        You'll become this chapter's admin and get a join code to share.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="ss-label" htmlFor="join-code">Chapter code</label>
+                        <input
+                          id="join-code"
+                          type="text"
+                          value={joinCode}
+                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                          placeholder="e.g. XK7P2QRT"
+                          className="ss-input uppercase tracking-widest"
+                        />
+                      </div>
+                      <div>
+                        <span className="ss-label">I'm a</span>
+                        <div className="flex gap-2">
+                          {(['big', 'little', 'admin'] as const).map(r => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => setRole(r)}
+                              aria-pressed={role === r}
+                              className={`flex-1 py-2 rounded-pill text-sm font-medium border transition-colors ${
+                                role === r
+                                  ? 'bg-[color:var(--ss-jade-deep)] text-white border-transparent'
+                                  : 'bg-white/50 text-[color:var(--ss-ink-4)] border-[color:var(--ss-input-border)] hover:bg-white/70'
+                              }`}
+                            >
+                              {r === 'big' ? 'Big' : r === 'little' ? 'Little' : 'Admin'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="ss-caption">
+                        The chapter's admin will need to approve you before you can rank.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="ss-label" htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="ss-input"
+                />
+              </div>
+
+              <div>
+                <label className="ss-label" htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  className="ss-input"
+                />
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMode(true); setError(''); }}
+                    className="mt-2 text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+
+              {error && (
+                <p className="text-[color:var(--ss-error)] text-sm">{error}</p>
+              )}
+
+              <Button type="submit" disabled={loading} fullWidth>
+                {loading ? '...' : mode === 'signin' ? 'Sign in' : 'Create my profile'}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-[color:var(--ss-ink-5)]">
+              {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
               <button
-                type="button"
-                onClick={() => { setForgotMode(true); setError(''); }}
-                className="mt-1 text-sm text-gray-500 underline hover:text-black"
+                onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setSuccessMessage(''); }}
+                className="underline underline-offset-4 font-medium text-[color:var(--ss-ink-2)]"
               >
-                Forgot password?
+                {mode === 'signin' ? 'Sign up' : 'Sign in'}
               </button>
-            )}
-          </div>
-
-          {error && (
-            <p className="text-brick text-sm">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? '...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
-          <button
-            onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setSuccessMessage(''); }}
-            className="underline font-medium text-black"
-          >
-            {mode === 'signin' ? 'Sign up' : 'Sign in'}
-          </button>
-        </p>
-        </>
+            </p>
+          </>
         )}
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          {!showGuestWarning ? (
-            <button
-              onClick={() => setShowGuestWarning(true)}
-              className="w-full text-center text-sm text-gray-600 underline hover:text-black"
-            >
-              Continue without an account
-            </button>
-          ) : (
-            <div className="text-sm">
-              <h3 className="font-semibold mb-2">Continue without an account?</h3>
-              <p className="text-gray-600 mb-4">
-                Your progress will be stored only on this device. You won't be able to access it from
-                another browser or recover it if this browser's data is cleared.
-              </p>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => { setShowGuestWarning(false); setMode('signup'); }}
-                  className="w-full py-2 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors"
-                >
-                  Create an account and save my work
-                </button>
-                <button
-                  onClick={handleContinueAsGuest}
-                  className="w-full py-2 border border-jade-300 rounded-md hover:bg-jade-50 transition-colors"
-                >
-                  Continue on this device
-                </button>
-                <button
-                  onClick={() => setShowGuestWarning(false)}
-                  className="w-full py-2 text-gray-500 hover:text-black text-sm"
-                >
-                  Go back
-                </button>
+        {!forgotMode && (
+          <div className="mt-8 pt-6 border-t border-[color:var(--ss-surface-border)]">
+            {!showGuestWarning ? (
+              <button
+                onClick={() => setShowGuestWarning(true)}
+                className="w-full text-center text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
+              >
+                Continue without an account
+              </button>
+            ) : (
+              <div className="ss-surface text-sm">
+                <h3 className="font-semibold mb-2 text-[color:var(--ss-ink-2)]">Continue without an account?</h3>
+                <p className="text-[color:var(--ss-ink-5)] mb-4">
+                  Your progress stays on this device only. You won't be able to open it from another browser
+                  or recover it if this browser's data is cleared.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button fullWidth size="sm" onClick={() => { setShowGuestWarning(false); setMode('signup'); }}>
+                    Create an account and save my work
+                  </Button>
+                  <Button fullWidth size="sm" variant="quiet" onClick={handleContinueAsGuest}>
+                    Continue on this device
+                  </Button>
+                  <button
+                    onClick={() => setShowGuestWarning(false)}
+                    className="text-[color:var(--ss-ink-5)] text-sm hover:text-[color:var(--ss-ink-2)]"
+                  >
+                    Go back
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 };
