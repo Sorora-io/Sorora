@@ -473,6 +473,14 @@ const RankingsTab = ({
 // Roster tab — real member list with role pills
 // ---------------------------------------------------------------------------
 
+type RosterFilter = 'all' | 'big' | 'little' | 'admin';
+type RosterSort = 'az' | 'za';
+
+// A roster entry counts as an "admin" for filtering when they have the
+// dedicated admin role OR when they hold the isAdmin flag alongside a
+// big/little role — matches how the row's role pill labels them.
+const isRosterAdmin = (m: RosterEntry) => m.role === 'admin' || m.isAdmin;
+
 const RosterTab = ({
   membership,
   onNavigate,
@@ -480,20 +488,42 @@ const RosterTab = ({
   membership: MembershipWithGroup;
   onNavigate: (p: string) => void;
 }) => {
+  const [filter, setFilter] = useState<RosterFilter>('all');
+  const [sort, setSort] = useState<RosterSort>('az');
+
   const { data: roster, isLoading } = useQuery({
     queryKey: queryKeys.fullRoster(membership.group_id),
     queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
   });
 
-  const grouped = useMemo(() => {
+  const filtered = useMemo(() => {
     const list = roster ?? [];
-    const order: Record<string, number> = { admin: 0, big: 1, little: 2 };
-    return [...list].sort(
-      (a, b) =>
-        (order[a.role] ?? 9) - (order[b.role] ?? 9) ||
-        (a.name ?? a.email).localeCompare(b.name ?? b.email)
-    );
+    const matched = list.filter(m => {
+      if (filter === 'all') return true;
+      if (filter === 'admin') return isRosterAdmin(m);
+      return m.role === filter;
+    });
+    const cmp = (a: RosterEntry, b: RosterEntry) =>
+      (a.name ?? a.email).localeCompare(b.name ?? b.email);
+    return [...matched].sort((a, b) => (sort === 'az' ? cmp(a, b) : -cmp(a, b)));
+  }, [roster, filter, sort]);
+
+  const counts = useMemo(() => {
+    const list = roster ?? [];
+    return {
+      all: list.length,
+      big: list.filter(m => m.role === 'big').length,
+      little: list.filter(m => m.role === 'little').length,
+      admin: list.filter(isRosterAdmin).length,
+    };
   }, [roster]);
+
+  const filterOptions: { id: RosterFilter; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'big', label: 'Bigs' },
+    { id: 'little', label: 'Littles' },
+    { id: 'admin', label: 'Admins' },
+  ];
 
   return (
     <div>
@@ -503,7 +533,7 @@ const RosterTab = ({
       <div className="mt-8 ss-surface max-w-xl">
         {isLoading ? (
           <p className="ss-caption">Loading your chapter…</p>
-        ) : grouped.length === 0 ? (
+        ) : (roster?.length ?? 0) === 0 ? (
           <>
             <SectionHeading>
               No members yet.
@@ -513,35 +543,101 @@ const RosterTab = ({
             </p>
           </>
         ) : (
-          <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-            {grouped.map(m => (
-              <div key={m.userId} className="flex items-center gap-3 py-3">
-                <span className="w-9 h-9 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
-                  {m.avatarUrl ? (
-                    <img src={m.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
-                  ) : (
-                    initial(m.name, m.email)
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[color:var(--ss-ink-2)] truncate">
-                    {m.name ?? m.email}
-                  </div>
-                  {m.major && (
-                    <div className="text-xs text-[color:var(--ss-ink-5)] truncate">{m.major}</div>
-                  )}
-                </div>
-                <span className="ss-pill">
-                  {m.role === 'admin'
-                    ? 'Admin'
-                    : m.role === 'big'
-                    ? 'Big'
-                    : 'Little'}
-                  {m.isAdmin && m.role !== 'admin' && ' · Admin'}
-                </span>
+          <>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mb-4">
+              <div
+                className="flex flex-wrap gap-1"
+                role="group"
+                aria-label="Filter roster by role"
+              >
+                {filterOptions.map(opt => {
+                  const active = filter === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setFilter(opt.id)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-[13px] font-medium transition-colors ${
+                        active
+                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                          : 'bg-transparent text-[color:var(--ss-ink-3)] hover:bg-white/60'
+                      }`}
+                    >
+                      {opt.label}
+                      <span
+                        className={`tabular-nums text-[11px] ${
+                          active ? 'text-white/70' : 'text-[color:var(--ss-ink-5)]'
+                        }`}
+                      >
+                        {counts[opt.id]}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+              <div
+                className="flex gap-1 ml-auto"
+                role="group"
+                aria-label="Sort roster by name"
+              >
+                {(['az', 'za'] as RosterSort[]).map(id => {
+                  const active = sort === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSort(id)}
+                      aria-pressed={active}
+                      className={`inline-flex items-center px-2.5 py-1.5 rounded-pill text-[12px] font-medium tracking-wide transition-colors ${
+                        active
+                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                          : 'bg-transparent text-[color:var(--ss-ink-4)] hover:bg-white/60'
+                      }`}
+                    >
+                      {id === 'az' ? 'A → Z' : 'Z → A'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {filtered.length === 0 ? (
+              <p className="ss-caption">
+                No {filter === 'admin' ? 'admins' : `${filter}s`} in your chapter yet.
+              </p>
+            ) : (
+              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+                {filtered.map(m => (
+                  <div key={m.userId} className="flex items-center gap-3 py-3">
+                    <span className="w-9 h-9 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
+                      {m.avatarUrl ? (
+                        <img src={m.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        initial(m.name, m.email)
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[color:var(--ss-ink-2)] truncate">
+                        {m.name ?? m.email}
+                      </div>
+                      {m.major && (
+                        <div className="text-xs text-[color:var(--ss-ink-5)] truncate">{m.major}</div>
+                      )}
+                    </div>
+                    <span className="ss-pill">
+                      {m.role === 'admin'
+                        ? 'Admin'
+                        : m.role === 'big'
+                        ? 'Big'
+                        : 'Little'}
+                      {m.isAdmin && m.role !== 'admin' && ' · Admin'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
