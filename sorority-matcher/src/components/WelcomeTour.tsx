@@ -26,7 +26,6 @@ interface TourStep {
   preview: ReactNode;
 }
 
-const opposite = (role: string) => (role === 'big' ? 'little' : 'big');
 const oppositePlural = (role: string) => (role === 'big' ? 'littles' : 'Bigs');
 
 const PreviewSurface = ({ children }: { children: ReactNode }) => (
@@ -44,7 +43,6 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
       : isEffectiveAdmin(membership)
       ? 'Admin'
       : 'Member';
-  const target = opposite(membership.role);
   const targetPlural = oppositePlural(membership.role);
   const deadlineLabel = membership.group.ranking_deadline
     ? new Date(membership.group.ranking_deadline + 'T00:00:00').toLocaleDateString(undefined, {

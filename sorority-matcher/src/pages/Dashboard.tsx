@@ -250,6 +250,10 @@ const ProfileTab = ({
       setYear(profile.year ?? '');
       setBio(profile.bio ?? '');
     }
+    // We watch the fields we actually seed from, not the whole profile
+    // object, so an unrelated refetch that returns a new reference with
+    // the same values doesn't wipe the user's in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.major, profile?.year, profile?.bio]);
 
   const save = async (e: React.FormEvent) => {
