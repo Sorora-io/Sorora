@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Button from './Button';
 
 interface SceneShellProps {
   children: ReactNode;
@@ -47,13 +48,9 @@ const SceneShell = ({
             sorora
           </Link>
           {topRightLabel !== null && (
-            <button
-              type="button"
-              onClick={handleTopRight}
-              className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-            >
+            <Button variant="outline" size="sm" onClick={handleTopRight}>
               {topRightLabel}
-            </button>
+            </Button>
           )}
         </header>
 

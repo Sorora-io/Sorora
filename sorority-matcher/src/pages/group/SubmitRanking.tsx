@@ -116,7 +116,7 @@ const SubmitRanking = () => {
           </Link>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm min-h-[36px] rounded-pill border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] font-medium hover:bg-white/60 transition-colors whitespace-nowrap"
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>

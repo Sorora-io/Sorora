@@ -1,73 +1,64 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import Button from './Button';
 import { useAuth } from '../contexts/AuthContext';
 
+const ARM_MS = 3000;
+
 const AccountMenu = () => {
   const { signOut } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const container = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const id = useId();
+  const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!open) return;
-    const outside = (event: PointerEvent) => {
-      if (!container.current?.contains(event.target as Node)) setOpen(false);
-    };
+    if (!armed) return;
+    timer.current = window.setTimeout(() => setArmed(false), ARM_MS);
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setOpen(false);
+        setArmed(false);
         trigger.current?.focus();
       }
     };
-    document.addEventListener('pointerdown', outside);
     document.addEventListener('keydown', escape);
     return () => {
-      document.removeEventListener('pointerdown', outside);
       document.removeEventListener('keydown', escape);
+      if (timer.current) window.clearTimeout(timer.current);
     };
-  }, [open]);
+  }, [armed]);
 
-  const handleSignOut = async () => {
-    setBusy(true);
+  const handleClick = async () => {
     setError('');
+    if (!armed) {
+      setArmed(true);
+      return;
+    }
+    setBusy(true);
     try {
       await signOut();
-      setOpen(false);
     } catch {
       setError('Could not sign out. Please try again.');
     } finally {
       setBusy(false);
+      setArmed(false);
     }
   };
 
   return (
-    <div ref={container} className="relative shrink-0" onBlur={event => {
-      if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false);
-    }}>
-      <button
+    <div className="shrink-0 flex flex-col items-end gap-1">
+      <Button
         ref={trigger}
-        type="button"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => { setError(''); setOpen(value => !value); }}
-        className="inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-full border border-[color:var(--ss-jade-line)] bg-white/50 text-[color:var(--ss-ink-2)] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jade-700"
+        variant={armed ? 'danger-outline' : 'outline'}
+        size="sm"
+        onClick={handleClick}
+        disabled={busy}
+        aria-live="polite"
+        className="min-w-[10rem]"
       >
-        Sign out <ChevronDown size={16} aria-hidden="true" className={open ? 'rotate-180' : ''} />
-      </button>
-      {open && (
-        <section id={id} aria-labelledby={`${id}-title`} className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-2xl border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-surface-hi)] p-4 shadow-lg text-left">
-          <h2 id={`${id}-title`} className="text-base font-semibold text-[color:var(--ss-ink-2)]">Sign out?</h2>
-          <div className="mt-4 flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 !min-h-[44px]" disabled={busy} onClick={() => { setOpen(false); trigger.current?.focus(); }}>Cancel</Button>
-            <Button size="sm" className="flex-1 !min-h-[44px]" onClick={handleSignOut} disabled={busy}>{busy ? 'Signing out…' : 'Confirm'}</Button>
-          </div>
-          {error && <p role="alert" className="mt-3 text-xs text-brick">{error}</p>}
-        </section>
-      )}
+        {busy ? 'Signing out…' : armed ? 'Click again to confirm' : 'Sign out'}
+      </Button>
+      {error && <p role="alert" className="text-xs text-brick">{error}</p>}
     </div>
   );
 };

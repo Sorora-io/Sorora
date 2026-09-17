@@ -280,16 +280,17 @@ const Login = () => {
               required
               minLength={6}
             />
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
               onClick={() => {
                 setForgotMode(true);
                 setError('');
               }}
-              className="mt-2 text-sm text-[color:var(--ss-ink-5)] underline underline-offset-4 hover:text-[color:var(--ss-ink-2)]"
             >
               Forgot password?
-            </button>
+            </Button>
           </div>
           {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
           <Button type="submit" size="lg" fullWidth disabled={loading}>

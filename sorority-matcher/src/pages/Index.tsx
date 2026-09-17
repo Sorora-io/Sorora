@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMyProfile } from '../hooks/useMyProfile';
@@ -111,13 +111,16 @@ const Index = () => {
             <Button size="lg" variant="ghost" onClick={() => setStep(1)}>
               Meet sorora ↓
             </Button>
-            <button
-              type="button"
+            <Button
+              size="md"
+              variant="outline"
               onClick={() => navigate('/login')}
-              className="ss-link"
             >
               I already have an account
-            </button>
+            </Button>
+            <Link to="/about" className="ss-link">
+              About sorora
+            </Link>
           </>
         }
       >
