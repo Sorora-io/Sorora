@@ -219,9 +219,9 @@ const DashboardTab = ({
       </div>
 
       <div className="mt-8 flex flex-col items-start gap-3">
-        <button type="button" onClick={onReplayTour} className="ss-link">
+        <Button variant="outline" size="sm" onClick={onReplayTour}>
           Replay the tour
-        </button>
+        </Button>
       </div>
     </div>
   );
