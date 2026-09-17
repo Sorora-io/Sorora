@@ -226,10 +226,11 @@ const Login = () => {
 
     return (
       <SceneShell
-        topRightLabel="Start over"
+        topRightLabel="Start tour"
         footer={
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="md"
             onClick={() => {
               setMode('signup');
               setStep(joinCodeFromLink ? 'role' : 'find-chapter');
@@ -237,10 +238,9 @@ const Login = () => {
               setError('');
               setSuccessMessage('');
             }}
-            className="ss-link"
           >
             Don't have an account? Sign up
-          </button>
+          </Button>
         }
       >
         <Heading text="Welcome back to sorora." />
