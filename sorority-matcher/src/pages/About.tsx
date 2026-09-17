@@ -123,20 +123,30 @@ const About = () => {
               Three passes over your preferences.
             </h2>
 
-            <ol className="relative mt-6 space-y-6 pl-6 md:pl-8 before:absolute before:left-[11px] md:before:left-[15px] before:top-2 before:bottom-2 before:w-px before:bg-[color:var(--ss-jade-line)]">
-              {steps.map(step => (
-                <li key={step.label} className="relative">
-                  <span
-                    aria-hidden
-                    className="absolute -left-6 md:-left-8 top-0.5 inline-flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-full bg-[color:var(--ss-jade-deep)] text-white text-[10px] md:text-xs font-semibold shadow-[0_4px_12px_-4px_rgba(15,45,32,0.6)]"
+            <ol className="mt-6">
+              {steps.map((step, i) => {
+                const isLast = i === steps.length - 1;
+                return (
+                  <li
+                    key={step.label}
+                    className="grid grid-cols-[2rem_1fr] md:grid-cols-[2.25rem_1fr] gap-x-4 items-start"
                   >
-                    {step.label.slice(-2)}
-                  </span>
-                  <div className="ss-kicker text-[color:var(--ss-jade-soft)]">{step.label}</div>
-                  <h3 className="mt-0.5 text-[15px] font-semibold text-[color:var(--ss-ink-1)]">{step.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--ss-ink-4)]">{step.body}</p>
-                </li>
-              ))}
+                    <div className="flex flex-col items-center self-stretch">
+                      <span className="inline-flex h-8 w-8 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--ss-jade-deep)] text-white text-[11px] md:text-xs font-semibold shadow-[0_4px_12px_-4px_rgba(15,45,32,0.6)]">
+                        {step.label.slice(-2)}
+                      </span>
+                      {!isLast && (
+                        <span aria-hidden className="mt-1 w-px flex-1 bg-[color:var(--ss-jade-line)]" />
+                      )}
+                    </div>
+                    <div className={isLast ? '' : 'pb-6'}>
+                      <div className="ss-kicker text-[color:var(--ss-jade-soft)]">{step.label}</div>
+                      <h3 className="mt-0.5 text-[15px] font-semibold text-[color:var(--ss-ink-1)]">{step.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-[color:var(--ss-ink-4)]">{step.body}</p>
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </section>
 

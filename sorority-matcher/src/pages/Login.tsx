@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
 import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
@@ -36,6 +36,7 @@ const Sub = ({ text }: { text: string }) => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { signIn, signUp, sendPasswordReset } = useAuth();
 
@@ -87,8 +88,16 @@ const Login = () => {
 
   const backTo = (target: SignupStep | 'exit') => () => {
     setError('');
-    if (target === 'exit') navigate('/');
-    else setStep(target);
+    if (target === 'exit') {
+      // location.key === 'default' means this is the first entry in the
+      // history stack (deep-link / bookmark). Otherwise the user came from
+      // the tour, so pop history to preserve the slide they were on
+      // instead of remounting Index and losing its `step` state.
+      if (location.key !== 'default') navigate(-1);
+      else navigate('/');
+    } else {
+      setStep(target);
+    }
   };
 
   const validateJoinCode = async () => {
