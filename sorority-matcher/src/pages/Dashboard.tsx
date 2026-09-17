@@ -709,7 +709,7 @@ const Dashboard = () => {
           />
         ) : (
           <>
-            <nav aria-label="Dashboard navigation" className="hidden sm:flex flex-wrap gap-1 justify-center mb-4">
+            <nav aria-label="Dashboard navigation" className="flex flex-wrap gap-1 justify-center mb-4">
               {TABS.map(t => (
                 <button
                   key={t.id}

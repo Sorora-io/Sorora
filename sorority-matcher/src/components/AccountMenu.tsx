@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, LogOut } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import Button from './Button';
 import { useAuth } from '../contexts/AuthContext';
 
 const AccountMenu = () => {
@@ -51,28 +51,22 @@ const AccountMenu = () => {
       <button
         ref={trigger}
         type="button"
-        aria-label={open ? 'Close navigation' : 'Open navigation'}
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen(value => !value)}
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--ss-jade-line)] bg-white/50 text-[color:var(--ss-ink-2)] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jade-700"
+        onClick={() => { setError(''); setOpen(value => !value); }}
+        className="inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2 text-sm font-medium rounded-full border border-[color:var(--ss-jade-line)] bg-white/50 text-[color:var(--ss-ink-2)] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jade-700"
       >
-        {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+        Sign out <ChevronDown size={16} aria-hidden="true" className={open ? 'rotate-180' : ''} />
       </button>
       {open && (
-        <nav id={id} aria-label="Account navigation" className="absolute right-0 top-full z-50 mt-2 w-56 max-w-[calc(100vw-3rem)] rounded-2xl border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-surface-hi)] p-2 shadow-lg text-left">
-          {['Dashboard', 'Profile', 'Rankings', 'Roster', 'FAQ'].map(label => (
-            <Link key={label} to={`/dashboard?tab=${label.toLowerCase()}`} onClick={() => setOpen(false)} className="flex min-h-[44px] items-center rounded-xl px-4 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-pill-bg)] focus-visible:bg-[color:var(--ss-pill-bg)]">
-              {label}
-            </Link>
-          ))}
-          <div className="mt-1 border-t border-[color:var(--ss-surface-border)] pt-1">
-            <button type="button" onClick={handleSignOut} disabled={busy} className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-4 py-2 text-sm text-brick hover:bg-brick-50 disabled:opacity-50">
-              <LogOut size={16} aria-hidden="true" />{busy ? 'Signing out…' : 'Sign out'}
-            </button>
-            {error && <p role="alert" className="px-4 py-2 text-xs text-brick">{error}</p>}
+        <section id={id} aria-labelledby={`${id}-title`} className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-2xl border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-surface-hi)] p-4 shadow-lg text-left">
+          <h2 id={`${id}-title`} className="text-base font-semibold text-[color:var(--ss-ink-2)]">Sign out?</h2>
+          <div className="mt-4 flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1 !min-h-[44px]" disabled={busy} onClick={() => { setOpen(false); trigger.current?.focus(); }}>Cancel</Button>
+            <Button size="sm" className="flex-1 !min-h-[44px]" onClick={handleSignOut} disabled={busy}>{busy ? 'Signing out…' : 'Confirm'}</Button>
           </div>
-        </nav>
+          {error && <p role="alert" className="mt-3 text-xs text-brick">{error}</p>}
+        </section>
       )}
     </div>
   );
