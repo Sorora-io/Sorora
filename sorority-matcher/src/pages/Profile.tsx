@@ -3,17 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import AddOrganizationForm from '../components/AddOrganizationForm';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import Button from '../components/Button';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
 import { getMyProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
-const Profile = () => {
+export const ProfileContent = () => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user, signOut, signIn, updatePassword } = useAuth();
-  const { membership, memberships, setActiveGroupId, refresh } = useGroup();
+  const { membership, refresh } = useGroup();
 
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -22,12 +24,8 @@ const Profile = () => {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
 
-  const [showAddOrg, setShowAddOrg] = useState(false);
 
-  // Requesting a role change is a per-org action — each org's own row in
-  // "Your Organizations" tracks its own open/selected/saving/error state
-  // rather than sharing one global control tied to whichever org happens to
-  // be active.
+  // Keep role request state tied to the current membership.
   const [roleChangeOpenId, setRoleChangeOpenId] = useState<string | null>(null);
   const [requestedRoleByOrg, setRequestedRoleByOrg] = useState<Record<string, MembershipRole>>({});
   const [roleErrorByOrg, setRoleErrorByOrg] = useState<Record<string, string>>({});
@@ -46,20 +44,10 @@ const Profile = () => {
   const [avatarError, setAvatarError] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Name, bio, and school info save independently of each other — each
-  // section gets its own status so editing one never implies (or requires)
-  // touching the others.
-  const [nameError, setNameError] = useState('');
-  const [nameSaved, setNameSaved] = useState(false);
-  const [nameSaving, setNameSaving] = useState(false);
-
-  const [bioError, setBioError] = useState('');
-  const [bioSaved, setBioSaved] = useState(false);
-  const [bioSaving, setBioSaving] = useState(false);
-
-  const [schoolError, setSchoolError] = useState('');
-  const [schoolSaved, setSchoolSaved] = useState(false);
-  const [schoolSaving, setSchoolSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   const [signOutConfirming, setSignOutConfirming] = useState(false);
 
@@ -70,7 +58,8 @@ const Profile = () => {
 
   useEffect(() => {
     (async () => {
-      const { profile } = await getMyProfile();
+      const { profile, error } = await getMyProfile();
+      if (error || !profile) setLoadError(error || 'Profile not found');
       if (profile) {
         setName(profile.name ?? '');
         setBio(profile.bio ?? '');
@@ -97,51 +86,28 @@ const Profile = () => {
       setAvatarUploading(false);
       return;
     }
-    const { error: saveError } = await updateMyProfile(name, bio, url, major, college, year, hometown);
-    if (saveError) {
-      setAvatarError(saveError);
-    } else {
-      setAvatarUrl(url);
-    }
+    setAvatarUrl(url);
+    setSaved(false);
     setAvatarUploading(false);
   };
 
-  const handleSaveName = async () => {
-    setNameSaving(true);
-    setNameError('');
-    setNameSaved(false);
-    const { error } = await updateMyProfile(name.trim(), bio, avatarUrl, major, college, year, hometown);
-    if (error) setNameError(error);
-    else setNameSaved(true);
-    setNameSaving(false);
-  };
-
-  const handleSaveBio = async () => {
-    setBioSaving(true);
-    setBioError('');
-    setBioSaved(false);
-    const { error } = await updateMyProfile(name, bio.trim(), avatarUrl, major, college, year, hometown);
-    if (error) setBioError(error);
-    else setBioSaved(true);
-    setBioSaving(false);
-  };
-
-  const handleSaveSchool = async () => {
-    setSchoolSaving(true);
-    setSchoolError('');
-    setSchoolSaved(false);
-    const { error } = await updateMyProfile(
-      name,
-      bio,
-      avatarUrl,
-      major.trim(),
-      college.trim(),
-      year.trim(),
-      hometown.trim()
-    );
-    if (error) setSchoolError(error);
-    else setSchoolSaved(true);
-    setSchoolSaving(false);
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setSaveError('');
+    setSaved(false);
+    try {
+      const { error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl, major.trim(), college.trim(), year.trim(), hometown.trim());
+      if (error) setSaveError(error);
+      else {
+        setSaved(true);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.myProfile() });
+      }
+    } catch {
+      setSaveError('Could not save your profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -211,223 +177,47 @@ const Profile = () => {
     navigate('/');
   };
 
+  const m = membership;
+  const roleChangeOpen = !!m && roleChangeOpenId === m.id;
+  const requestedRole = m ? requestedRoleByOrg[m.id] ?? 'big' : 'big';
+  const inputClass = 'ss-input !min-h-[44px] !py-2.5 !px-3.5';
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-8">
-      <header className="mb-8">
-        <Link to="/">
-          <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
-        </Link>
-      </header>
-
-      <div className="max-w-5xl w-full mb-2">
-        <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black">
-          <ArrowLeft size={14} /> Back to Dashboard
-        </Link>
-      </div>
-
-      <div className="max-w-5xl w-full">
-
-          <h2 className="text-2xl font-semibold mb-6">Profile</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div className="bg-white rounded-lg shadow-sm p-5">
-              <div className="flex items-center gap-4 mb-5">
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={avatarUploading}
-                  className="relative w-20 h-20 flex-shrink-0 rounded-full overflow-hidden border border-jade-300 bg-gray-100 flex items-center justify-center hover:border-jade-600 transition-colors disabled:opacity-50"
-                  aria-label="Change profile picture"
-                >
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xl font-semibold text-gray-400">
-                      {(name || user?.email || '?').charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                  <span className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center text-white text-[10px] font-medium opacity-0 hover:opacity-100">
-                    {avatarUploading ? '...' : 'Change'}
-                  </span>
-                </button>
-                <div className="min-w-0">
-                  <p className="text-sm text-gray-600 truncate">{user?.email}</p>
-                  {avatarError && <p className="text-brick text-sm mt-1">{avatarError}</p>}
-                </div>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/gif,image/webp"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-              </div>
-
-              <h3 className="text-sm font-semibold mb-2">Name</h3>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  disabled={profileLoading}
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
-                />
-                {nameError && <p className="text-brick text-sm">{nameError}</p>}
-                {nameSaved && <p className="text-jade-700 text-sm">Name updated.</p>}
-                <Button fullWidth onClick={handleSaveName} disabled={nameSaving || profileLoading}>
-                  {nameSaving ? '...' : 'Save Name'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-5">
-              <h3 className="text-sm font-semibold mb-2">Bio</h3>
-              <div className="flex flex-col gap-2">
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="A little about you"
-                  rows={3}
-                  disabled={profileLoading}
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50 resize-none"
-                />
-                {bioError && <p className="text-brick text-sm">{bioError}</p>}
-                {bioSaved && <p className="text-jade-700 text-sm">Bio updated.</p>}
-                <Button fullWidth onClick={handleSaveBio} disabled={bioSaving || profileLoading}>
-                  {bioSaving ? '...' : 'Save Bio'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-5">
-              <h3 className="text-sm font-semibold mb-2">School info</h3>
-              <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={major}
-                    onChange={(e) => setMajor(e.target.value)}
-                    placeholder="Major"
-                    disabled={profileLoading}
-                    className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={college}
-                    onChange={(e) => setCollege(e.target.value)}
-                    placeholder="College"
-                    disabled={profileLoading}
-                    className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    placeholder="Graduating Year"
-                    disabled={profileLoading}
-                    className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
-                  />
-                  <input
-                    type="text"
-                    value={hometown}
-                    onChange={(e) => setHometown(e.target.value)}
-                    placeholder="Hometown"
-                    disabled={profileLoading}
-                    className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 disabled:opacity-50"
-                  />
-                </div>
-                {schoolError && <p className="text-brick text-sm">{schoolError}</p>}
-                {schoolSaved && <p className="text-jade-700 text-sm">School info updated.</p>}
-                <Button fullWidth onClick={handleSaveSchool} disabled={schoolSaving || profileLoading}>
-                  {schoolSaving ? '...' : 'Save School Info'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-5">
-              <h3 className="text-sm font-semibold mb-2">Change password</h3>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Current password"
-                  autoComplete="current-password"
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                />
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="New password"
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  minLength={6}
-                  autoComplete="new-password"
-                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
-                />
-                {passwordError && <p className="text-brick text-sm">{passwordError}</p>}
-                {passwordSaved && <p className="text-jade-700 text-sm">Password updated.</p>}
-                <Button fullWidth onClick={handleChangePassword} disabled={passwordSaving}>
-                  {passwordSaving ? '...' : 'Update Password'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-5 md:col-span-2">
-              <h3 className="text-sm font-semibold mb-2">Your Organizations</h3>
-
-              <div className="flex flex-col gap-2 mb-3">
-                {memberships.map(m => {
-                  const active = m.group_id === membership?.group_id;
-                  const roleChangeOpen = roleChangeOpenId === m.id;
-                  const requestedRole = requestedRoleByOrg[m.id] ?? 'big';
-                  return (
-                    <div
-                      key={m.id}
-                      className={`px-3 py-2 rounded-md border ${
-                        active ? 'border-jade-600' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{m.group.name}</p>
-                          {m.group.school && <p className="text-xs text-gray-400">{m.group.school}</p>}
-                          <p className="text-xs text-gray-500">
-                            {roleLabel[m.role]}
-                            {m.status !== 'approved' && ` (${m.status})`}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {m.status === 'approved' && !m.requested_role && (
-                            <button
-                              onClick={() => setRoleChangeOpenId(roleChangeOpen ? null : m.id)}
-                              className="text-sm underline text-gray-600 hover:text-black"
-                            >
-                              {roleChangeOpen ? 'Cancel' : 'Change role'}
-                            </button>
-                          )}
-                          {active ? (
-                            <span className="text-xs text-gray-400">Active</span>
-                          ) : (
-                            <button
-                              onClick={() => setActiveGroupId(m.group_id)}
-                              className="text-sm underline text-gray-600 hover:text-black"
-                            >
-                              Switch
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
+    <div className="w-full">
+      <h1 className="font-display text-4xl md:text-5xl text-[color:var(--ss-ink-1)]">Your profile</h1>
+      <p className="mt-2 mb-7 text-[color:var(--ss-ink-5)]">A little about you, all in one place.</p>
+      <form onSubmit={handleSave} onChange={() => setSaved(false)} className="rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60 p-5 sm:p-7">
+        <div className="flex flex-wrap items-center gap-4 border-b border-[color:var(--ss-surface-border)] pb-6 mb-6">
+          <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-[color:var(--ss-pill-bg)] flex items-center justify-center">
+            {avatarUrl ? <img src={avatarUrl} alt="Your profile" className="w-full h-full object-cover" /> : <span className="font-display text-3xl">{name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() || '?'}</span>}
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <h2 className="font-display text-2xl sm:text-3xl break-words">{name || 'Your name'}</h2>
+            <p className="text-sm text-[color:var(--ss-ink-5)] break-words">{[college, year && `Class of ${year}`].filter(Boolean).join(' · ') || 'Make yourself at home.'}</p>
+          </div>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => avatarInputRef.current?.click()} disabled={profileLoading || saving || avatarUploading || !!loadError}>{avatarUploading ? 'Uploading…' : 'Change photo'}</Button>
+          <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={handleAvatarChange} className="hidden" aria-label="Choose profile photo" />
+        </div>
+        {avatarError && <p role="alert" className="text-brick text-sm mb-4">{avatarError}</p>}
+        {loadError && <p role="alert" className="text-brick text-sm mb-4">Could not load your profile: {loadError}. Please reload to try again.</p>}
+        <fieldset disabled={profileLoading || saving || !!loadError} className="space-y-5 disabled:opacity-60">
+          <div><label htmlFor="profile-name" className="ss-label">Name</label><input id="profile-name" className={inputClass} value={name} onChange={e => setName(e.target.value)} autoComplete="name" /></div>
+          <div><label htmlFor="profile-bio" className="ss-label">Bio</label><textarea id="profile-bio" className={`${inputClass} resize-y`} rows={3} value={bio} onChange={e => setBio(e.target.value)} placeholder="A little about you" /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-x-6">
+            {[{id: 'major', label: 'Major', value: major, set: setMajor}, {id: 'college', label: 'College', value: college, set: setCollege}, {id: 'year', label: 'Graduating year', value: year, set: setYear}, {id: 'hometown', label: 'Hometown', value: hometown, set: setHometown}].map(field => <div key={field.id}><label htmlFor={`profile-${field.id}`} className="ss-label">{field.label}</label><input id={`profile-${field.id}`} className={inputClass} value={field.value} onChange={e => field.set(e.target.value)} /></div>)}
+          </div>
+        </fieldset>
+        <div className="mt-7 pt-5 border-t border-[color:var(--ss-surface-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div><p className="ss-caption">Your profile helps your chapter get to know you.</p><p role="status" className="text-sm text-jade-700">{profileLoading ? 'Loading profile…' : saved ? 'Changes saved.' : ''}</p>{saveError && <p role="alert" className="text-brick text-sm">{saveError}</p>}</div>
+          <Button type="submit" disabled={saving || profileLoading || avatarUploading || !!loadError}>{saving ? 'Saving…' : 'Save changes'}</Button>
+        </div>
+      </form>
+      <details className="mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
+        <summary className="cursor-pointer p-5 sm:px-7 marker:text-jade-700"><span className="font-display text-xl">Chapter membership</span><span className="inline-flex flex-wrap gap-2 ml-3 align-middle">{m && <><span className="ss-pill">{m.group.name}</span><span className="ss-pill">{roleLabel[m.role]}</span></>}</span></summary>
+        <div className="px-5 sm:px-7 pb-6">
+          {m ? <>
+            <p className="ss-caption mb-3">{m.group.school && `${m.group.school} · `}Membership status: {m.status}</p>
+            {m.status === 'approved' && !m.requested_role && <Button variant="outline" size="sm" onClick={() => setRoleChangeOpenId(roleChangeOpen ? null : m.id)}>{roleChangeOpen ? 'Cancel' : 'Request role change'}</Button>}
                       {m.status === 'approved' && m.requested_role && (
                         <p className="text-xs text-gray-500 mt-2">
                           Your request to become {roleLabel[m.requested_role]} is waiting on your
@@ -438,6 +228,7 @@ const Profile = () => {
                       {roleChangeOpen && (
                         <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-100">
                           <select
+                            aria-label="Requested chapter role"
                             value={requestedRole}
                             onChange={(e) =>
                               setRequestedRoleByOrg(prev => ({ ...prev, [m.id]: e.target.value as MembershipRole }))
@@ -459,34 +250,60 @@ const Profile = () => {
                           </button>
                         </div>
                       )}
-                    </div>
-                  );
-                })}
-                {memberships.length === 0 && (
-                  <p className="text-sm text-gray-500">You're not part of any organization yet.</p>
-                )}
-              </div>
 
-              {showAddOrg ? (
-                <AddOrganizationForm
-                  onCreated={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
-                  onJoined={(groupId) => { setActiveGroupId(groupId); setShowAddOrg(false); }}
-                  onCancel={() => setShowAddOrg(false)}
+          </> : <p className="ss-caption">You haven't joined a chapter yet. <Link to="/group/onboarding" className="ss-link">Join your chapter</Link></p>}
+        </div>
+      </details>
+      <details className="mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
+        <summary className="cursor-pointer p-5 sm:px-7 marker:text-jade-700"><span className="font-display text-xl">Account settings</span><span className="block ss-caption mt-1">Password, sign out, and account management</span></summary>
+        <div className="px-5 sm:px-7 pb-6 space-y-5">
+            <div className="bg-white rounded-lg shadow-sm p-5">
+              <h3 className="text-sm font-semibold mb-2">Change password</h3>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  aria-label="Current password"
+                  placeholder="Current password"
+                  autoComplete="current-password"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
-              ) : (
-                <Button variant="outline" size="sm" fullWidth onClick={() => setShowAddOrg(true)}>
-                  + Add Organization
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  aria-label="New password"
+                  placeholder="New password"
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  aria-label="Confirm new password"
+                  placeholder="Confirm new password"
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+                />
+                {passwordError && <p className="text-brick text-sm">{passwordError}</p>}
+                {passwordSaved && <p className="text-jade-700 text-sm">Password updated.</p>}
+                <Button fullWidth onClick={handleChangePassword} disabled={passwordSaving}>
+                  {passwordSaving ? '...' : 'Update Password'}
                 </Button>
-              )}
+              </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-5 flex items-center justify-between">
+            <div className="bg-white rounded-lg shadow-sm p-5 flex flex-wrap gap-3 items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold">Sign out</h3>
                 <p className="text-xs text-gray-500">You can always sign back in later.</p>
               </div>
               {signOutConfirming ? (
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button variant="ghost" onClick={() => setSignOutConfirming(false)}>
                     Cancel
                   </Button>
@@ -505,7 +322,7 @@ const Profile = () => {
               <h3 className="text-sm font-semibold text-brick mb-1">Danger Zone</h3>
 
               {!deleteOpen ? (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-gray-500">Permanently delete your account and all its data.</p>
                   <Button
                     variant="danger-outline"
@@ -521,7 +338,7 @@ const Profile = () => {
                   <div className="bg-brick-50 border border-brick rounded-md p-4">
                     <p className="text-sm text-brick font-medium mb-2">This can't be undone.</p>
                     <p className="text-sm text-brick">
-                      Deleting your account permanently removes your profile, organization memberships,
+                      Deleting your account permanently removes your profile, chapter membership,
                       rankings, and notes. If you currently own a chapter, you'll need to{' '}
                       <Link to="/group/settings" className="underline">
                         transfer ownership
@@ -530,11 +347,12 @@ const Profile = () => {
                     </p>
                   </div>
 
-                  <label className="text-sm text-gray-600">
+                  <label htmlFor="delete-confirmation" className="text-sm text-gray-600">
                     Type <span className="font-mono font-semibold">DELETE</span> to confirm.
                   </label>
                   <input
                     type="text"
+                    id="delete-confirmation"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                     placeholder="DELETE"
@@ -542,17 +360,17 @@ const Profile = () => {
                   />
                   {deleteError && <p className="text-brick text-sm">{deleteError}</p>}
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       variant="ghost"
-                      className="flex-1"
+                      className="flex-1 !whitespace-normal"
                       onClick={() => { setDeleteOpen(false); setDeleteConfirmText(''); setDeleteError(''); }}
                     >
                       Cancel
                     </Button>
                     <Button
                       variant="danger"
-                      className="flex-1"
+                      className="flex-1 !whitespace-normal"
                       onClick={handleDeleteAccount}
                       disabled={deleteConfirmText !== 'DELETE' || deleteSaving}
                     >
@@ -562,10 +380,26 @@ const Profile = () => {
                 </div>
               )}
             </div>
-          </div>
+
         </div>
+      </details>
     </div>
   );
 };
+
+const Profile = () => (
+  <div className="min-h-screen px-5 sm:px-8 pb-12">
+    <header className="max-w-5xl mx-auto py-5 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--ss-surface-border)]">
+      <Link to="/" className="font-display text-3xl text-[color:var(--ss-ink-1)]">Sorora</Link>
+      <nav aria-label="Main navigation" className="flex flex-wrap gap-1">
+        {['Dashboard', 'Profile', 'Rankings', 'Roster', 'FAQ'].map(label => <Link key={label} to={label === 'Profile' ? '/profile' : `/dashboard?tab=${label.toLowerCase()}`} className="ss-tab !px-3 !text-sm" aria-current={label === 'Profile' ? 'page' : undefined}>{label}</Link>)}
+      </nav>
+    </header>
+    <main className="max-w-4xl mx-auto pt-7">
+      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-[color:var(--ss-ink-5)] mb-6"><ArrowLeft size={14} />Back to dashboard</Link>
+      <ProfileContent />
+    </main>
+  </div>
+);
 
 export default Profile;

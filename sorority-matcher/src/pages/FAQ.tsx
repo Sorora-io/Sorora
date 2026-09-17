@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface QA {
   q: string;
@@ -45,7 +46,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: 'Can I admin more than one chapter?',
-        a: "Yes. Add or join another organization from your Profile page, then switch between them using the org switcher at the top of the sidebar.",
+        a: 'Sorora currently supports one chapter per account.',
       },
       {
         q: 'A member wants to change roles (e.g. Big to Admin) — how do I handle that?',
@@ -64,11 +65,11 @@ const SECTIONS: FaqSection[] = [
     items: [
       {
         q: 'How do I join my chapter?',
-        a: 'Sign up (or sign in, then "+ Add Organization" on your Profile), enter your chapter\'s join code, and select "Big." Your chapter admin needs to approve you before you can rank anyone.',
+        a: 'Sign up and choose "Join a chapter", enter your chapter\'s join code, and select "Big." Your chapter admin needs to approve you before you can rank anyone.',
       },
       {
         q: 'How do I rank littles?',
-        a: '"Rank Littles" appears in the sidebar once you\'re approved. Click available names in order of preference, most preferred first — you need to rank at least the minimum your admin has set.',
+        a: 'Open the Rankings tab on your dashboard after your membership is approved. Rank available members in order of preference, most preferred first, and meet the minimum set by your admin.',
       },
       {
         q: "Can I take twins?",
@@ -80,7 +81,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: 'Can I be in more than one chapter?',
-        a: 'Yes. Add or join another organization from your Profile page, then switch between them from the sidebar.',
+        a: 'Sorora currently supports one chapter per account.',
       },
       {
         q: 'How do I request to become an Admin or Little?',
@@ -95,11 +96,11 @@ const SECTIONS: FaqSection[] = [
     items: [
       {
         q: 'How do I join my chapter?',
-        a: 'Sign up (or sign in, then "+ Add Organization" on your Profile), enter your chapter\'s join code, and select "Little." Your chapter admin needs to approve you before you can rank anyone.',
+        a: 'Sign up and choose "Join a chapter", enter your chapter\'s join code, and select "Little." Your chapter admin needs to approve you before you can rank anyone.',
       },
       {
         q: 'How do I rank bigs?',
-        a: '"Rank Bigs" appears in the sidebar once you\'re approved. Click available names in order of preference, most preferred first — you need to rank at least the minimum your admin has set.',
+        a: 'Open the Rankings tab on your dashboard after your membership is approved. Rank available members in order of preference, most preferred first, and meet the minimum set by your admin.',
       },
       {
         q: "I'm still waiting on approval — what do I do?",
@@ -111,13 +112,16 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: 'Can I be in more than one chapter?',
-        a: 'Yes. Add or join another organization from your Profile page, then switch between them from the sidebar.',
+        a: 'Sorora currently supports one chapter per account.',
       },
     ],
   },
 ];
 
 const FAQ = () => {
+  const { user } = useAuth();
+  const backTo = user ? "/dashboard" : "/";
+  const backLabel = user ? "Back to dashboard" : "Back to home";
   const [openKeys, setOpenKeys] = useState<Set<string>>(new Set([`${SECTIONS[0].id}-0`]));
 
   const toggle = (key: string) => {
@@ -132,15 +136,15 @@ const FAQ = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
           <Link
-            to="/"
-            className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+            to={backTo}
+            className="inline-flex items-center justify-center rounded-pill border border-[color:var(--ss-jade-line)] px-5 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-white/60"
           >
-            Back to home
+            {backLabel}
           </Link>
         </header>
 
@@ -208,6 +212,7 @@ const FAQ = () => {
         </div>
 
         <div className="text-center mt-8">
+          <Link to={backTo} className="ss-link inline-block mb-4">{backLabel}</Link>
           <p className="ss-caption">
             Still have questions?{' '}
             <Link to="/contact" className="underline underline-offset-4 text-[color:var(--ss-ink-2)] font-medium">

@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
-import { homeForRole } from '../components/RequireGroupRole';
+import { ProfileContent } from './Profile';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
-import { getMyProfile, updateMyProfile, MyProfile } from '../lib/profile';
+import { getMyProfile } from '../lib/profile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys } from '../lib/queryKeys';
 
 // Dashboard = the sorora-story canvas's five-tab member view (Dashboard /
 // Profile / Rankings / Roster / FAQ). Every tab lives on the same soft
-// mint background under a shared top nav; no sidebar. The multi-chapter
-// switcher hides in a small link above the tab row.
+// mint background under a shared top nav; no sidebar.
 
 type TabId = 'dashboard' | 'profile' | 'rankings' | 'roster' | 'faq';
 
@@ -222,135 +221,6 @@ const DashboardTab = ({
           Replay the tour
         </button>
       </div>
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Profile tab — inline form matching design (Major / Year / Bio + Save)
-// ---------------------------------------------------------------------------
-
-const ProfileTab = ({
-  profile,
-  membership,
-}: {
-  profile: MyProfile | null | undefined;
-  membership: MembershipWithGroup;
-}) => {
-  const qc = useQueryClient();
-  const [major, setMajor] = useState(profile?.major ?? '');
-  const [year, setYear] = useState(profile?.year ?? '');
-  const [bio, setBio] = useState(profile?.bio ?? '');
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  useEffect(() => {
-    if (profile) {
-      setMajor(profile.major ?? '');
-      setYear(profile.year ?? '');
-      setBio(profile.bio ?? '');
-    }
-    // We watch the fields we actually seed from, not the whole profile
-    // object, so an unrelated refetch that returns a new reference with
-    // the same values doesn't wipe the user's in-progress edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.id, profile?.major, profile?.year, profile?.bio]);
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile) return;
-    setStatus('saving');
-    setErrorMsg('');
-    const { error } = await updateMyProfile(
-      profile.name ?? '',
-      bio,
-      profile.avatar_url ?? null,
-      major,
-      profile.college ?? '',
-      year,
-      profile.hometown ?? ''
-    );
-    if (error) {
-      setErrorMsg(error);
-      setStatus('error');
-      return;
-    }
-    setStatus('saved');
-    qc.invalidateQueries({ queryKey: queryKeys.myProfile() });
-    setTimeout(() => setStatus('idle'), 1800);
-  };
-
-  return (
-    <div>
-      <Heading text="Make your profile yours." />
-      <Sub text="Add a photo and a few details so your chapter can find you and put a face to your name." />
-
-      <div className="mt-8 ss-surface max-w-xl flex items-start gap-4">
-        <div className="w-14 h-14 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-lg font-medium">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-          ) : (
-            initial(profile?.name, profile?.email)
-          )}
-        </div>
-        <div className="min-w-0">
-          <SectionHeading>
-            {profile?.name || 'Your name'}
-          </SectionHeading>
-          <span className="ss-pill mt-1">{roleLabel(membership)}</span>
-        </div>
-      </div>
-
-      <form onSubmit={save} className="mt-6 max-w-xl flex flex-col gap-4">
-        <div>
-          <label className="ss-label" htmlFor="major">Major</label>
-          <input
-            id="major"
-            className="ss-input"
-            type="text"
-            value={major}
-            onChange={e => setMajor(e.target.value)}
-            placeholder="e.g. Computer Science"
-          />
-        </div>
-        <div>
-          <label className="ss-label" htmlFor="year">Year</label>
-          <input
-            id="year"
-            className="ss-input"
-            type="text"
-            value={year}
-            onChange={e => setYear(e.target.value)}
-            placeholder="e.g. Junior"
-          />
-        </div>
-        <div>
-          <label className="ss-label" htmlFor="bio">A little about me</label>
-          <textarea
-            id="bio"
-            className="ss-input"
-            rows={5}
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-            placeholder="Something you'd like your chapter to know…"
-            style={{ resize: 'vertical', minHeight: 120 }}
-          />
-        </div>
-        {status === 'error' && errorMsg && (
-          <p className="text-[color:var(--ss-error)] text-sm">{errorMsg}</p>
-        )}
-        <div className="flex items-center gap-3">
-          <Button type="submit" disabled={status === 'saving'}>
-            {status === 'saving' ? 'Saving…' : 'Save profile'}
-          </Button>
-          {status === 'saved' && (
-            <span className="text-sm text-[color:var(--ss-jade)]">Saved.</span>
-          )}
-          <Link to="/profile" className="ss-link">
-            More profile settings
-          </Link>
-        </div>
-      </form>
     </div>
   );
 };
@@ -697,7 +567,6 @@ const Dashboard = () => {
 
   const tabFromUrl = (searchParams.get('tab') as TabId) || 'dashboard';
   const [tab, setTab] = useState<TabId>(tabFromUrl);
-  const [switchOpen, setSwitchOpen] = useState(false);
   const [signOutConfirming, setSignOutConfirming] = useState(false);
   const [tourActive, setTourActive] = useState(false);
 
@@ -720,11 +589,6 @@ const Dashboard = () => {
     queryFn: () => getMyProfile().then(({ profile: p }) => p),
     enabled: !!user,
   });
-
-  const otherMemberships = useMemo(
-    () => memberships.filter(m => !membership || m.group_id !== membership.group_id),
-    [memberships, membership]
-  );
 
   // First-time approved member sees the welcome + tour. Also flipped on
   // manually by "Replay the tour".
@@ -773,13 +637,7 @@ const Dashboard = () => {
             <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
               sorora
             </Link>
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-            >
-              Sign out
-            </button>
+            <Button variant="outline" size="sm" onClick={() => signOut()}>Sign out</Button>
           </header>
           <Heading text="Your chapter starts here." />
           <Sub text="You're signed in but not part of a chapter yet. Join one with a code, or set yours up." />
@@ -812,7 +670,7 @@ const Dashboard = () => {
   const renderTab = () => {
     switch (tab) {
       case 'profile':
-        return <ProfileTab profile={profile} membership={membership} />;
+        return <ProfileContent />;
       case 'rankings':
         return <RankingsTab membership={membership} onNavigate={onNavigate} />;
       case 'roster':
@@ -839,45 +697,8 @@ const Dashboard = () => {
             sorora
           </Link>
           <div className="flex items-center gap-4">
-            {otherMemberships.length > 0 && (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setSwitchOpen(o => !o)}
-                  className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-                >
-                  Switch chapter
-                </button>
-                {switchOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-white/95 border border-[color:var(--ss-surface-border)] rounded-2xl p-2 z-10 shadow-lg">
-                    {otherMemberships.map(m => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => { setActiveGroupId(m.group_id); setSwitchOpen(false); }}
-                        className="w-full text-left px-3 py-2 rounded-pill text-sm hover:bg-[color:var(--ss-surface)]"
-                      >
-                        <span className="block font-medium text-[color:var(--ss-ink-2)] truncate">
-                          {m.group.name}
-                        </span>
-                        <span className="block text-xs text-[color:var(--ss-ink-5)] truncate">
-                          {roleLabel(m)}
-                        </span>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { setSwitchOpen(false); onNavigate(homeForRole(membership)); }}
-                      className="w-full text-left px-3 py-2 rounded-pill text-sm hover:bg-[color:var(--ss-surface)] text-[color:var(--ss-ink-4)]"
-                    >
-                      + Add another chapter
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
             {signOutConfirming ? (
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex flex-wrap justify-end items-center gap-2 text-sm">
                 <span className="text-[color:var(--ss-ink-5)]">Sign out?</span>
                 <button
                   onClick={() => signOut()}
@@ -893,13 +714,7 @@ const Dashboard = () => {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setSignOutConfirming(true)}
-                className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-              >
-                Sign out
-              </button>
+              <Button variant="outline" size="sm" onClick={() => setSignOutConfirming(true)}>Sign out</Button>
             )}
           </div>
         </header>
