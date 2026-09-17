@@ -12,6 +12,7 @@ interface SceneShellProps {
   footer?: ReactNode;
   /** Optional wider max-width for content-heavy pages (dashboard, FAQ). */
   wide?: boolean;
+  centered?: boolean;
 }
 
 // Every screen in the sorora-story canvas shares the same frame: a soft
@@ -26,12 +27,13 @@ const SceneShell = ({
   onTopRight,
   footer,
   wide = false,
+  centered = false,
 }: SceneShellProps) => {
   const navigate = useNavigate();
   const handleTopRight = onTopRight ?? (() => navigate('/'));
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+    <div className={`min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8 ${centered ? 'justify-center' : ''}`}>
       <section
         className={`ss-frost w-full ${
           wide ? 'max-w-4xl' : 'max-w-2xl'

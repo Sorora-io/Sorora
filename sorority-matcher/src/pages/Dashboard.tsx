@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
+import AccountMenu from '../components/AccountMenu';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import { ProfileContent } from './Profile';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
@@ -534,13 +535,17 @@ const FaqTab = () => (
       </SectionHeading>
       <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
         {[
-          'Can I update my rankings?',
-          'Who can see my preferences?',
-          'When will matches be announced?',
-        ].map(q => (
-          <p key={q} className="py-3 text-[color:var(--ss-ink-2)]">
-            {q}
-          </p>
+          { question: 'Can I update my rankings?', answer: 'Yes. Open the Rankings tab and save your updated preferences while submissions are open. Your chapter admin controls the deadline and when submissions close.' },
+          { question: 'Who can see my preferences?', answer: 'You and your chapter admins can see your rankings. Other Bigs and Littles cannot see your preferences.' },
+          { question: 'When will matches be announced?', answer: 'Your chapter admin runs matching and shares the results. Contact your admin for your chapter’s announcement date.' },
+        ].map(({ question, answer }) => (
+          <details key={question} className="group">
+            <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-4 py-3 text-[color:var(--ss-ink-2)] [&::-webkit-details-marker]:hidden">
+              {question}
+              <span aria-hidden="true" className="shrink-0 text-xl group-open:rotate-45 transition-transform">+</span>
+            </summary>
+            <p className="ss-caption pb-4 pr-6">{answer}</p>
+          </details>
         ))}
       </div>
     </div>
@@ -562,12 +567,11 @@ const FaqTab = () => (
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { memberships, membership, setActiveGroupId } = useGroup();
 
   const tabFromUrl = (searchParams.get('tab') as TabId) || 'dashboard';
   const [tab, setTab] = useState<TabId>(tabFromUrl);
-  const [signOutConfirming, setSignOutConfirming] = useState(false);
   const [tourActive, setTourActive] = useState(false);
 
   useEffect(() => {
@@ -637,7 +641,7 @@ const Dashboard = () => {
             <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
               sorora
             </Link>
-            <Button variant="outline" size="sm" onClick={() => signOut()}>Sign out</Button>
+            <AccountMenu />
           </header>
           <Heading text="Your chapter starts here." />
           <Sub text="You're signed in but not part of a chapter yet. Join one with a code, or set yours up." />
@@ -696,27 +700,7 @@ const Dashboard = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <div className="flex items-center gap-4">
-            {signOutConfirming ? (
-              <div className="flex flex-wrap justify-end items-center gap-2 text-sm">
-                <span className="text-[color:var(--ss-ink-5)]">Sign out?</span>
-                <button
-                  onClick={() => signOut()}
-                  className="font-medium text-brick hover:underline"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setSignOutConfirming(false)}
-                  className="text-[color:var(--ss-ink-5)] hover:underline"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => setSignOutConfirming(true)}>Sign out</Button>
-            )}
-          </div>
+          <AccountMenu />
         </header>
 
         {tourActive ? (
@@ -727,7 +711,7 @@ const Dashboard = () => {
           />
         ) : (
           <>
-            <nav className="flex flex-wrap gap-1 justify-center mb-4">
+            <nav aria-label="Dashboard navigation" className="hidden sm:flex flex-wrap gap-1 justify-center mb-4">
               {TABS.map(t => (
                 <button
                   key={t.id}

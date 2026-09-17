@@ -161,8 +161,9 @@ const Roster = () => {
 
   const renderSection = (label: string, list: RosterEntry[]) => (
     <div>
-      <div className="ss-kicker">
-        {label} ({list.length})
+      <div className="ss-kicker flex items-center gap-2">
+        {label}
+        <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-md border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tracking-normal tabular-nums">{list.length}</span>
       </div>
       {list.length === 0 ? (
         <p className="ss-caption">No one here yet.</p>
@@ -181,13 +182,13 @@ const Roster = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
+            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-pill border border-[color:var(--ss-jade-line)] px-4 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-white/60"
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>

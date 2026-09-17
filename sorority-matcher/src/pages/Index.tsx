@@ -78,6 +78,7 @@ const Index = () => {
   if (signedIn) {
     return (
       <SceneShell
+        centered
         topRightLabel={null}
         footer={
           <Button size="lg" onClick={() => navigate('/dashboard')}>
@@ -92,9 +93,7 @@ const Index = () => {
         />
         <p className="mt-6 max-w-lg text-[color:var(--ss-ink-5)] text-lg">
           {memberships.length > 0
-            ? `You’re part of ${memberships.length} ${
-                memberships.length === 1 ? 'chapter' : 'chapters'
-              }. Everything you need is a click away.`
+            ? 'Everything you need for your chapter is a click away.'
             : "You haven't joined a chapter yet. Let's fix that."}
         </p>
       </SceneShell>
