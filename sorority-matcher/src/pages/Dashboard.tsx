@@ -404,7 +404,7 @@ const RosterTab = ({
       <Heading text="Your chapter roster" />
       <Sub text={groupLabel(membership.group)} />
 
-      <div className="mt-8 ss-surface max-w-xl">
+      <div className="mt-8 ss-surface">
         {isLoading ? (
           <p className="ss-caption">Loading your chapter…</p>
         ) : (roster?.length ?? 0) === 0 ? (
