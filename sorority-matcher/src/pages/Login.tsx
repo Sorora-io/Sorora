@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { stashPendingGroupAction } from '../contexts/GroupContext';
 import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
@@ -177,9 +178,9 @@ const Login = () => {
         }}
         footer={
           resetSent ? (
-            <button onClick={() => setForgotMode(false)} className="ss-link">
-              Back to sign in
-            </button>
+            <Button variant="outline" size="lg" onClick={() => setForgotMode(false)}>
+              <ArrowLeft size={16} /> Back to sign in
+            </Button>
           ) : null
         }
       >
@@ -316,10 +317,14 @@ const Login = () => {
   // Signup wizard scenes
   // -----------------------------------------------------------------------
 
-  const BackLink = ({ target }: { target: SignupStep | 'exit' }) => (
-    <button type="button" onClick={backTo(target)} className="ss-link">
-      Back
-    </button>
+  const BackButton = ({ target }: { target: SignupStep | 'exit' }) => (
+    <Button size="lg" variant="outline" onClick={backTo(target)}>
+      <ArrowLeft size={16} /> Back
+    </Button>
+  );
+
+  const NavRow = ({ children }: { children: ReactNode }) => (
+    <div className="flex flex-wrap items-center justify-center gap-3">{children}</div>
   );
 
   if (step === 'find-chapter') {
@@ -331,12 +336,12 @@ const Login = () => {
     return (
       <SceneShell
         footer={
-          <>
+          <NavRow>
+            <BackButton target="exit" />
             <Button size="lg" onClick={handleContinue} disabled={loading}>
-              {loading ? '...' : 'Continue'}
+              {loading ? '...' : 'Continue'} <ArrowRight size={16} />
             </Button>
-            <BackLink target="exit" />
-          </>
+          </NavRow>
         }
       >
         <Heading text="Let’s find your chapter." />
@@ -364,7 +369,8 @@ const Login = () => {
     return (
       <SceneShell
         footer={
-          <>
+          <NavRow>
+            <BackButton target="exit" />
             <Button
               size="lg"
               onClick={() => {
@@ -376,10 +382,9 @@ const Login = () => {
                 setStep('chapter-school');
               }}
             >
-              Continue
+              Continue <ArrowRight size={16} />
             </Button>
-            <BackLink target="exit" />
-          </>
+          </NavRow>
         }
       >
         <Heading text="What’s your sorority’s name?" italic />
@@ -404,7 +409,8 @@ const Login = () => {
     return (
       <SceneShell
         footer={
-          <>
+          <NavRow>
+            <BackButton target="chapter-name" />
             <Button
               size="lg"
               onClick={() => {
@@ -417,10 +423,9 @@ const Login = () => {
                 setStep('account');
               }}
             >
-              Continue
+              Continue <ArrowRight size={16} />
             </Button>
-            <BackLink target="chapter-name" />
-          </>
+          </NavRow>
         }
       >
         <Heading text="Where’s your chapter?" />
@@ -445,12 +450,12 @@ const Login = () => {
     return (
       <SceneShell
         footer={
-          <>
+          <NavRow>
+            <BackButton target="find-chapter" />
             <Button size="lg" onClick={() => setStep('account')}>
-              Continue
+              Continue <ArrowRight size={16} />
             </Button>
-            <BackLink target="find-chapter" />
-          </>
+          </NavRow>
         }
       >
         <Heading text="Are you a Big or a Little?" />
@@ -486,17 +491,17 @@ const Login = () => {
   return (
     <SceneShell
       footer={
-        <>
+        <NavRow>
+          <BackButton target={path === 'create' ? 'chapter-school' : 'role'} />
           <Button
             size="lg"
             type="submit"
             form="account-form"
             disabled={loading}
           >
-            {loading ? '...' : 'Create my profile'}
+            {loading ? '...' : 'Create my profile'} <ArrowRight size={16} />
           </Button>
-          <BackLink target={path === 'create' ? 'chapter-school' : 'role'} />
-        </>
+        </NavRow>
       }
     >
       <Heading text="Make yourself at home." italic />

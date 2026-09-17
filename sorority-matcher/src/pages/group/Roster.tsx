@@ -6,7 +6,7 @@ import { LayoutGrid, List, ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getFullRoster, RosterEntry } from '../../lib/rankings';
 import { groupLabel, MembershipRole } from '../../lib/groups';
-import { queryKeys } from '../../lib/queryKeys';
+import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
 // Design canvas: roster shows a single sage ss-surface with rows of
@@ -75,6 +75,7 @@ const Roster = () => {
         return r;
       }),
     enabled: !!group,
+    staleTime: STALE.medium,
   });
   const error = queryError ? (queryError as Error).message : '';
 

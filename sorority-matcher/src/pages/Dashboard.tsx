@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
@@ -11,7 +11,7 @@ import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
-import { queryKeys } from '../lib/queryKeys';
+import { queryKeys, STALE } from '../lib/queryKeys';
 
 // Dashboard = the sorora-story canvas's five-tab member view (Dashboard /
 // Profile / Rankings / Roster / FAQ). Every tab lives on the same soft
@@ -254,6 +254,7 @@ const RankingsTab = ({
     queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
     queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
     enabled: isRanker,
+    staleTime: STALE.medium,
   });
 
   // Join ranked ids against roster so we can show real names in the list —
@@ -368,6 +369,7 @@ const RosterTab = ({
   const { data: roster, isLoading } = useQuery({
     queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
     queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+    staleTime: STALE.medium,
   });
 
   const filtered = useMemo(() => {
@@ -571,6 +573,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { memberships, membership, setActiveGroupId } = useGroup();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const tabFromUrl = (searchParams.get('tab') as TabId) || 'dashboard';
   const [tab, setTab] = useState<TabId>(tabFromUrl);
@@ -627,6 +631,22 @@ const Dashboard = () => {
   };
 
   const onReplayTour = () => setTourActive(true);
+
+  // Hover/focus on a tab pill prefetches that tab's data so the switch is
+  // instant. Cheap when the user doesn't click (React Query dedupes and
+  // respects the query's staleTime), noticeable when they do. We only
+  // prefetch tabs that fetch their own data — Profile is already covered
+  // by useMyProfile at the shell level, and FAQ is static.
+  const prefetchTab = (id: TabId) => {
+    if (!user || !membership) return;
+    if (id === 'roster' || id === 'rankings') {
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.fullRoster(user.id, membership.group_id),
+        queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+        staleTime: STALE.medium,
+      });
+    }
+  };
 
   // -----------------------------------------------------------------------
   // Empty state — signed in but not in any chapter
@@ -715,6 +735,8 @@ const Dashboard = () => {
                   key={t.id}
                   type="button"
                   onClick={() => setActiveTab(t.id)}
+                  onMouseEnter={() => prefetchTab(t.id)}
+                  onFocus={() => prefetchTab(t.id)}
                   aria-current={tab === t.id ? 'page' : undefined}
                   className="ss-tab"
                 >

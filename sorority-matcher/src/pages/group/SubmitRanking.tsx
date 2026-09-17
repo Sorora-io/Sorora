@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
 import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
-import { queryKeys } from '../../lib/queryKeys';
+import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 import Button from '../../components/Button';
 
@@ -26,6 +26,7 @@ const SubmitRanking = () => {
     queryKey: queryKeys.groupRoster(user?.id ?? '', group?.id ?? '', oppositeRole),
     queryFn: () => getRoster(group!.id, oppositeRole).then(({ roster: r }) => r),
     enabled: !!group,
+    staleTime: STALE.medium,
   });
   // Shares its cache key with Dashboard's OrgCard — whichever page the
   // member visited first already has this warm.
