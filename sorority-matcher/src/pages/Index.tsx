@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useMyProfile } from '../hooks/useMyProfile';
@@ -105,10 +106,11 @@ const Index = () => {
   if (onOpening) {
     return (
       <SceneShell
-        topRightLabel={null}
+        topRightLabel="About"
+        onTopRight={() => navigate('/about')}
         footer={
           <>
-            <Button size="lg" variant="ghost" onClick={() => setStep(1)}>
+            <Button size="lg" onClick={() => setStep(1)}>
               Meet sorora ↓
             </Button>
             <Button
@@ -118,9 +120,6 @@ const Index = () => {
             >
               I already have an account
             </Button>
-            <Link to="/about" className="ss-link">
-              About sorora
-            </Link>
           </>
         }
       >
@@ -135,37 +134,38 @@ const Index = () => {
       onTopRight={() => setStep(0)}
       footer={
         <>
-          {!isLastSlide && (
-            <Button size="lg" onClick={() => setStep(step + 1)}>
-              Continue
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setStep(step - 1)}
+            >
+              <ArrowLeft size={16} /> Back
             </Button>
-          )}
-          {isLastSlide && (
-            <div className="flex flex-col sm:flex-row gap-3 items-center">
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/login?mode=signup&path=join')}
-              >
-                Join a chapter
+            {!isLastSlide && (
+              <Button size="lg" onClick={() => setStep(step + 1)}>
+                Continue <ArrowRight size={16} />
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/login?mode=signup&path=create')}
-              >
-                Create a chapter
-              </Button>
-            </div>
-          )}
+            )}
+            {isLastSlide && (
+              <>
+                <Button
+                  size="lg"
+                  onClick={() => navigate('/login?mode=signup&path=join')}
+                >
+                  Join a chapter
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate('/login?mode=signup&path=create')}
+                >
+                  Create a chapter
+                </Button>
+              </>
+            )}
+          </div>
           <SceneDots current={slideIndex} total={SLIDES.length} />
-          <button
-            type="button"
-            onClick={() => setStep(step - 1)}
-            className="ss-link"
-          >
-            Back
-          </button>
         </>
       }
     >

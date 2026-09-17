@@ -280,10 +280,16 @@ const Login = () => {
               required
               minLength={6}
             />
+          </div>
+          {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
+          <Button type="submit" size="lg" fullWidth disabled={loading}>
+            {loading ? '...' : 'Sign in'}
+          </Button>
+          <div className="flex justify-end">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="mt-3"
+              className="!min-h-0 !px-3 !py-1 !text-xs"
               onClick={() => {
                 setForgotMode(true);
                 setError('');
@@ -292,10 +298,6 @@ const Login = () => {
               Forgot password?
             </Button>
           </div>
-          {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
-          <Button type="submit" size="lg" fullWidth disabled={loading}>
-            {loading ? '...' : 'Sign in'}
-          </Button>
         </form>
       </SceneShell>
     );
