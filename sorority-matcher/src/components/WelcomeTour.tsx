@@ -1,5 +1,6 @@
 import { useState, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Button from './Button';
 import { SceneDots } from './SceneShell';
 import { MembershipWithGroup, isEffectiveAdmin } from '../lib/groups';
@@ -163,13 +164,13 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
           you around your chapter’s space, so you know where everything is when you need it.
         </p>
         <p className="ss-caption mt-6">Chapter timeline: {deadlineLabel}</p>
-        <div className="mt-10 flex flex-col items-center gap-4">
-          <Button size="lg" onClick={() => setStep(0)}>
-            Show me around
-          </Button>
-          <button type="button" onClick={onFinish} className="ss-link">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <Button size="lg" variant="outline" onClick={onFinish}>
             Skip the tour
-          </button>
+          </Button>
+          <Button size="lg" onClick={() => setStep(0)}>
+            Show me around <ArrowRight size={16} />
+          </Button>
         </div>
       </div>
     );
@@ -187,13 +188,13 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
         <p className="mt-5 max-w-lg text-[color:var(--ss-ink-5)] text-lg leading-relaxed">
           You’re all set{firstName ? `, ${firstName}` : ''}. Your profile, {targetPlural.toLowerCase()} rankings, roster, and FAQ will be right here.
         </p>
-        <div className="mt-10 flex flex-col items-center gap-4">
-          <Button size="lg" onClick={onFinish}>
-            Go to my dashboard
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <Button size="lg" variant="outline" onClick={() => setStep(3)}>
+            <ArrowLeft size={16} /> Back
           </Button>
-          <button type="button" onClick={() => setStep(3)} className="ss-link">
-            Back
-          </button>
+          <Button size="lg" onClick={onFinish}>
+            Go to my dashboard <ArrowRight size={16} />
+          </Button>
         </div>
       </div>
     );
@@ -218,20 +219,22 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
       <PreviewSurface>{s.preview}</PreviewSurface>
 
       <div className="mt-10 flex flex-col items-center gap-4">
-        <Button
-          size="lg"
-          onClick={() => setStep(isLast ? 'end' : ((idx + 1) as Step))}
-        >
-          {isLast ? 'Finish my tour' : 'Continue'}
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setStep(idx === 0 ? 'welcome' : ((idx - 1) as Step))}
+          >
+            <ArrowLeft size={16} /> Back
+          </Button>
+          <Button
+            size="lg"
+            onClick={() => setStep(isLast ? 'end' : ((idx + 1) as Step))}
+          >
+            {isLast ? 'Finish my tour' : 'Continue'} <ArrowRight size={16} />
+          </Button>
+        </div>
         <SceneDots current={idx} total={tourSteps.length} />
-        <button
-          type="button"
-          onClick={() => setStep(idx === 0 ? 'welcome' : ((idx - 1) as Step))}
-          className="ss-link"
-        >
-          Back
-        </button>
       </div>
     </div>
   );
