@@ -1,15 +1,13 @@
-// Centralized so the same fetch reached from different pages (e.g.
-// getMyRanking from both Dashboard and SubmitRanking) shares one cache
-// entry under react-query — a typo'd duplicate key here would silently
-// defeat that sharing and bring back the "reloads every time" flicker.
+// Every authenticated cache entry belongs to one user, including chapter
+// data whose visibility can differ with membership permissions.
 export const queryKeys = {
-  myProfile: () => ['my-profile'] as const,
-  // Keyed by cycle, not group — rankings/pairings are per-cycle now, so
-  // this also means starting a new cycle naturally busts the cache (a new
-  // cycleId is a new key) instead of needing a manual invalidation.
-  submissionStatus: (cycleId: string) => ['submission-status', cycleId] as const,
-  myRanking: (cycleId: string) => ['my-ranking', cycleId] as const,
-  fullRoster: (groupId: string) => ['full-roster', groupId] as const,
-  groupRoster: (groupId: string, role: string) => ['group-roster', groupId, role] as const,
-  myNotes: (groupId: string) => ['my-notes', groupId] as const,
+  myProfile: (userId: string) => ['user', userId, 'my-profile'] as const,
+  submissionStatus: (userId: string, cycleId: string) => ['user', userId, 'submission-status', cycleId] as const,
+  myRanking: (userId: string, cycleId: string) => ['user', userId, 'my-ranking', cycleId] as const,
+  fullRoster: (userId: string, groupId: string) => ['user', userId, 'full-roster', groupId] as const,
+  groupRoster: (userId: string, groupId: string, role?: string) => role
+    ? ['user', userId, 'group-roster', groupId, role] as const
+    : ['user', userId, 'group-roster', groupId] as const,
+  myNotes: (userId: string, groupId: string) => ['user', userId, 'my-notes', groupId] as const,
+  approvals: (userId: string, groupId: string) => ['user', userId, 'approvals', groupId] as const,
 };

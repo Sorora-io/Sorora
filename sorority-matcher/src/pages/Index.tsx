@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import { getMyProfile } from '../lib/profile';
-import { queryKeys } from '../lib/queryKeys';
+import { useMyProfile } from '../hooks/useMyProfile';
 import Button from '../components/Button';
 import SceneShell, { SceneDots } from '../components/SceneShell';
 
@@ -64,11 +62,7 @@ const Index = () => {
   const { memberships } = useGroup();
   const [step, setStep] = useState(0);
 
-  const { data: profile } = useQuery({
-    queryKey: queryKeys.myProfile(),
-    queryFn: () => getMyProfile().then(({ profile: p }) => p),
-    enabled: !!user,
-  });
+  const { data: profile } = useMyProfile();
 
   const signedIn = !!user;
 

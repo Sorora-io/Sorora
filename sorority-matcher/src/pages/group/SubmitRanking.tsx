@@ -1,3 +1,5 @@
+import { invalidateChapter } from '../../lib/cache';
+import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -10,6 +12,7 @@ import LoadingLogo from '../../components/LoadingLogo';
 import Button from '../../components/Button';
 
 const SubmitRanking = () => {
+  const { user } = useAuth();
   const { membership, refresh } = useGroup();
   const group = membership?.group;
   const role = membership?.role;
@@ -20,14 +23,14 @@ const SubmitRanking = () => {
   const queryClient = useQueryClient();
 
   const { data: roster = [], isLoading: rosterLoading } = useQuery({
-    queryKey: queryKeys.groupRoster(group?.id ?? '', oppositeRole),
+    queryKey: queryKeys.groupRoster(user?.id ?? '', group?.id ?? '', oppositeRole),
     queryFn: () => getRoster(group!.id, oppositeRole).then(({ roster: r }) => r),
     enabled: !!group,
   });
   // Shares its cache key with Dashboard's OrgCard — whichever page the
   // member visited first already has this warm.
   const { data: existingRankedIds, isLoading: rankingLoading } = useQuery({
-    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
     enabled: !!cycleId,
   });
@@ -95,7 +98,8 @@ const SubmitRanking = () => {
       // Other pages (Dashboard's OrgCard) cache this same query — without
       // invalidating it here, they'd keep showing "not submitted" until
       // their own cache happens to go stale on its own.
-      queryClient.invalidateQueries({ queryKey: queryKeys.myRanking(cycleId) });
+      queryClient.setQueryData(queryKeys.myRanking(user!.id, cycleId), [...rankedIds]);
+      await invalidateChapter(queryClient, user!.id, group.id, cycleId);
       await refresh();
     }
     setSaving(false);

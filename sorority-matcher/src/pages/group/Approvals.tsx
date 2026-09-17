@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
+import { queryKeys } from '../../lib/queryKeys';
+import { invalidateChapter } from '../../lib/cache';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
@@ -11,7 +15,6 @@ import {
   getGroupMembers,
   setMemberAdmin,
   removeMember,
-  PendingMembership,
   RoleChangeRequest,
   GroupMember,
 } from '../../lib/groups';
@@ -19,13 +22,11 @@ import {
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Approvals = () => {
-  const { membership } = useGroup();
+  const { membership, refresh } = useGroup();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const group = membership?.group;
 
-  const [pending, setPending] = useState<PendingMembership[]>([]);
-  const [roleChanges, setRoleChanges] = useState<RoleChangeRequest[]>([]);
-  const [members, setMembers] = useState<GroupMember[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
   const [adminSavingId, setAdminSavingId] = useState<string | null>(null);
@@ -36,30 +37,25 @@ const Approvals = () => {
 
   const joinLink = group ? `${window.location.origin}/login?join=${group.join_code}` : '';
 
-  const load = useCallback(async () => {
-    if (!group) return;
-    setLoading(true);
-    const [
-      { memberships, error: loadError },
-      { requests, error: roleError },
-      { members: memberList, error: membersError },
-    ] = await Promise.all([
-      getPendingMemberships(group.id),
-      getPendingRoleChanges(group.id),
-      getGroupMembers(group.id),
-    ]);
-    if (loadError) setError(loadError);
-    else if (roleError) setError(roleError);
-    else if (membersError) setError(membersError);
-    setPending(memberships);
-    setRoleChanges(requests);
-    setMembers(memberList);
-    setLoading(false);
-  }, [group]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, isPending: loading, error: loadError } = useQuery({
+    queryKey: queryKeys.approvals(user?.id ?? '', group?.id ?? ''),
+    enabled: !!user && !!group,
+    queryFn: async () => {
+      const [pendingResult, rolesResult, membersResult] = await Promise.all([
+        getPendingMemberships(group!.id), getPendingRoleChanges(group!.id), getGroupMembers(group!.id),
+      ]);
+      const failure = pendingResult.error || rolesResult.error || membersResult.error;
+      if (failure) throw new Error(failure);
+      return { pending: pendingResult.memberships, roleChanges: rolesResult.requests, members: membersResult.members };
+    },
+  });
+  const pending = data?.pending ?? [];
+  const roleChanges = data?.roleChanges ?? [];
+  const members = data?.members ?? [];
+  const refreshAfterChange = async () => {
+    if (user && group) await invalidateChapter(queryClient, user.id, group.id, group.active_cycle_id);
+    await refresh();
+  };
 
   const handleDecision = async (membershipId: string, status: 'approved' | 'rejected') => {
     const { error: updateError } = await updateMembershipStatus(membershipId, status);
@@ -67,7 +63,7 @@ const Approvals = () => {
       setError(updateError);
       return;
     }
-    setPending(prev => prev.filter(m => m.id !== membershipId));
+    await refreshAfterChange();
   };
 
   const handleRoleDecision = async (r: RoleChangeRequest, approve: boolean) => {
@@ -76,7 +72,7 @@ const Approvals = () => {
       setError(updateError);
       return;
     }
-    setRoleChanges(prev => prev.filter(req => req.id !== r.id));
+    await refreshAfterChange();
   };
 
   const handleToggleAdmin = async (m: GroupMember) => {
@@ -86,7 +82,7 @@ const Approvals = () => {
     if (toggleError) {
       setAdminError(toggleError);
     } else {
-      setMembers(prev => prev.map(row => (row.id === m.id ? { ...row, is_admin: !row.is_admin } : row)));
+      await refreshAfterChange();
     }
     setAdminSavingId(null);
   };
@@ -98,7 +94,7 @@ const Approvals = () => {
     if (removeError) {
       setRemoveError(removeError);
     } else {
-      setMembers(prev => prev.filter(m => m.id !== membershipId));
+      await refreshAfterChange();
       setRemoveConfirmId(null);
     }
     setRemoveSavingId(null);
@@ -177,7 +173,7 @@ const Approvals = () => {
         <div className="mt-6 ss-surface">
           <div className="ss-kicker" style={{ marginBottom: 8 }}>Pending requests</div>
 
-          {error && <p className="text-[color:var(--ss-error)] text-sm mb-3">{error}</p>}
+          {(error || loadError) && <p className="text-[color:var(--ss-error)] text-sm mb-3">{error || loadError?.message}</p>}
 
           {loading ? (
             <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">

@@ -1,3 +1,5 @@
+import { useMyProfile } from '../hooks/useMyProfile';
+import { invalidateChapter } from '../lib/cache';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -7,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import Button from '../components/Button';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
-import { getMyProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
+import { updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -32,7 +34,9 @@ export const ProfileContent = () => {
   const [roleSentByOrg, setRoleSentByOrg] = useState<Record<string, boolean>>({});
   const [roleSavingId, setRoleSavingId] = useState<string | null>(null);
 
-  const [profileLoading, setProfileLoading] = useState(true);
+  const { data: profile, isPending: profileLoading, error: profileError } = useMyProfile();
+  const loadError = profileError?.message ?? '';
+  const seeded = useRef(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [major, setMajor] = useState('');
@@ -47,7 +51,6 @@ export const ProfileContent = () => {
   const [saveError, setSaveError] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loadError, setLoadError] = useState('');
 
   const [signOutConfirming, setSignOutConfirming] = useState(false);
 
@@ -57,21 +60,16 @@ export const ProfileContent = () => {
   const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { profile, error } = await getMyProfile();
-      if (error || !profile) setLoadError(error || 'Profile not found');
-      if (profile) {
-        setName(profile.name ?? '');
-        setBio(profile.bio ?? '');
-        setMajor(profile.major ?? '');
-        setCollege(profile.college ?? '');
-        setYear(profile.year ?? '');
-        setHometown(profile.hometown ?? '');
-        setAvatarUrl(profile.avatar_url);
-      }
-      setProfileLoading(false);
-    })();
-  }, []);
+    if (!profile || seeded.current) return;
+    seeded.current = true;
+    setName(profile.name ?? '');
+    setBio(profile.bio ?? '');
+    setMajor(profile.major ?? '');
+    setCollege(profile.college ?? '');
+    setYear(profile.year ?? '');
+    setHometown(profile.hometown ?? '');
+    setAvatarUrl(profile.avatar_url);
+  }, [profile]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,11 +95,13 @@ export const ProfileContent = () => {
     setSaveError('');
     setSaved(false);
     try {
-      const { error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl, major.trim(), college.trim(), year.trim(), hometown.trim());
+      const { profile: updated, error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl, major.trim(), college.trim(), year.trim(), hometown.trim());
       if (error) setSaveError(error);
       else {
         setSaved(true);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.myProfile() });
+        if (updated) queryClient.setQueryData(queryKeys.myProfile(user!.id), updated);
+        else await queryClient.invalidateQueries({ queryKey: queryKeys.myProfile(user!.id) });
+        if (membership) await invalidateChapter(queryClient, user!.id, membership.group_id, membership.group.active_cycle_id);
       }
     } catch {
       setSaveError('Could not save your profile. Please try again.');
@@ -160,6 +160,7 @@ export const ProfileContent = () => {
     } else {
       setRoleSentByOrg(prev => ({ ...prev, [membershipId]: true }));
       await refresh();
+      if (user && membership) await invalidateChapter(queryClient, user.id, membership.group_id, membership.group.active_cycle_id);
     }
     setRoleSavingId(null);
   };
@@ -184,7 +185,7 @@ export const ProfileContent = () => {
 
   return (
     <div className="w-full">
-      <h1 className="font-display text-4xl md:text-5xl text-[color:var(--ss-ink-1)]">Your profile</h1>
+      <h1 className="font-sans text-[30px] font-semibold leading-[1.2] tracking-[-0.9px] text-[color:var(--ss-ink-1)]">Your profile</h1>
       <p className="mt-2 mb-7 text-[color:var(--ss-ink-5)]">A little about you, all in one place.</p>
       <form onSubmit={handleSave} onChange={() => setSaved(false)} className="rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60 p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-4 border-b border-[color:var(--ss-surface-border)] pb-6 mb-6">

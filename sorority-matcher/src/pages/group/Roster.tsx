@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -24,6 +25,7 @@ const initial = (r: RosterEntry) => (r.name || r.email || '?').charAt(0).toUpper
 const roleWord: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Roster = () => {
+  const { user } = useAuth();
   const { membership } = useGroup();
   const group = membership?.group;
 
@@ -66,7 +68,7 @@ const Roster = () => {
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: queryKeys.fullRoster(group?.id ?? ''),
+    queryKey: queryKeys.fullRoster(user?.id ?? '', group?.id ?? ''),
     queryFn: () =>
       getFullRoster(group!.id).then(({ roster: r, error: loadError }) => {
         if (loadError) throw new Error(loadError);

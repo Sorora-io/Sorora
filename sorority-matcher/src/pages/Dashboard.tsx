@@ -9,7 +9,7 @@ import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import { ProfileContent } from './Profile';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
-import { getMyProfile } from '../lib/profile';
+import { useMyProfile } from '../hooks/useMyProfile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys } from '../lib/queryKeys';
 
@@ -97,19 +97,20 @@ const DashboardTab = ({
   onNavigate: (path: string) => void;
   onReplayTour: () => void;
 }) => {
+  const { user } = useAuth();
   const isRanker = membership.role === 'big' || membership.role === 'little';
   const isAdmin = isEffectiveAdmin(membership);
   const cycleId = membership.group.active_cycle_id;
   const targetPlural = opposite(membership.role) === 'big' ? 'Bigs' : 'littles';
 
   const { data: rankedIds } = useQuery({
-    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
     enabled: isRanker && !!cycleId,
   });
 
   const { data: statusRows } = useQuery({
-    queryKey: queryKeys.submissionStatus(cycleId ?? ''),
+    queryKey: queryKeys.submissionStatus(user?.id ?? '', cycleId ?? ''),
     queryFn: () =>
       getSubmissionStatus(membership.group_id, cycleId).then(({ rows }) => rows),
     enabled: isAdmin && !!cycleId,
@@ -237,19 +238,20 @@ const RankingsTab = ({
   membership: MembershipWithGroup;
   onNavigate: (p: string) => void;
 }) => {
+  const { user } = useAuth();
   const isRanker = membership.role === 'big' || membership.role === 'little';
   const target = opposite(membership.role);
   const targetPlural = target === 'big' ? 'Bigs' : 'littles';
   const cycleId = membership.group.active_cycle_id;
 
   const { data: rankedIds } = useQuery({
-    queryKey: queryKeys.myRanking(cycleId ?? ''),
+    queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
     enabled: isRanker && !!cycleId,
   });
 
   const { data: roster } = useQuery({
-    queryKey: queryKeys.fullRoster(membership.group_id),
+    queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
     queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
     enabled: isRanker,
   });
@@ -362,8 +364,9 @@ const RosterTab = ({
   const [filter, setFilter] = useState<RosterFilter>('all');
   const [sort, setSort] = useState<RosterSort>('az');
 
+  const { user } = useAuth();
   const { data: roster, isLoading } = useQuery({
-    queryKey: queryKeys.fullRoster(membership.group_id),
+    queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
     queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
   });
 
@@ -567,7 +570,6 @@ const FaqTab = () => (
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useAuth();
   const { memberships, membership, setActiveGroupId } = useGroup();
 
   const tabFromUrl = (searchParams.get('tab') as TabId) || 'dashboard';
@@ -588,11 +590,7 @@ const Dashboard = () => {
     }, { replace: true });
   };
 
-  const { data: profile } = useQuery({
-    queryKey: queryKeys.myProfile(),
-    queryFn: () => getMyProfile().then(({ profile: p }) => p),
-    enabled: !!user,
-  });
+  const { data: profile } = useMyProfile();
 
   // First-time approved member sees the welcome + tour. Also flipped on
   // manually by "Replay the tour".

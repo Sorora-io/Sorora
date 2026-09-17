@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
@@ -10,6 +11,7 @@ import LoadingLogo from '../../components/LoadingLogo';
 import Button from '../../components/Button';
 
 const Status = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { membership } = useGroup();
   const group = membership?.group;
@@ -27,7 +29,7 @@ const Status = () => {
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: queryKeys.submissionStatus(cycleId ?? ''),
+    queryKey: queryKeys.submissionStatus(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getSubmissionStatus(group!.id, cycleId).then(({ rows: r, error: loadError }) => {
       if (loadError) throw new Error(loadError);
       return r;

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -26,20 +27,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    let active = true;
+    let authEventReceived = false;
+    let previousId: string | null = null;
+    const applySession = (next: Session | null) => {
+      if (!active) return;
+      const nextId = next?.user.id ?? null;
+      if (previousId !== nextId) queryClient.clear();
+      previousId = nextId;
+      setSession(next);
+      setUser(next?.user ?? null);
       setLoading(false);
+    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
+      authEventReceived = true;
+      applySession(next);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: initial } }) => {
+      if (!authEventReceived) applySession(initial);
     });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [queryClient]);
 
   const signUp = async (email: string, password: string, name?: string) => {
     const { error } = await supabase.auth.signUp({
@@ -56,7 +67,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    queryClient.clear();
   };
 
   const updatePassword = async (newPassword: string) => {
@@ -78,7 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signUp, signIn, signOut, updatePassword, sendPasswordReset,
       }}
     >
-      {children}
+      <React.Fragment key={user?.id ?? 'signed-out'}>{children}</React.Fragment>
     </AuthContext.Provider>
   );
 };
