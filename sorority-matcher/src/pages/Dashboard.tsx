@@ -288,7 +288,7 @@ const RankingsTab = ({
         }
       />
 
-      <div className="mt-8 ss-surface max-w-xl">
+      <div className="mt-8 ss-surface">
         {empty ? (
           <>
             <SectionHeading>
@@ -532,7 +532,7 @@ const FaqTab = () => (
   <div>
     <Heading text="A little help, whenever you need it." />
     <Sub text="Visit the FAQ whenever you need help with rankings, submissions, or what happens next." />
-    <div className="mt-8 ss-surface max-w-xl">
+    <div className="mt-8 ss-surface">
       <SectionHeading>
         Frequently asked questions
       </SectionHeading>
