@@ -35,7 +35,7 @@ const SceneShell = ({
   const handleTopRight = onTopRight ?? (() => navigate('/'));
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8 ${centered ? 'justify-center' : ''}`}>
+    <div className={`flex-1 w-full flex flex-col items-center px-5 md:px-8 py-8 ${centered ? 'justify-center' : ''}`}>
       <section
         className={`ss-frost w-full ${
           wide ? 'max-w-4xl' : 'max-w-2xl'

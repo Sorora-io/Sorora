@@ -65,7 +65,7 @@ const AppShell = () => {
   }
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       {user && groupError && (
         <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
           <p>We couldn’t finish loading your chapter: {groupError}</p>
@@ -74,6 +74,7 @@ const AppShell = () => {
           </button>
         </div>
       )}
+      <main className="flex-1 flex flex-col">
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -96,6 +97,7 @@ const AppShell = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      </main>
       <Footer />
     </div>
   );
