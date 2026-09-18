@@ -16,6 +16,8 @@ Gmail no longer accepts your regular password for SMTP. You need a 16-character 
 
 > Using Google Workspace instead of a personal @gmail.com account? Same flow, but your admin may need to allow App Passwords under Security → Less secure apps / App passwords.
 
+> **Already set up Custom SMTP for Auth (forgot-password) emails?** Reuse the exact same Gmail address + App Password here — Auth's SMTP config in the Supabase dashboard lives in a separate store from Edge Function env vars, so the creds still need to be dropped in via `supabase secrets set` below. Same values, different store.
+
 ### 2. Set the secrets
 
 ```bash
