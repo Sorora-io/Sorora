@@ -11,6 +11,7 @@ import RequireRealAccount from "./components/RequireRealAccount";
 import RequireGroupRole from "./components/RequireGroupRole";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
+import Footer from "./components/Footer";
 // Index and Login stay eager — they're the two pages a fresh visitor is
 // actually likely to land on first, so loading them shouldn't cost an
 // extra chunk-fetch round trip. Everything else (chapter-scoped pages a
@@ -95,6 +96,7 @@ const AppShell = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      <Footer />
     </div>
   );
 };
