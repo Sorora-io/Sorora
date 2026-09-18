@@ -557,12 +557,18 @@ const FaqTab = () => (
         ))}
       </div>
     </div>
-    <div className="mt-6">
+    <div className="mt-6 flex flex-wrap gap-3">
       <Link
         to="/faq"
         className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
       >
         Open the full FAQ
+      </Link>
+      <Link
+        to="/contact"
+        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill border border-[color:var(--ss-jade-line)] text-[color:var(--ss-ink-2)] hover:bg-white/60 transition-colors"
+      >
+        Contact us
       </Link>
     </div>
   </div>

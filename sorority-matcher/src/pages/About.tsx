@@ -179,6 +179,14 @@ const About = () => {
               ))}
             </ul>
           </section>
+
+          <p className="text-center ss-caption">
+            Still curious, or something not working?{' '}
+            <Link to="/contact" className="underline underline-offset-4 text-[color:var(--ss-ink-2)] font-medium">
+              Contact us
+            </Link>
+            .
+          </p>
         </div>
       </section>
     </div>
