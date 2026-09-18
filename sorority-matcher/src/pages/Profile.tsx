@@ -213,8 +213,14 @@ export const ProfileContent = () => {
           <Button type="submit" disabled={saving || profileLoading || avatarUploading || !!loadError}>{saving ? 'Saving…' : 'Save changes'}</Button>
         </div>
       </form>
-      <details className="mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
-        <summary className="cursor-pointer p-5 sm:px-7 marker:text-jade-700"><span className="font-display text-xl">Chapter membership</span><span className="inline-flex flex-wrap gap-2 ml-3 align-middle">{m && <><span className="ss-pill">{m.group.name}</span><span className="ss-pill">{roleLabel[m.role]}</span></>}</span></summary>
+      <details className="group mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:px-7 [&::-webkit-details-marker]:hidden">
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="font-display text-xl">Chapter membership</span>
+            {m && <span className="inline-flex flex-wrap gap-2"><span className="ss-pill">{m.group.name}</span><span className="ss-pill">{roleLabel[m.role]}</span></span>}
+          </span>
+          <span aria-hidden="true" className="shrink-0 text-xl leading-none text-[color:var(--ss-jade)] transition-transform group-open:rotate-45">+</span>
+        </summary>
         <div className="px-5 sm:px-7 pb-6">
           {m ? <>
             <p className="ss-caption mb-3">{m.group.school && `${m.group.school} · `}Membership status: {m.status}</p>
@@ -255,8 +261,14 @@ export const ProfileContent = () => {
           </> : <p className="ss-caption">You haven't joined a chapter yet. <Link to="/group/onboarding" className="ss-link">Join your chapter</Link></p>}
         </div>
       </details>
-      <details className="mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
-        <summary className="cursor-pointer p-5 sm:px-7 marker:text-jade-700"><span className="font-display text-xl">Account settings</span><span className="block ss-caption mt-1">Password, sign out, and account management</span></summary>
+      <details className="group mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:px-7 [&::-webkit-details-marker]:hidden">
+          <span className="flex flex-col">
+            <span className="font-display text-xl">Account settings</span>
+            <span className="ss-caption mt-1">Password, sign out, and account management</span>
+          </span>
+          <span aria-hidden="true" className="shrink-0 text-xl leading-none text-[color:var(--ss-jade)] transition-transform group-open:rotate-45">+</span>
+        </summary>
         <div className="px-5 sm:px-7 pb-6 space-y-5">
             <div className="bg-white rounded-lg shadow-sm p-5">
               <h3 className="text-sm font-semibold mb-2">Change password</h3>
