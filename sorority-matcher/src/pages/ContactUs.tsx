@@ -23,7 +23,7 @@ const ContactUs = () => {
     }
     setSending(true);
     setError('');
-    const { error: sendError } = await sendContactMessage(name.trim(), email.trim(), message.trim());
+    const { error: sendError } = await sendContactMessage(name.trim(), email.trim(), message.trim(), website);
     if (sendError) {
       setError(sendError);
     } else {
