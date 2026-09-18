@@ -38,6 +38,32 @@ const json = (body: unknown, status = 200) =>
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// Defaults live in one place so the Settings preview and the actual send
+// stay in sync — the client fetches DEFAULT_REVEAL_TEMPLATE from Supabase
+// via the get_reveal_email_defaults RPC (migration 0019). Update both
+// if you change these.
+const DEFAULT_SUBJECT = 'Your Little{{little_plural_s}} {{little_plural_is_are}} here — {{chapter_name}}';
+const DEFAULT_BODY = `Hi {{first_name}},
+
+Your Little{{little_plural_s}} {{little_plural_is_are}}: {{little_names}}
+
+Said with love,
+{{chapter_name}}`;
+
+function renderTemplate(
+  template: string,
+  vars: { first_name: string; little_names: string; chapter_name: string; little_count: number },
+): string {
+  const s = vars.little_count > 1 ? 's' : '';
+  const isAre = vars.little_count > 1 ? 'are' : 'is';
+  return template
+    .replace(/\{\{\s*first_name\s*\}\}/g, vars.first_name)
+    .replace(/\{\{\s*little_names\s*\}\}/g, vars.little_names)
+    .replace(/\{\{\s*chapter_name\s*\}\}/g, vars.chapter_name)
+    .replace(/\{\{\s*little_plural_s\s*\}\}/g, s)
+    .replace(/\{\{\s*little_plural_is_are\s*\}\}/g, isAre);
+}
+
 interface PairingRow {
   id: string;
   big_id: string;
@@ -60,10 +86,12 @@ async function revealCycle(
 ) {
   const { data: groupRow, error: groupError } = await admin
     .from('groups')
-    .select('name')
+    .select('name, reveal_email_subject, reveal_email_body')
     .eq('id', groupId)
     .maybeSingle();
   if (groupError || !groupRow) return { sent: 0, total: 0, error: 'Group not found' };
+  const subjectTemplate = (groupRow.reveal_email_subject as string | null)?.trim() || DEFAULT_SUBJECT;
+  const bodyTemplate = (groupRow.reveal_email_body as string | null)?.trim() || DEFAULT_BODY;
 
   const { data: pairingRows, error: pairingsError } = await admin
     .from('pairings')
@@ -117,21 +145,30 @@ async function revealCycle(
   const failures: string[] = [];
   try {
     for (const t of targets.values()) {
-      const greeting = t.bigName ? `Hi ${t.bigName.split(/\s+/)[0]},` : 'Hi,';
-      const littleList = t.littles.map(l => l.name || l.email).join(', ');
-      const htmlList = t.littles
-        .map(l => `<li>${escapeHtml(l.name || l.email)}</li>`)
+      const firstName = t.bigName?.split(/\s+/)[0] || 'there';
+      const littleNames = t.littles.map(l => l.name || l.email).join(', ');
+      const vars = {
+        first_name: firstName,
+        little_names: littleNames,
+        chapter_name: groupRow.name as string,
+        little_count: t.littles.length,
+      };
+      const subject = renderTemplate(subjectTemplate, vars);
+      const bodyPlain = renderTemplate(bodyTemplate, vars);
+      // Preserve paragraph breaks in HTML view — a blank line becomes a new
+      // <p>, a single newline becomes a <br>. Everything escaped first so
+      // an admin can't inject HTML by editing the template.
+      const bodyHtml = bodyPlain
+        .split(/\n{2,}/)
+        .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
         .join('');
       try {
         await client.send({
           from: REVEAL_FROM,
           to: t.bigEmail,
-          subject: `Your Little${t.littles.length > 1 ? 's are' : ' is'} here — ${groupRow.name}`,
-          content: `${greeting}\n\nYour Little${t.littles.length > 1 ? 's are' : ' is'}: ${littleList}\n\nSaid with love,\n${groupRow.name}\n${APP_URL}`,
-          html: `<p>${greeting}</p>
-<p>Your Little${t.littles.length > 1 ? 's are' : ' is'}:</p>
-<ul>${htmlList}</ul>
-<p style="color:#888;font-size:12px;">Sent by Sorora on behalf of ${escapeHtml(groupRow.name)}.</p>`,
+          subject,
+          content: `${bodyPlain}\n\n${APP_URL}`,
+          html: `${bodyHtml}<p style="color:#888;font-size:12px;">Sent by Sorora on behalf of ${escapeHtml(groupRow.name as string)}.</p>`,
         });
         // Stamp before moving on, so a mid-run crash still records progress.
         await admin

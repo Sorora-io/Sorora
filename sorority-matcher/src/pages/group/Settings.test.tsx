@@ -8,6 +8,10 @@ jest.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({user:null}) })
 jest.mock('../../contexts/GroupContext', () => ({useGroup:()=>({membership:{group:mockGroup},refresh:mockRefresh})}));
 jest.mock('../../lib/groups', () => ({
   updateBlindRankings: jest.fn(),
+  updateRevealEmailTemplate: jest.fn(),
+  renderRevealTemplate: (t: string) => t,
+  DEFAULT_REVEAL_SUBJECT: 'default subject',
+  DEFAULT_REVEAL_BODY: 'default body',
   getGroupCycles: async()=>({cycles:[]}),
   getGroupAdmins: async()=>({admins:[]}),
   getApprovedRoleCounts: async()=>({bigs:2,littles:2}),

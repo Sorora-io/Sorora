@@ -14,11 +14,25 @@ export interface Group {
   min_big_rankings: number;
   min_little_rankings: number;
   ranking_deadline: string | null;
+  reveal_email_subject: string | null;
+  reveal_email_body: string | null;
   created_by: string;
   owner_id: string;
   active_cycle_id: string | null;
   created_at: string;
 }
+
+// Kept in sync with supabase/functions/send-pairing-reveal/index.ts —
+// the Edge Function falls back to these when the chapter's own template
+// fields are null, so the Settings preview shows what a Big would
+// actually receive by default.
+export const DEFAULT_REVEAL_SUBJECT = 'Your Little{{little_plural_s}} {{little_plural_is_are}} here — {{chapter_name}}';
+export const DEFAULT_REVEAL_BODY = `Hi {{first_name}},
+
+Your Little{{little_plural_s}} {{little_plural_is_are}}: {{little_names}}
+
+Said with love,
+{{chapter_name}}`;
 
 export interface Cycle {
   id: string;
@@ -352,4 +366,36 @@ export async function transferGroupOwnership(
 export async function updateBlindRankings(groupId: string, blind: boolean): Promise<{ error: string | null }> {
   const { error } = await supabase.from('groups').update({ blind_rankings: blind }).eq('id', groupId);
   return { error: error?.message ?? null };
+}
+
+// `null` on either field clears the chapter's override so the Edge
+// Function's default fires again — i.e. "Reset to default" in the UI
+// sends { subject: null, body: null }.
+export async function updateRevealEmailTemplate(
+  groupId: string,
+  subject: string | null,
+  body: string | null,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('groups')
+    .update({ reveal_email_subject: subject, reveal_email_body: body })
+    .eq('id', groupId);
+  return { error: error?.message ?? null };
+}
+
+// Same tag semantics as the Edge Function's renderTemplate — kept small
+// and dependency-free so the Settings preview matches what a Big
+// actually gets.
+export function renderRevealTemplate(
+  template: string,
+  vars: { first_name: string; little_names: string; chapter_name: string; little_count: number },
+): string {
+  const s = vars.little_count > 1 ? 's' : '';
+  const isAre = vars.little_count > 1 ? 'are' : 'is';
+  return template
+    .replace(/\{\{\s*first_name\s*\}\}/g, vars.first_name)
+    .replace(/\{\{\s*little_names\s*\}\}/g, vars.little_names)
+    .replace(/\{\{\s*chapter_name\s*\}\}/g, vars.chapter_name)
+    .replace(/\{\{\s*little_plural_s\s*\}\}/g, s)
+    .replace(/\{\{\s*little_plural_is_are\s*\}\}/g, isAre);
 }

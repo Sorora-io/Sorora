@@ -9,6 +9,10 @@ import {
   updateGroupDescription,
   updateGroupSettings,
   updateGroupDeadline,
+  updateRevealEmailTemplate,
+  renderRevealTemplate,
+  DEFAULT_REVEAL_SUBJECT,
+  DEFAULT_REVEAL_BODY,
   getGroupAdmins,
   transferGroupOwnership,
   getApprovedRoleCounts,
@@ -52,6 +56,45 @@ const Settings = () => {
     } finally {
       setPrivacySaving(false);
     }
+  };
+
+  const [revealSubject, setRevealSubject] = useState(group?.reveal_email_subject ?? '');
+  const [revealBody, setRevealBody] = useState(group?.reveal_email_body ?? '');
+  const [revealSaving, setRevealSaving] = useState(false);
+  const [revealError, setRevealError] = useState('');
+  const [revealSaved, setRevealSaved] = useState(false);
+  const revealUsingDefault = !revealSubject.trim() && !revealBody.trim();
+  const previewSubject = renderRevealTemplate(revealSubject.trim() || DEFAULT_REVEAL_SUBJECT, {
+    first_name: 'Sarah', little_names: 'Emma Davis', chapter_name: group?.name || 'Your chapter', little_count: 1,
+  });
+  const previewBody = renderRevealTemplate(revealBody.trim() || DEFAULT_REVEAL_BODY, {
+    first_name: 'Sarah', little_names: 'Emma Davis', chapter_name: group?.name || 'Your chapter', little_count: 1,
+  });
+  const handleSaveReveal = async () => {
+    if (!group) return;
+    setRevealSaving(true);
+    setRevealError('');
+    setRevealSaved(false);
+    // Empty string = "clear my override, fall back to the default template"
+    // — clients don't have to know the default string themselves.
+    const result = await updateRevealEmailTemplate(
+      group.id,
+      revealSubject.trim() || null,
+      revealBody.trim() || null,
+    );
+    if (result.error) {
+      setRevealError(result.error);
+    } else {
+      setRevealSaved(true);
+      await refresh();
+    }
+    setRevealSaving(false);
+  };
+  const handleResetReveal = () => {
+    setRevealSubject('');
+    setRevealBody('');
+    setRevealError('');
+    setRevealSaved(false);
   };
 
   const [name, setName] = useState(group?.name ?? '');
@@ -309,6 +352,57 @@ const Settings = () => {
           <p className="ss-caption mt-2">Matching runs on the server either way. Turning this on cannot erase preferences an admin has already seen.</p>
           {privacyError && <p role="alert" className="mt-2 text-sm text-brick">{privacyError}</p>}
           {privacySaved && <p role="status" className="mt-2 text-sm text-jade-700">Privacy setting saved.</p>}
+        </section>
+
+        <section className="ss-surface mb-6" aria-labelledby="reveal-template-title">
+          <h2 id="reveal-template-title" className="text-base font-medium">Pairing reveal email</h2>
+          <p className="ss-caption mt-1">
+            Sent to each Big when you reveal pairings. Leave blank to use the default. Merge tags:
+            {' '}<code className="text-[color:var(--ss-ink-2)]">{'{{first_name}}'}</code>,
+            {' '}<code className="text-[color:var(--ss-ink-2)]">{'{{little_names}}'}</code>,
+            {' '}<code className="text-[color:var(--ss-ink-2)]">{'{{chapter_name}}'}</code>.
+          </p>
+
+          <label className="ss-label mt-4 block" htmlFor="reveal-subject">Subject</label>
+          <input
+            id="reveal-subject"
+            type="text"
+            value={revealSubject}
+            onChange={e => setRevealSubject(e.target.value)}
+            placeholder={DEFAULT_REVEAL_SUBJECT}
+            className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
+          />
+
+          <label className="ss-label mt-4 block" htmlFor="reveal-body">Body</label>
+          <textarea
+            id="reveal-body"
+            value={revealBody}
+            onChange={e => setRevealBody(e.target.value)}
+            placeholder={DEFAULT_REVEAL_BODY}
+            rows={7}
+            className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100 resize-y font-mono text-sm"
+          />
+
+          <div className="mt-4">
+            <p className="ss-kicker">Preview {revealUsingDefault && '(default)'}</p>
+            <div className="mt-2 rounded-md border border-[color:var(--ss-surface-border)] bg-white/60 p-3 text-sm">
+              <p className="font-medium text-[color:var(--ss-ink-2)]">{previewSubject}</p>
+              <p className="mt-2 whitespace-pre-wrap text-[color:var(--ss-ink-3)]">{previewBody}</p>
+            </div>
+            <p className="ss-caption mt-1">Preview uses Sarah / Emma Davis / your chapter name as sample values.</p>
+          </div>
+
+          {revealError && <p role="alert" className="mt-3 text-sm text-brick">{revealError}</p>}
+          {revealSaved && <p role="status" className="mt-3 text-sm text-jade-700">Template saved.</p>}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button onClick={handleSaveReveal} disabled={revealSaving}>
+              {revealSaving ? '…' : 'Save template'}
+            </Button>
+            <Button variant="ghost" onClick={handleResetReveal} disabled={revealSaving || revealUsingDefault}>
+              Reset to default
+            </Button>
+          </div>
         </section>
 
         <div className="flex flex-col gap-4">
