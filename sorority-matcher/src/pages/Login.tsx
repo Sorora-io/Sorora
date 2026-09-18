@@ -230,7 +230,7 @@ const Login = () => {
       setLoading(true);
       const { error: signInError } = await signIn(email, password);
       if (signInError) setError(signInError.message);
-      else navigate('/group/onboarding');
+      else navigate('/dashboard');
       setLoading(false);
     };
 

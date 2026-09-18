@@ -149,18 +149,21 @@ const FAQ = () => {
         </header>
 
         <div className="text-center mb-8">
-          <span className="ss-kicker">Frequently asked questions</span>
           <h1 className="font-display text-[38px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
-            A little help, whenever you need it.
+            Frequently Asked Questions
           </h1>
           <p className="mt-3 ss-caption max-w-lg mx-auto">
             Pick the section that matches your role in your chapter.
           </p>
         </div>
 
-        <nav className="flex justify-center gap-1 flex-wrap mb-6">
+        <nav className="flex justify-center gap-3 flex-wrap mb-8">
           {SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} className="ss-tab">
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className="inline-flex items-center justify-center rounded-pill border border-[color:var(--ss-jade-line)] bg-white/60 px-6 py-2.5 text-sm font-medium text-[color:var(--ss-ink-2)] transition-colors hover:bg-[color:var(--ss-jade-deep)] hover:text-white hover:border-transparent"
+            >
               {s.label}
             </a>
           ))}
