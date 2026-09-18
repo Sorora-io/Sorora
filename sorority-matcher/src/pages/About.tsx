@@ -1,3 +1,4 @@
+import PageHeader from '../components/PageHeader';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Check, Sparkles, Scale, Ruler, Users } from 'lucide-react';
 
@@ -60,7 +61,7 @@ const About = () => {
           className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-[color:var(--ss-jade-soft)] opacity-[0.06] blur-3xl"
         />
 
-        <header className="relative flex items-center justify-between mb-10">
+        <PageHeader className="relative flex items-center justify-between mb-10">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -70,7 +71,7 @@ const About = () => {
           >
             <ArrowLeft size={14} /> Back to home
           </Link>
-        </header>
+        </PageHeader>
 
         <div className="relative text-center mb-14">
           <span className="ss-kicker">How Sorora works</span>

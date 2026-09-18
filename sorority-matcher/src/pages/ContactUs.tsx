@@ -1,3 +1,4 @@
+import PageHeader from '../components/PageHeader';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,7 +35,7 @@ const ContactUs = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-6 py-10">
-      <header className="w-full max-w-xl mb-6 flex items-center justify-between">
+      <PageHeader className="w-full max-w-xl mb-6 flex items-center justify-between">
         <Link
           to="/"
           className="font-display text-xl font-semibold text-[color:var(--ss-ink-1)] tracking-wide"
@@ -47,7 +48,7 @@ const ContactUs = () => {
         >
           Back to home
         </Link>
-      </header>
+      </PageHeader>
 
       <section className="ss-frost w-full max-w-xl rounded-[24px] px-6 py-10 md:px-10 md:py-12 shadow-card">
         <div className="ss-kicker">Contact</div>

@@ -7,6 +7,7 @@ const ACTIVE_GROUP_KEY = 'sorora-active-group-id';
 
 export interface PendingGroupAction {
   mode: 'create' | 'join';
+  email: string;
   groupName?: string; // mode: create
   school?: string; // mode: create
   groupId?: string; // mode: join
@@ -30,7 +31,7 @@ function readPendingGroupAction(): PendingGroupAction | null {
   }
 }
 
-function clearPendingGroupAction() {
+export function clearPendingGroupAction() {
   try {
     localStorage.removeItem(PENDING_ACTION_KEY);
   } catch {
@@ -62,6 +63,7 @@ interface GroupContextType {
   setActiveGroupId: (groupId: string) => void;
   loading: boolean;
   initialized: boolean;
+  error: string | null;
   refresh: () => Promise<void>;
 }
 
@@ -78,95 +80,90 @@ export const useGroup = () => {
 export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
   const [memberships, setMemberships] = useState<MembershipWithGroup[]>([]);
+  const [membershipsUserId, setMembershipsUserId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupIdState] = useState<string | null>(readActiveGroupId);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-  // A ref, not state: React StrictMode double-invokes effects in
-  // development against the same render's closure, so a useState guard set
-  // synchronously at the top of the effect can still read as false on the
-  // second invocation — which fired createGroup/requestToJoinGroup twice in
-  // testing. A ref's mutation is visible immediately, closing that gap.
-  const autoSubmitAttempted = useRef(false);
+  const [loadedUserId, setLoadedUserId] = useState<string | null | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+  const currentUserId = user?.id ?? null;
+  const identity = useRef(currentUserId);
+  identity.current = currentUserId;
+  const inFlight = useRef<{ userId: string | null; promise: Promise<void> } | null>(null);
 
   const setActiveGroupId = useCallback((groupId: string) => {
     writeActiveGroupId(groupId);
     setActiveGroupIdState(groupId);
   }, []);
 
-  // `loading` reflects any in-flight fetch (including a refresh() called
-  // after a save, to pick up new data) — pages should feel free to ignore it
-  // and keep their own content mounted. `initialized` only ever flips once,
-  // from false to true, the first time membership status becomes known;
-  // that's the one route-gating components should block on, so an action
-  // like "save my ranking" -> refresh() doesn't unmount the page underneath
-  // a "Loading..." screen and wipe local success/error state.
-  const refresh = useCallback(async () => {
-    if (!user) {
-      setMemberships([]);
-      setLoading(false);
-      setInitialized(true);
-      return;
-    }
-    setLoading(true);
-    const { memberships: list } = await getMyMemberships();
-    setMemberships(list);
-    setLoading(false);
-    setInitialized(true);
-  }, [user]);
-
-  const lastUserId = useRef<string | null>(null);
-  const identitySeen = useRef(false);
-
-  useEffect(() => {
-    // Wait for AuthContext's own session check to resolve first — otherwise
-    // this fires once with `user` still null (before the real session is
-    // known), which would mark `initialized` true with no membership and
-    // briefly bounce a genuinely-signed-in admin/big/little through
-    // Onboarding before the real membership loads.
-    if (authLoading) return;
-
-    const currentId = user?.id ?? null;
-    // A real identity change (signing in, signing out, switching accounts)
-    // means the loaded membership list belongs to someone else — clear
-    // `initialized` so route guards fall back to the full-page loading
-    // screen instead of briefly showing the previous (or empty) org list
-    // while the real one loads. A manual refresh() for the SAME user (e.g.
-    // after saving a setting) must not do this, or every save would bounce
-    // the whole app back to a loading screen.
-    if (identitySeen.current && lastUserId.current !== currentId) {
-      setInitialized(false);
-    }
-    identitySeen.current = true;
-    lastUserId.current = currentId;
-
-    refresh();
-  }, [authLoading, user, refresh]);
-
-  // Runs a create/join action stashed at signup time, the first time this
-  // browser sees this user with no orgs yet (i.e. right after email
-  // confirmation on the same device/browser they signed up with).
-  useEffect(() => {
-    if (!user || loading || memberships.length > 0 || autoSubmitAttempted.current) return;
-
-    const action = readPendingGroupAction();
-    if (!action) return;
-
-    autoSubmitAttempted.current = true;
-    (async () => {
-      if (action.mode === 'create' && action.groupName) {
-        await createGroup(action.groupName, action.school ?? '');
-      } else if (action.mode === 'join' && action.groupId && action.role) {
-        await requestToJoinGroup(action.groupId, action.role);
+  const refresh = useCallback((): Promise<void> => {
+    const userId = user?.id ?? null;
+    if (inFlight.current?.userId === userId) return inFlight.current.promise;
+    const task = (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!user) {
+          setMemberships([]);
+          return;
+        }
+        let result = await getMyMemberships();
+        if (identity.current !== userId) return;
+        if (result.error) throw new Error(result.error);
+        const action = readPendingGroupAction();
+        // Only resume the action for the account that started it.
+        if (action && action.email?.toLowerCase() === user.email?.toLowerCase()) {
+          let groupId = action.groupId;
+          if (action.mode === 'create' && action.groupName) {
+            const created = await createGroup(action.groupName, action.school ?? '');
+            if (created.error || !created.group) throw new Error(created.error ?? 'Could not create your chapter.');
+            groupId = created.group.id;
+          } else if (action.mode === 'join' && groupId && action.role) {
+            if (!result.memberships.some(m => m.group_id === groupId)) {
+              const joined = await requestToJoinGroup(groupId, action.role);
+              if (joined.error) throw new Error(joined.error);
+            }
+          } else {
+            throw new Error('Your chapter details are incomplete. Please start the chapter setup again.');
+          }
+          clearPendingGroupAction();
+          if (identity.current !== userId) return;
+          if (groupId) setActiveGroupId(groupId);
+          result = await getMyMemberships();
+          if (result.error) throw new Error(result.error);
+        }
+        if (identity.current === userId) {
+          setMemberships(result.memberships);
+          setMembershipsUserId(userId);
+        }
+      } catch (failure) {
+        if (identity.current === userId) {
+          setError(failure instanceof Error ? failure.message : 'Could not load your chapter. Please try again.');
+        }
+      } finally {
+        if (identity.current === userId) {
+          setLoading(false);
+          setLoadedUserId(userId);
+        }
       }
-      clearPendingGroupAction();
-      await refresh();
     })();
-  }, [user, loading, memberships, refresh]);
+    inFlight.current = { userId, promise: task };
+    void task.finally(() => {
+      if (inFlight.current?.promise === task) inFlight.current = null;
+    });
+    return task;
+  }, [user, setActiveGroupId]);
+
+  useEffect(() => {
+    if (!authLoading) void refresh();
+  }, [authLoading, refresh]);
+
+  const initialized = !authLoading && loadedUserId === currentUserId;
+  const currentMemberships = initialized && user && membershipsUserId === user.id ? memberships : [];
 
   // Pick the "active" org: whichever matches the stored id, if it still
   // exists among this user's memberships; otherwise the first one.
   const membership =
-    memberships.find(m => m.group_id === activeGroupId) ?? memberships[0] ?? null;
+    currentMemberships.find(m => m.group_id === activeGroupId) ?? currentMemberships[0] ?? null;
 
   // Keep the stored active id in sync once we know the real list (covers
   // first load, and the case where the previously-active org disappeared).
@@ -178,11 +175,12 @@ export const GroupProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [membership, activeGroupId]);
 
   const value: GroupContextType = {
-    memberships,
+    memberships: currentMemberships,
     membership,
     setActiveGroupId,
     loading,
     initialized,
+    error,
     refresh,
   };
 

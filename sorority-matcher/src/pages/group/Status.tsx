@@ -1,3 +1,4 @@
+import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -106,7 +107,7 @@ const Status = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -116,14 +117,16 @@ const Status = () => {
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>
-        </header>
+        </PageHeader>
 
         <span className="ss-kicker">02 · Preference collection</span>
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
           Submission status
         </h1>
         <p className="mt-3 ss-caption max-w-lg">
-          See who's submitted their rankings and remind anyone who hasn't yet.
+          {(group.blind_rankings ?? true)
+            ? 'Blind rankings are on. You can see who has submitted, but only each member can view their own preferences.'
+            : 'Blind rankings are off. Chapter admins can access members’ preferences.'} Matching runs on the server.
         </p>
 
         {!cycleId ? (

@@ -1,10 +1,10 @@
+import PageHeader from '../components/PageHeader';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
-import AccountMenu from '../components/AccountMenu';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import { ProfileContent } from './Profile';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
@@ -134,10 +134,10 @@ const DashboardTab = ({
       />
 
       <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {isRanker && (
+        {(isRanker || isAdmin) && (
           <section className="ss-surface flex flex-col gap-3">
             <SectionHeading>
-              My {targetPlural} rankings
+              {isRanker ? `My ${targetPlural} rankings` : 'My rankings'}
             </SectionHeading>
             <p className="ss-caption">
               {submitted
@@ -271,7 +271,10 @@ const RankingsTab = ({
     return (
       <div>
         <Heading text="Rankings" />
-        <Sub text="Rankings are visible to members with a Big or Little role." />
+        <Sub text="Submit your own preferences while keeping your admin access." />
+        <div className="mt-6">
+          <Button onClick={() => onNavigate('/group/submit-ranking')}>Set up my rankings</Button>
+        </div>
       </div>
     );
   }
@@ -541,7 +544,7 @@ const FaqTab = () => (
       <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
         {[
           { question: 'Can I update my rankings?', answer: 'Yes. Open the Rankings tab and save your updated preferences while submissions are open. Your chapter admin controls the deadline and when submissions close.' },
-          { question: 'Who can see my preferences?', answer: 'You and your chapter admins can see your rankings. Other Bigs and Littles cannot see your preferences.' },
+          { question: 'Who can see my preferences?', answer: 'When Blind rankings is on, only you can view your preferences. When it is off, chapter admins can also access them. Your ranking page shows the current setting. Other members cannot see your preferences.' },
           { question: 'When will matches be announced?', answer: 'Your chapter admin runs matching and shares the results. Contact your admin for your chapter’s announcement date.' },
         ].map(({ question, answer }) => (
           <details key={question} className="group">
@@ -648,6 +651,10 @@ const Dashboard = () => {
     }
   };
 
+  if (membership && membership.status !== 'approved') {
+    return <Navigate to="/group/pending" replace />;
+  }
+
   // -----------------------------------------------------------------------
   // Empty state — signed in but not in any chapter
   // -----------------------------------------------------------------------
@@ -655,15 +662,14 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
         <section className="ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 text-center">
-          <header className="flex items-center justify-between mb-10">
+          <PageHeader className="flex items-center justify-between mb-10">
             <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
               sorora
             </Link>
-            <AccountMenu />
-          </header>
+          </PageHeader>
           <Heading text="Your chapter starts here." />
           <Sub text="You're signed in but not part of a chapter yet. Join one with a code, or set yours up." />
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-col items-center gap-3">
             <Button size="lg" variant="outline" onClick={() => navigate('/login?mode=signup&path=join')}>
               Join a chapter
             </Button>
@@ -714,12 +720,11 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-6">
+        <PageHeader className="flex items-center justify-between mb-6">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <AccountMenu />
-        </header>
+        </PageHeader>
 
         {tourActive ? (
           <WelcomeTour

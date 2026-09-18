@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { useGroup } from '../../contexts/GroupContext';
 import { homeForRole } from '../../components/RequireGroupRole';
 import { groupLabel } from '../../lib/groups';
@@ -11,7 +10,6 @@ const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 
 
 const Pending = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { membership, loading, refresh } = useGroup();
 
   useEffect(() => {
@@ -27,8 +25,7 @@ const Pending = () => {
 
   return (
     <SceneShell
-      topRightLabel="Sign out"
-      onTopRight={() => signOut()}
+      topRightLabel={null}
       footer={
         <>
           <Button variant="outline" onClick={refresh}>

@@ -1,3 +1,4 @@
+import PageHeader from '../components/PageHeader';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,11 +52,11 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
-      <header className="mb-12">
+      <PageHeader className="mb-12">
         <Link to="/">
           <h1 className="text-4xl font-display font-semibold text-center text-jade-800">Sorora</h1>
         </Link>
-      </header>
+      </PageHeader>
 
       <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-5">
         <h2 className="text-2xl font-semibold mb-6">Set a New Password</h2>

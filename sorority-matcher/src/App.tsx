@@ -53,25 +53,26 @@ const queryClient = new QueryClient({
   },
 });
 
-// Session restore on a fresh page load/reload is the one moment the whole
-// app is in an unknown auth AND organization state — gating the entire
-// shell (not just each route's own content area) on both avoids a
-// signed-in sidebar/content flashing signed-out chrome, or a real member
-// briefly flashing "no organizations," before AuthContext and GroupContext
-// resolve. `groupInitialized` (not GroupContext's `loading`) is the right
-// flag here — it only ever flips false->true once, on the first membership
-// fetch, so a later refresh() (e.g. after saving something) doesn't bounce
-// the whole app back to this full-page spinner.
+// Keep public auth forms mounted while membership loading follows a sign-in.
+// Protected routes wait for the current account’s memberships themselves.
 const AppShell = () => {
-  const { loading: authLoading } = useAuth();
-  const { initialized: groupInitialized } = useGroup();
+  const { loading: authLoading, user } = useAuth();
+  const { error: groupError, refresh, loading: groupLoading } = useGroup();
 
-  if (authLoading || !groupInitialized) {
+  if (authLoading) {
     return <LoadingScreen />;
   }
 
   return (
     <div>
+      {user && groupError && (
+        <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
+          <p>We couldn’t finish loading your chapter: {groupError}</p>
+          <button type="button" className="mt-2 underline" onClick={() => void refresh()} disabled={groupLoading}>
+            {groupLoading ? 'Trying again…' : 'Try again'}
+          </button>
+        </div>
+      )}
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -88,7 +89,7 @@ const AppShell = () => {
           <Route path="/group/settings" element={<RequireGroupRole allow={['admin']}><GroupSettings /></RequireGroupRole>} />
           <Route path="/group/status" element={<RequireGroupRole allow={['admin']}><GroupStatus /></RequireGroupRole>} />
           <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
-          <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
+          <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
           <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

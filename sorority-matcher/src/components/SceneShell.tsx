@@ -1,3 +1,4 @@
+import PageHeader from './PageHeader';
 import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from './Button';
@@ -40,7 +41,7 @@ const SceneShell = ({
           wide ? 'max-w-4xl' : 'max-w-2xl'
         } rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col`}
       >
-        <header className="flex items-center justify-between mb-8">
+        <PageHeader className="flex items-center justify-between mb-8">
           <Link
             to={markTo}
             className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]"
@@ -52,7 +53,7 @@ const SceneShell = ({
               {topRightLabel}
             </Button>
           )}
-        </header>
+        </PageHeader>
 
         <div className="flex-1 flex flex-col items-center text-center">
           {children}

@@ -1,8 +1,10 @@
+import PageHeader from '../../components/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import {
+  updateBlindRankings,
   updateGroupProfile,
   updateGroupDescription,
   updateGroupSettings,
@@ -31,6 +33,26 @@ const clamp = (value: number, min: number, max: number | undefined) => {
 const Settings = () => {
   const { membership, refresh } = useGroup();
   const group = membership?.group;
+
+  const [privacySaving, setPrivacySaving] = useState(false);
+  const [privacyError, setPrivacyError] = useState('');
+  const [privacySaved, setPrivacySaved] = useState(false);
+  const toggleBlindRankings = async () => {
+    if (!group) return;
+    setPrivacySaving(true);
+    setPrivacyError('');
+    setPrivacySaved(false);
+    try {
+      const result = await updateBlindRankings(group.id, !(group.blind_rankings ?? true));
+      if (result.error) throw new Error(result.error);
+      await refresh();
+      setPrivacySaved(true);
+    } catch (failure) {
+      setPrivacyError(failure instanceof Error ? failure.message : 'Could not save ranking privacy.');
+    } finally {
+      setPrivacySaving(false);
+    }
+  };
 
   const [name, setName] = useState(group?.name ?? '');
   const [school, setSchool] = useState(group?.school ?? '');
@@ -202,7 +224,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -212,7 +234,7 @@ const Settings = () => {
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>
-        </header>
+        </PageHeader>
 
         <span className="ss-kicker">Chapter</span>
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] mb-8">
@@ -268,6 +290,26 @@ const Settings = () => {
             {descSaving ? '...' : 'Save Description'}
           </Button>
         </div>
+
+        <section className="ss-surface mb-6" aria-labelledby="ranking-privacy-title">
+          <div className="flex items-center justify-between gap-4">
+            <h2 id="ranking-privacy-title" className="text-base font-medium">Blind rankings</h2>
+            <button type="button" role="switch" aria-checked={group.blind_rankings ?? true}
+              aria-label="Blind rankings" aria-describedby="ranking-privacy-description"
+              disabled={privacySaving} onClick={toggleBlindRankings}
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${(group.blind_rankings ?? true) ? 'bg-[color:var(--ss-jade-deep)]' : 'bg-gray-300'}`}>
+              <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(group.blind_rankings ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+          <p id="ranking-privacy-description" className="ss-caption mt-3">
+            {(group.blind_rankings ?? true)
+              ? 'On — only members can view their own preferences. Admins see submission status and final pairings, even when they participate in matching.'
+              : 'Off — chapter admins can access members’ ranked preferences. Other members can still only see their own rankings.'}
+          </p>
+          <p className="ss-caption mt-2">Matching runs on the server either way. Turning this on cannot erase preferences an admin has already seen.</p>
+          {privacyError && <p role="alert" className="mt-2 text-sm text-brick">{privacyError}</p>}
+          {privacySaved && <p role="status" className="mt-2 text-sm text-jade-700">Privacy setting saved.</p>}
+        </section>
 
         <div className="flex flex-col gap-4">
           <div>

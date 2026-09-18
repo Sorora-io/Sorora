@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { runDeferredAcceptance, PreferenceMap } from './matching';
 import { MembershipRole, Profile } from './groups';
 
 export interface RosterMember {
@@ -141,83 +140,29 @@ export async function getSubmissionStatus(
   groupId: string,
   cycleId: string | null
 ): Promise<{ rows: SubmissionStatusRow[]; error: string | null }> {
-  const [membersRes, rankingsRes] = await Promise.all([
-    supabase
-      .from('memberships')
-      .select('user_id, role, profile:profiles(email, name)')
-      .eq('group_id', groupId)
-      .eq('status', 'approved')
-      .in('role', ['big', 'little']),
-    cycleId
-      ? supabase.from('rankings').select('ranker_id').eq('cycle_id', cycleId)
-      : Promise.resolve({ data: [] as { ranker_id: string }[], error: null }),
-  ]);
-
-  if (membersRes.error) return { rows: [], error: membersRes.error.message };
-  if (rankingsRes.error) return { rows: [], error: rankingsRes.error.message };
-
-  const submitted = new Set((rankingsRes.data ?? []).map(r => r.ranker_id as string));
-
-  const rows: SubmissionStatusRow[] = (membersRes.data ?? []).map((row: any) => ({
-    userId: row.user_id as string,
-    role: row.role as MembershipRole,
-    name: (row.profile as Profile | null)?.name ?? null,
-    email: (row.profile as Profile | null)?.email ?? '',
-    submitted: submitted.has(row.user_id as string),
-  }));
-
-  return { rows, error: null };
+  if (!cycleId) return { rows: [], error: null };
+  const { data, error } = await supabase.rpc('get_blind_submission_status', {
+    p_group_id: groupId,
+    p_cycle_id: cycleId,
+  });
+  if (error) return { rows: [], error: error.message };
+  return {
+    rows: (data ?? []).map((row: any) => ({
+      userId: row.user_id, role: row.role, name: row.name,
+      email: row.email, submitted: row.submitted,
+    })),
+    error: null,
+  };
 }
 
+// Only final pairings leave the database; the admin's browser never receives
+// another member's ordered preferences, even while running matching.
 export async function runMatching(groupId: string, cycleId: string): Promise<{ error: string | null }> {
-  const [bigsRes, littlesRes, rankingsRes] = await Promise.all([
-    supabase
-      .from('memberships')
-      .select('user_id, willing_to_take_twins')
-      .eq('group_id', groupId)
-      .eq('role', 'big')
-      .eq('status', 'approved'),
-    supabase.from('memberships').select('user_id').eq('group_id', groupId).eq('role', 'little').eq('status', 'approved'),
-    supabase.from('rankings').select('ranker_id, ranked_ids').eq('cycle_id', cycleId),
-  ]);
-
-  if (bigsRes.error) return { error: bigsRes.error.message };
-  if (littlesRes.error) return { error: littlesRes.error.message };
-  if (rankingsRes.error) return { error: rankingsRes.error.message };
-
-  const bigIds = (bigsRes.data ?? []).map(b => b.user_id as string);
-  const littleIds = (littlesRes.data ?? []).map(l => l.user_id as string);
-  const twinsWilling = new Set(
-    (bigsRes.data ?? []).filter(b => b.willing_to_take_twins).map(b => b.user_id as string)
-  );
-
-  const bigRankings: PreferenceMap = {};
-  const littleRankings: PreferenceMap = {};
-  const bigIdSet = new Set(bigIds);
-  const littleIdSet = new Set(littleIds);
-  for (const row of rankingsRes.data ?? []) {
-    const rankerId = row.ranker_id as string;
-    const rankedIds = (row.ranked_ids as string[]) ?? [];
-    if (bigIdSet.has(rankerId)) bigRankings[rankerId] = rankedIds;
-    else if (littleIdSet.has(rankerId)) littleRankings[rankerId] = rankedIds;
-  }
-
-  const result = runDeferredAcceptance(bigIds, littleIds, bigRankings, littleRankings, twinsWilling);
-
-  // Scoped to this cycle only — re-running matching never touches a past
-  // cycle's pairings, which is the whole point of cycles existing.
-  const { error: deleteError } = await supabase.from('pairings').delete().eq('cycle_id', cycleId);
-  if (deleteError) return { error: deleteError.message };
-
-  const rows = result.flatMap(({ big, littles }) =>
-    littles.map(littleId => ({ group_id: groupId, cycle_id: cycleId, big_id: big, little_id: littleId }))
-  );
-  if (rows.length > 0) {
-    const { error: insertError } = await supabase.from('pairings').insert(rows);
-    if (insertError) return { error: insertError.message };
-  }
-
-  return { error: null };
+  const { error } = await supabase.rpc('run_blind_matching', {
+    p_group_id: groupId,
+    p_cycle_id: cycleId,
+  });
+  return { error: error?.message ?? null };
 }
 
 export async function getPairings(cycleId: string): Promise<{ pairings: PairingRow[]; error: string | null }> {

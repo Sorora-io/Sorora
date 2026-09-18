@@ -10,6 +10,7 @@ export interface Group {
   school: string;
   description: string;
   join_code: string;
+  blind_rankings: boolean;
   min_big_rankings: number;
   min_little_rankings: number;
   ranking_deadline: string | null;
@@ -346,4 +347,9 @@ export async function transferGroupOwnership(
   });
   if (error) return { group: null, error: error.message };
   return { group: data as Group, error: null };
+}
+
+export async function updateBlindRankings(groupId: string, blind: boolean): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('groups').update({ blind_rankings: blind }).eq('id', groupId);
+  return { error: error?.message ?? null };
 }

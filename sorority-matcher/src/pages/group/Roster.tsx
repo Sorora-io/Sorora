@@ -1,3 +1,4 @@
+import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -185,7 +186,7 @@ const Roster = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-3 mb-8">
+        <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -195,7 +196,7 @@ const Roster = () => {
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>
-        </header>
+        </PageHeader>
 
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
           Your chapter roster

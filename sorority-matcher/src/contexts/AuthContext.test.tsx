@@ -33,3 +33,18 @@ test('late initial session cannot overwrite a newer authentication event', async
   await act(async () => resolve({ data: { session: { user: { id: 'alice' } } } }));
   await waitFor(() => expect(screen.getByText('bob')).toBeInTheDocument());
 });
+
+test('authentication does not remount an in-progress signup form', async () => {
+  mockGetSession.mockResolvedValue({ data: { session: null } });
+  const { useState } = require('react');
+  const Form = () => {
+    const [draft, setDraft] = useState('');
+    return <input aria-label="Chapter draft" value={draft} onChange={(event: any) => setDraft(event.target.value)} />;
+  };
+  const { fireEvent } = require('@testing-library/react');
+  render(<QueryClientProvider client={new QueryClient()}><AuthProvider><Form /></AuthProvider></QueryClientProvider>);
+  const input = screen.getByLabelText('Chapter draft');
+  fireEvent.change(input, { target: { value: 'My chapter' } });
+  act(() => mockListener('SIGNED_IN', { user: { id: 'new-user' } }));
+  expect(screen.getByLabelText('Chapter draft')).toHaveValue('My chapter');
+});

@@ -7,7 +7,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    name?: string,
+  ) => Promise<{ session: Session | null; error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
@@ -53,12 +57,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [queryClient]);
 
   const signUp = async (email: string, password: string, name?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
     });
-    return { error };
+    return { session: data.session, error };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -91,7 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signUp, signIn, signOut, updatePassword, sendPasswordReset,
       }}
     >
-      <React.Fragment key={user?.id ?? 'signed-out'}>{children}</React.Fragment>
+      {children}
     </AuthContext.Provider>
   );
 };

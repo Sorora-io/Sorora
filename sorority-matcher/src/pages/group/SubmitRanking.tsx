@@ -1,8 +1,9 @@
+import PageHeader from '../../components/PageHeader';
 import { invalidateChapter } from '../../lib/cache';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
@@ -10,8 +11,10 @@ import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
 import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 import Button from '../../components/Button';
+import SceneShell from '../../components/SceneShell';
+import ChooseMatchingRole from '../../components/ChooseMatchingRole';
 
-const SubmitRanking = () => {
+const RankingEditor = () => {
   const { user } = useAuth();
   const { membership, refresh } = useGroup();
   const group = membership?.group;
@@ -47,11 +50,11 @@ const SubmitRanking = () => {
   // refetch of the same query must not silently overwrite it.
   const seeded = useRef(false);
   useEffect(() => {
-    if (seeded.current || !existingRankedIds) return;
+    if (seeded.current || !existingRankedIds || rosterLoading) return;
     const rosterIds = new Set(roster.map(m => m.userId));
     setRankedIds(existingRankedIds.filter(id => rosterIds.has(id)));
     seeded.current = true;
-  }, [existingRankedIds, roster]);
+  }, [existingRankedIds, roster, rosterLoading]);
 
   const loading = (rosterLoading || rankingLoading) && !seeded.current;
 
@@ -111,7 +114,7 @@ const SubmitRanking = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -121,7 +124,7 @@ const SubmitRanking = () => {
           >
             <ArrowLeft size={14} /> Back to dashboard
           </Link>
-        </header>
+        </PageHeader>
 
         <span className="ss-kicker">Your rankings</span>
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
@@ -130,6 +133,8 @@ const SubmitRanking = () => {
         <p className="mt-2 ss-caption">
           {groupLabel(group)} · rank at least {minRequired}, most preferred first
         </p>
+
+        <p className="mt-3 ss-caption">{(group.blind_rankings ?? true) ? 'Blind rankings are on. Admins can see that you submitted, but cannot view your ranking order.' : 'Blind rankings are off. Chapter admins can access your ranked preferences.'}</p>
 
         {!cycleId ? (
           <p className="mt-8 ss-caption">
@@ -228,6 +233,20 @@ const SubmitRanking = () => {
       </section>
     </div>
   );
+};
+
+const SubmitRanking = () => {
+  const navigate = useNavigate();
+  const { membership } = useGroup();
+  if (membership?.role === 'admin') {
+    return (
+      <SceneShell topRightLabel="Dashboard" onTopRight={() => navigate('/dashboard')}>
+        <h1 className="font-display text-4xl">Your rankings</h1>
+        <ChooseMatchingRole />
+      </SceneShell>
+    );
+  }
+  return <RankingEditor key={`${membership?.id}:${membership?.role}:${membership?.group.active_cycle_id}`} />;
 };
 
 export default SubmitRanking;

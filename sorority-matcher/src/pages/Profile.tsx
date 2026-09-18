@@ -1,3 +1,4 @@
+import PageHeader from '../components/PageHeader';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { invalidateChapter } from '../lib/cache';
 import { useState, useEffect, useRef } from 'react';
@@ -402,12 +403,12 @@ export const ProfileContent = () => {
 
 const Profile = () => (
   <div className="min-h-screen px-5 sm:px-8 pb-12">
-    <header className="max-w-5xl mx-auto py-5 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--ss-surface-border)]">
+    <PageHeader className="max-w-5xl mx-auto py-5 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--ss-surface-border)]">
       <Link to="/" className="font-display text-3xl text-[color:var(--ss-ink-1)]">Sorora</Link>
       <nav aria-label="Main navigation" className="flex flex-wrap gap-1">
         {['Dashboard', 'Profile', 'Rankings', 'Roster', 'FAQ'].map(label => <Link key={label} to={label === 'Profile' ? '/profile' : `/dashboard?tab=${label.toLowerCase()}`} className="ss-tab !px-3 !text-sm" aria-current={label === 'Profile' ? 'page' : undefined}>{label}</Link>)}
       </nav>
-    </header>
+    </PageHeader>
     <main className="max-w-4xl mx-auto pt-7">
       <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-[color:var(--ss-ink-5)] mb-6"><ArrowLeft size={14} />Back to dashboard</Link>
       <ProfileContent />

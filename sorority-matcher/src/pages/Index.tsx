@@ -106,6 +106,7 @@ const Index = () => {
   if (onOpening) {
     return (
       <SceneShell
+        centered
         topRightLabel="About"
         onTopRight={() => navigate('/about')}
         footer={
@@ -130,41 +131,50 @@ const Index = () => {
 
   return (
     <SceneShell
+      centered
       topRightLabel="Start over"
       onTopRight={() => setStep(0)}
       footer={
         <>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setStep(step - 1)}
-            >
-              <ArrowLeft size={16} /> Back
-            </Button>
-            {!isLastSlide && (
+          {isLastSlide ? (
+            <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+              <Button
+                size="lg"
+                fullWidth
+                onClick={() => navigate('/login?mode=signup&path=join')}
+              >
+                Join a chapter
+              </Button>
+              <Button
+                size="lg"
+                fullWidth
+                variant="outline"
+                onClick={() => navigate('/login?mode=signup&path=create')}
+              >
+                Create a chapter
+              </Button>
+              <Button
+                size="md"
+                variant="ghost"
+                onClick={() => setStep(step - 1)}
+              >
+                <ArrowLeft size={16} /> Back
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setStep(step - 1)}
+              >
+                <ArrowLeft size={16} /> Back
+              </Button>
               <Button size="lg" onClick={() => setStep(step + 1)}>
                 Continue <ArrowRight size={16} />
               </Button>
-            )}
-            {isLastSlide && (
-              <>
-                <Button
-                  size="lg"
-                  onClick={() => navigate('/login?mode=signup&path=join')}
-                >
-                  Join a chapter
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate('/login?mode=signup&path=create')}
-                >
-                  Create a chapter
-                </Button>
-              </>
-            )}
-          </div>
+            </div>
+          )}
           <SceneDots current={slideIndex} total={SLIDES.length} />
         </>
       }

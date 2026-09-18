@@ -2,8 +2,8 @@ import { useEffect, useState, ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { stashPendingGroupAction } from '../contexts/GroupContext';
-import { findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
+import { stashPendingGroupAction, clearPendingGroupAction, useGroup } from '../contexts/GroupContext';
+import { createGroup, requestToJoinGroup, findGroupByJoinCode, groupLabel, MembershipRole } from '../lib/groups';
 import Button from '../components/Button';
 import SceneShell from '../components/SceneShell';
 
@@ -39,7 +39,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { signIn, signUp, sendPasswordReset } = useAuth();
+  const { user, signIn, signUp, sendPasswordReset } = useAuth();
+  const { refresh, setActiveGroupId } = useGroup();
 
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
   const modeFromLink = searchParams.get('mode');
@@ -53,7 +54,7 @@ const Login = () => {
   );
 
   const initialStep: SignupStep =
-    path === 'create' ? 'chapter-name' : joinCodeFromLink ? 'role' : 'find-chapter';
+    path === 'create' ? 'chapter-name' : 'find-chapter';
   const [step, setStep] = useState<SignupStep>(initialStep);
 
   // Form state
@@ -86,6 +87,34 @@ const Login = () => {
       if (group) setInvitedGroupLabel(groupLabel(group));
     });
   }, [joinCodeFromLink]);
+
+  useEffect(() => {
+    if (user && mode === 'signin' && !loading && !forgotMode) navigate('/dashboard', { replace: true });
+  }, [user, mode, loading, forgotMode, navigate]);
+
+  const finishChapter = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      let groupId = resolvedGroupId;
+      if (path === 'create') {
+        const result = await createGroup(groupName.trim(), school.trim());
+        if (result.error || !result.group) throw new Error(result.error ?? 'Could not create your chapter.');
+        groupId = result.group.id;
+      } else {
+        if (!groupId) throw new Error('Please go back and verify your chapter code.');
+        const result = await requestToJoinGroup(groupId, role);
+        if (result.error) throw new Error(result.error);
+      }
+      setActiveGroupId(groupId!);
+      await refresh();
+      navigate(path === 'create' ? '/dashboard' : '/group/pending', { replace: true });
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not save your chapter. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const backTo = (target: SignupStep | 'exit') => () => {
     setError('');
@@ -127,32 +156,52 @@ const Login = () => {
     }
     setLoading(true);
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
-    const { error: signUpError } = await signUp(email.trim(), password, displayName);
+    // Persist before signUp: its auth event can arrive before its promise resolves.
+    stashPendingGroupAction(
+      path === 'create'
+        ? { mode: 'create', email: email.trim(), groupName: groupName.trim(), school: school.trim() }
+        : { mode: 'join', email: email.trim(), groupId: resolvedGroupId, role }
+    );
+    let result;
+    try {
+      result = await signUp(email.trim(), password, displayName);
+    } catch {
+      clearPendingGroupAction();
+      setError('Could not create your account. Please try again.');
+      setLoading(false);
+      return;
+    }
+    const { session, error: signUpError } = result;
     if (signUpError) {
+      clearPendingGroupAction();
       setError(signUpError.message);
       setLoading(false);
       return;
     }
-    stashPendingGroupAction(
-      path === 'create'
-        ? { mode: 'create', groupName: groupName.trim(), school: school.trim() }
-        : { mode: 'join', groupId: resolvedGroupId, role }
-    );
+    // With email confirmation disabled Supabase returns a session on
+    // signup, so drop the user straight into the dashboard; the
+    // GroupContext picks up the stashed create/join action from there.
+    // If confirmation is on we fall back to the check-your-email note.
+    if (session) {
+      navigate('/dashboard');
+      return;
+    }
     setSuccessMessage(
       path === 'create'
         ? 'Check your email to confirm your account. Once confirmed, your chapter will be created automatically.'
         : `Check your email to confirm your account. Once confirmed, your request to join ${invitedGroupLabel} will be submitted automatically.`
     );
-    setMode('signin');
     setLoading(false);
   };
 
-  const useSampleProfile = () => {
-    setFirstName('Jade');
-    setLastName('Leong');
-    setEmail('jade.leong@nyu.edu');
-    setPassword('SoraraPreview2026');
-  };
+  if (successMessage) {
+    return (
+      <SceneShell centered topRightLabel={null}>
+        <Heading text="Check your email." />
+        <p role="status" className="mt-6 max-w-lg">{successMessage}</p>
+      </SceneShell>
+    );
+  }
 
   // -----------------------------------------------------------------------
   // Forgot-password scene
@@ -243,8 +292,8 @@ const Login = () => {
             size="md"
             onClick={() => {
               setMode('signup');
-              setStep(joinCodeFromLink ? 'role' : 'find-chapter');
-              setPath(joinCodeFromLink ? 'join' : 'join');
+              setStep('find-chapter');
+              setPath('join');
               setError('');
               setSuccessMessage('');
             }}
@@ -357,7 +406,7 @@ const Login = () => {
             placeholder="e.g. XK7P2QRT"
           />
           <p className="ss-caption mt-3">
-            Don't have a code yet? <button type="button" onClick={() => { setPath('create'); setStep('chapter-name'); }} className="underline underline-offset-4">Create a chapter instead.</button>
+            Don't have a code yet? <button type="button" onClick={() => { setError(''); setPath('create'); setStep('chapter-name'); }} className="underline underline-offset-4">Create a chapter instead.</button>
           </p>
           {error && <p className="mt-3 text-[color:var(--ss-error)] text-sm">{error}</p>}
         </div>
@@ -413,6 +462,7 @@ const Login = () => {
             <BackButton target="chapter-name" />
             <Button
               size="lg"
+              disabled={loading}
               onClick={() => {
                 if (!school.trim()) {
                   setError('Please enter your school.');
@@ -420,7 +470,8 @@ const Login = () => {
                 }
                 setError('');
                 setRole('admin');
-                setStep('account');
+                if (user) void finishChapter();
+                else setStep('account');
               }}
             >
               Continue <ArrowRight size={16} />
@@ -452,7 +503,7 @@ const Login = () => {
         footer={
           <NavRow>
             <BackButton target="find-chapter" />
-            <Button size="lg" onClick={() => setStep('account')}>
+            <Button size="lg" disabled={loading} onClick={() => { setError(''); if (user) void finishChapter(); else setStep('account'); }}>
               Continue <ArrowRight size={16} />
             </Button>
           </NavRow>
@@ -466,6 +517,7 @@ const Login = () => {
               : 'Choose the role you’re joining as.'
           }
         />
+        {error && <p role="alert" className="mt-4 text-[color:var(--ss-error)]">{error}</p>}
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
           {(['big', 'little', 'admin'] as const).map(r => (
             <button
@@ -563,10 +615,6 @@ const Login = () => {
             minLength={6}
           />
         </div>
-        <p className="ss-caption">Design preview only. Use sample details, not a real password.</p>
-        <button type="button" onClick={useSampleProfile} className="ss-link self-start">
-          Use sample profile
-        </button>
         {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
       </form>
     </SceneShell>

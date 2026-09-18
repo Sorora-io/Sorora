@@ -1,3 +1,4 @@
+import PageHeader from '../../components/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
@@ -56,7 +57,7 @@ const Pairings = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <header className="flex items-center justify-between mb-8">
+        <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
@@ -66,7 +67,7 @@ const Pairings = () => {
           >
             Back to dashboard
           </Link>
-        </header>
+        </PageHeader>
 
         <span className="ss-kicker">03 · After collection</span>
         <div className="flex items-start justify-between gap-4">
