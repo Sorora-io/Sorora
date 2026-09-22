@@ -30,17 +30,27 @@ supabase functions deploy send-pairing-reveal
 
 The admin's "Schedule reveal" UI writes `cycles.reveal_scheduled_at`, but nothing fires it until a cron job sweeps for due schedules. Enable that once, in the SQL editor:
 
+The function refuses a sweep unless the caller presents the **service role**
+key — the gateway's default JWT check also accepts the anon key, which is
+public in the frontend bundle, so the function checks the bearer token
+itself. That key must therefore reach the cron job without ending up in
+plaintext anywhere queryable, so it goes through Vault rather than being
+pasted into the job body (`cron.job.command` is readable by anyone who can
+read that table).
+
 ```sql
 -- pg_cron + pg_net ship with Supabase; enable them if you haven't yet.
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
--- Every 5 minutes, POST { sweep: true } to the Edge Function with the
--- service role key so it can find due schedules and mail them.
--- Replace <PROJECT_REF> with your project ref (e.g. qkizypdwgqhkxwuhzmbr)
--- and <SERVICE_ROLE_KEY> with the service_role key from Project Settings
--- → API. Do NOT paste the anon key here — this endpoint requires service
--- role to trust body.sweep.
+-- One-time: stash the service_role key (Project Settings → API) in Vault.
+-- Run this by itself, then clear your SQL editor tab so the key isn't left
+-- sitting in the editor's query history.
+select vault.create_secret('<SERVICE_ROLE_KEY>', 'service_role_key');
+
+-- Every 5 minutes, POST { sweep: true } to the Edge Function, pulling the
+-- key out of Vault at call time. Replace <PROJECT_REF> with your project
+-- ref (e.g. qkizypdwgqhkxwuhzmbr).
 select cron.schedule(
   'sorora-pairing-reveal-sweep',
   '*/5 * * * *',
@@ -49,13 +59,20 @@ select cron.schedule(
       url := 'https://<PROJECT_REF>.supabase.co/functions/v1/send-pairing-reveal',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
+        'Authorization', 'Bearer ' || (
+          select decrypted_secret from vault.decrypted_secrets
+          where name = 'service_role_key'
+        )
       ),
       body := jsonb_build_object('sweep', true)
     );
   $$
 );
 ```
+
+A 5-minute cadence means a reveal fires up to 5 minutes after its scheduled
+time, never before. Tighten to `* * * * *` if that matters, at the cost of
+12x the (free, trivial) invocations.
 
 Sanity-check the schedule with `select * from cron.job;` and its recent runs with `select * from cron.job_run_details order by start_time desc limit 20;`.
 

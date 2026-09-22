@@ -200,9 +200,17 @@ serve(async req => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const body = await req.json().catch(() => ({}));
 
-    // Scheduled sweep (service-role only — see README) walks every cycle
-    // whose reveal_scheduled_at is due but hasn't fired yet.
+    // Scheduled sweep walks every cycle whose reveal_scheduled_at is due
+    // but hasn't fired yet. Gated on the caller actually presenting the
+    // service role key: the gateway's default JWT check is satisfied by
+    // the anon key too, and that one ships publicly in the frontend
+    // bundle — without this, anyone could force every due reveal to fire
+    // and rob an admin of their last-minute cancel.
     if (body.sweep === true) {
+      const bearer = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+      if (bearer !== SERVICE_ROLE_KEY) {
+        return json({ error: 'The scheduled sweep requires the service role key.' }, 403);
+      }
       const { data: due, error: dueError } = await admin
         .from('cycles')
         .select('id, group_id')
