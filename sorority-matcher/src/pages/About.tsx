@@ -35,9 +35,9 @@ const steps = [
   },
   {
     label: 'Pass 03',
-    title: 'Twins, when the chapter wants them',
+    title: 'Twins and triplets',
     body:
-      'If a Big signals they can take twins, they stay in the pool after their first match and only leave once a second Little pairs with them. Twin support gives chapters flexibility without breaking the guarantees of the earlier passes.',
+      'Bigs can distinguish wanting multiple Littles from being willing to take twins. Wanting allows a choice of 2 or 3 Littles; willingness alone allows up to 2. Matching respects that limit while considering everyone’s rankings, so the requested number is not guaranteed.',
   },
 ];
 

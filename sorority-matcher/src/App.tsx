@@ -21,6 +21,7 @@ import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 
+const Superuser = lazy(() => import("./pages/Superuser"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -80,6 +81,7 @@ const AppShell = () => {
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/superuser" element={<Superuser />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
           <Route path="/about" element={<About />} />

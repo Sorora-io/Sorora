@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { MembershipRole, Profile } from './groups';
 
 export interface RosterMember {
+  avatarUrl?: string | null;
   userId: string;
   name: string | null;
   email: string;
@@ -25,7 +26,7 @@ export async function getRoster(
 ): Promise<{ roster: RosterMember[]; error: string | null }> {
   const { data, error } = await supabase
     .from('memberships')
-    .select('user_id, profile:profiles(email, name)')
+    .select('user_id, profile:profiles(email, name, avatar_url)')
     .eq('group_id', groupId)
     .eq('role', role)
     .eq('status', 'approved');
@@ -33,6 +34,7 @@ export async function getRoster(
   if (error) return { roster: [], error: error.message };
 
   const roster = (data ?? []).map((row: any) => ({
+    avatarUrl: (row.profile as Profile | null)?.avatar_url ?? null,
     userId: row.user_id as string,
     name: (row.profile as Profile | null)?.name ?? null,
     email: (row.profile as Profile | null)?.email ?? '',

@@ -10,6 +10,12 @@ export const queryKeys = {
     : ['user', userId, 'group-roster', groupId] as const,
   myNotes: (userId: string, groupId: string) => ['user', userId, 'my-notes', groupId] as const,
   approvals: (userId: string, groupId: string) => ['user', userId, 'approvals', groupId] as const,
+  // Deliberately separate from `approvals`, which the Approvals page uses
+  // for a composite fetch (pending + role changes + members). The dashboard
+  // only wants a count, and sharing the key would make the two fetchers
+  // overwrite each other's shape.
+  pendingCount: (userId: string, groupId: string) => ['user', userId, 'pending-count', groupId] as const,
+  revealStatus: (userId: string, cycleId: string) => ['user', userId, 'reveal-status', cycleId] as const,
 };
 
 // Per-family staleTime. The client-wide default in App.tsx is `short`;

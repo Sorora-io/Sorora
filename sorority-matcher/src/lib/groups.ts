@@ -51,6 +51,7 @@ export interface Membership {
   role: MembershipRole;
   status: MembershipStatus;
   willing_to_take_twins: boolean;
+  wanted_little_count?: 2 | 3 | null;
   requested_role: MembershipRole | null;
   is_admin: boolean;
   created_at: string;
@@ -61,6 +62,7 @@ export interface MembershipWithGroup extends Membership {
 }
 
 export interface Profile {
+  avatar_url?: string | null;
   email: string;
   name: string | null;
 }
@@ -250,8 +252,10 @@ export async function updateGroupSettings(
   return { error: error ? error.message : null };
 }
 
-export async function setMyTwinWillingness(groupId: string, willing: boolean): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc('set_my_twin_willingness', { p_group_id: groupId, p_willing: willing });
+export async function setMyLittlePreference(groupId: string, willing: boolean, wantedCount: 2 | 3 | null): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('set_my_little_preference', {
+    p_group_id: groupId, p_willing: wantedCount === null && willing, p_wanted_count: wantedCount,
+  });
   return { error: error ? error.message : null };
 }
 

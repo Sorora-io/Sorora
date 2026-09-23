@@ -3,6 +3,8 @@ import Login from './Login';
 import { stashPendingGroupAction, clearPendingGroupAction } from '../contexts/GroupContext';
 import { createGroup, findGroupByJoinCode, requestToJoinGroup } from '../lib/groups';
 
+jest.mock('../hooks/useSuperuser', () => ({ useSuperuser: () => ({ data: false }) }));
+jest.mock('../hooks/useMyProfile', () => ({ useMyProfile: () => ({ data: undefined }) }));
 const mockNavigate = jest.fn();
 const mockSignUp = jest.fn();
 const mockSignIn = jest.fn();

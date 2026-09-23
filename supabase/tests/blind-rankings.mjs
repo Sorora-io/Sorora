@@ -34,6 +34,7 @@ create policy "rankings: admins view group rankings" on rankings for select usin
 await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', import.meta.url), 'utf8'));
 // Verify reapplying the migration is safe.
 await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', import.meta.url), 'utf8'));
+await db.exec(await readFile(new URL('../migrations/0021_little_preferences.sql', import.meta.url), 'utf8'));
 const id = n => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
 const group = id(1), cycle = id(2), admin = id(10), big2 = id(11), little1 = id(20), little2 = id(21), outsider = id(90);
 await db.query('insert into groups(id, owner_id, active_cycle_id) values ($1,$2,$3)', [group, admin, cycle]);
@@ -71,11 +72,13 @@ for (let test=0;test<40;test++) {
  await db.exec('delete from rankings; delete from memberships; delete from pairings');
  const bigs = Array.from({length:1+test%4},(_,i)=>id(100+i));
  const littles = Array.from({length:1+test%7},(_,i)=>id(200+i));
- const twins=new Set(bigs.filter(()=>random()<0.5)); const bp={},lp={};
+ const twins=new Set(bigs.filter(()=>random()<0.5)); const bp={},lp={},wanted={};
+ for (const big of bigs) if (test >= 10 && random() < 0.6) wanted[big] = random() < 0.5 ? 2 : 3;
  await db.query("insert into memberships(group_id,user_id,role,status,is_admin) values ($1,$2,'admin','approved',true)",[group,admin]);
  for(const [users,role,targets,map] of [[bigs,'big',littles,bp],[littles,'little',bigs,lp]]) {
   for(const user of users) {
    await db.query("insert into memberships(group_id,user_id,role,status,willing_to_take_twins,created_at) values ($1,$2,$3,'approved',$4,'2026-01-01')",[group,user,role,twins.has(user)]);
+   if (wanted[user]) await db.query('update memberships set wanted_little_count = $1 where user_id = $2', [wanted[user],user]);
    map[user]=shuffle(targets).slice(0,Math.floor(random()*(targets.length+1)));
    await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values ($1,$2,$3,$4)',[group,cycle,user,map[user]]);
   }
@@ -83,10 +86,24 @@ for (let test=0;test<40;test++) {
  await asUser(admin);
  await db.query('select run_blind_matching($1,$2)',[group,cycle]);
  const actual=(await db.query('select big_id,little_id from pairings')).rows.map(r=>`${r.big_id}:${r.little_id}`).sort();
- const expected=runDeferredAcceptance(bigs,littles,bp,lp,twins).flatMap(r=>r.littles.map(l=>`${r.big}:${l}`)).sort();
+ const expected=runDeferredAcceptance(bigs,littles,bp,lp,twins,wanted).flatMap(r=>r.littles.map(l=>`${r.big}:${l}`)).sort();
  assert.deepEqual(actual,expected,`matching parity fixture ${test}`);
  await db.exec('reset role');
 }
+// Self-service saves, reloads, clears, and rejects invalid/unauthorized updates.
+const testBig = id(100);
+await asUser(testBig);
+await db.query('select set_my_little_preference($1,false,3)',[group]);
+let preference = (await db.query('select willing_to_take_twins,wanted_little_count from memberships where user_id=$1',[testBig])).rows[0];
+assert.deepEqual(preference,{willing_to_take_twins:false,wanted_little_count:3});
+await db.query('select set_my_little_preference($1,true,null)',[group]);
+preference = (await db.query('select willing_to_take_twins,wanted_little_count from memberships where user_id=$1',[testBig])).rows[0];
+assert.deepEqual(preference,{willing_to_take_twins:true,wanted_little_count:null});
+await assert.rejects(db.query('select set_my_little_preference($1,true,4)',[group]),/Choose 2 or 3/);
+await asUser(id(200));
+await assert.rejects(db.query('select set_my_little_preference($1,true,2)',[group]),/Only an approved Big/);
+await asUser(outsider);
+await assert.rejects(db.query('select set_my_little_preference($1,true,2)',[group]),/Only an approved Big/);
 // New chapters retain admin access and get their initial cycle.
 await asUser(admin);
 const created=(await db.query("select (create_group('Test chapter','Test school','TESTCODE')).id")).rows[0].id;

@@ -38,8 +38,8 @@ const SECTIONS: FaqSection[] = [
         a: "We first lock in every mutual first-choice pair, then run deferred acceptance — the same stable-matching algorithm the National Resident Matching Program uses — for everyone else. See the About page for the full breakdown.",
       },
       {
-        q: 'Can bigs take twins (two littles)?',
-        a: "Yes. Bigs can check \"I'm willing to take two Littles\" on their ranking page. A big who opts in stays in the matching pool for a second match after their first.",
+        q: 'Can bigs request twins or triplets?',
+        a: "Yes. On your ranking page, choose WANTING and select 2 Littles (twins) or 3 Littles (triplets), or choose WILLING if you are simply open to twins. Choose one option, or select 1 Little only. The final number depends on rankings and availability.",
       },
       {
         q: "Can I rename my chapter or update its school?",
@@ -74,7 +74,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: "Can I take twins?",
-        a: 'Check "I\'m willing to take two Littles (twins)" before saving your ranking. If you opt in, you may be matched with a second little.',
+        a: "Yes. On your ranking page, choose WANTING and select 2 Littles (twins) or 3 Littles (triplets), or choose WILLING if you are simply open to twins. Choose one option, or select 1 Little only. The final number depends on rankings and availability.",
       },
       {
         q: 'When do I find out who my little is?',

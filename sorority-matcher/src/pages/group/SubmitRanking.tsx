@@ -6,11 +6,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
-import { setMyTwinWillingness, groupLabel } from '../../lib/groups';
+import { setMyLittlePreference, groupLabel } from '../../lib/groups';
 import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
 import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 import Button from '../../components/Button';
+import Avatar from '../../components/Avatar';
 import SceneShell from '../../components/SceneShell';
 import ChooseMatchingRole from '../../components/ChooseMatchingRole';
 
@@ -40,7 +41,8 @@ const RankingEditor = () => {
   });
 
   const [rankedIds, setRankedIds] = useState<string[]>([]);
-  const [willingToTakeTwins, setWillingToTakeTwins] = useState(membership?.willing_to_take_twins ?? false);
+  const [willingToTakeTwins, setWillingToTakeTwins] = useState(membership?.wanted_little_count ? false : membership?.willing_to_take_twins ?? false);
+  const [wantedLittleCount, setWantedLittleCount] = useState<2 | 3 | null>(membership?.wanted_little_count ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -91,7 +93,7 @@ const RankingEditor = () => {
     setSaved(false);
 
     const tasks: Promise<{ error: string | null }>[] = [submitRanking(group.id, cycleId, rankedIds)];
-    if (role === 'big') tasks.push(setMyTwinWillingness(group.id, willingToTakeTwins));
+    if (role === 'big') tasks.push(setMyLittlePreference(group.id, willingToTakeTwins, wantedLittleCount));
 
     const results = await Promise.all(tasks);
     const failed = results.find(r => r.error);
@@ -156,9 +158,10 @@ const RankingEditor = () => {
                   <button
                     key={m.userId}
                     onClick={() => addToRanking(m.userId)}
-                    className="text-left px-3 py-2 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg hover:bg-white/85 transition-colors text-[color:var(--ss-ink-2)]"
+                    className="flex items-center gap-3 text-left px-3 py-2 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg hover:bg-white/85 transition-colors text-[color:var(--ss-ink-2)]"
                   >
-                    {m.name || m.email}
+                    <Avatar src={m.avatarUrl} name={m.name} email={m.email} size="sm" />
+                    <span>{m.name || m.email}</span>
                   </button>
                 ))}
               </div>
@@ -177,7 +180,8 @@ const RankingEditor = () => {
                     key={id}
                     className="flex items-center justify-between px-3 py-2 bg-white/75 border border-[color:var(--ss-input-border)] rounded-lg"
                   >
-                    <span className="text-[color:var(--ss-ink-2)]">
+                    <span className="flex min-w-0 items-center gap-2 text-[color:var(--ss-ink-2)]">
+                      <Avatar src={rosterById.get(id)?.avatarUrl} name={rosterById.get(id)?.name} email={rosterById.get(id)?.email} size="sm" />
                       <span className="text-[color:var(--ss-ink-5)] mr-2 tabular-nums">{idx + 1}.</span>
                       {rosterById.get(id)?.name || rosterById.get(id)?.email || 'Unknown'}
                     </span>
@@ -211,15 +215,42 @@ const RankingEditor = () => {
         )}
 
         {role === 'big' && (
-          <label className="flex items-center gap-2 mt-6 text-sm text-[color:var(--ss-ink-3)]">
-            <input
-              type="checkbox"
-              checked={willingToTakeTwins}
-              onChange={e => setWillingToTakeTwins(e.target.checked)}
-              className="accent-[color:var(--ss-jade-deep)] w-4 h-4"
-            />
-            I'm willing to take two Littles (twins)
-          </label>
+          <fieldset className="mt-6 space-y-3 text-sm text-[color:var(--ss-ink-3)]" disabled={saving}>
+            <legend className="font-medium mb-2">How many Littles would you like?</legend>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="littlePreference" checked={wantedLittleCount !== null}
+                onChange={() => { setWantedLittleCount(2); setWillingToTakeTwins(false); }}
+                className="accent-[color:var(--ss-jade-deep)] w-4 h-4" />
+              I’m WANTING to take multiple Littles
+            </label>
+            {wantedLittleCount !== null && (
+              <div role="radiogroup" aria-label="Wanted number of Littles" className="grid grid-cols-2 gap-3 pl-6 max-w-sm">
+                {([2, 3] as const).map(count => (
+                  <label key={count} className={`relative cursor-pointer rounded-2xl border px-4 py-3 transition-colors ${wantedLittleCount === count ? 'border-[color:var(--ss-jade-deep)] bg-[color:var(--ss-jade-deep)] text-white shadow-sm' : 'border-[color:var(--ss-input-border)] bg-white/60 hover:bg-white/90'}`}>
+                    <input type="radio" name="wantedLittleCount" value={count}
+                      checked={wantedLittleCount === count} onChange={() => setWantedLittleCount(count)}
+                      className="peer sr-only" />
+                    <span className="absolute inset-0 rounded-2xl peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--ss-jade-deep)] peer-focus-visible:ring-offset-2" />
+                    <span className="block font-medium">{count} Littles</span>
+                    <span className={`block text-xs mt-1 ${wantedLittleCount === count ? 'text-white/80' : 'text-[color:var(--ss-ink-5)]'}`}>{count === 2 ? 'Twins' : 'Triplets'}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <label className="flex items-center gap-2">
+              <input type="radio" name="littlePreference" checked={willingToTakeTwins && wantedLittleCount === null}
+                onChange={() => { setWillingToTakeTwins(true); setWantedLittleCount(null); }}
+                className="accent-[color:var(--ss-jade-deep)] w-4 h-4" />
+              I’m WILLING to take twins if needed
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="littlePreference" checked={!willingToTakeTwins && wantedLittleCount === null}
+                onChange={() => { setWillingToTakeTwins(false); setWantedLittleCount(null); }}
+                className="accent-[color:var(--ss-jade-deep)] w-4 h-4" />
+              I’d like 1 Little only
+            </label>
+            <p className="ss-caption">Wanting records your preference for 2 or 3 Littles. Willing means you’re open to 2 without requesting them. Matches still depend on everyone’s rankings and availability.</p>
+          </fieldset>
         )}
 
         {error && <p className="text-[color:var(--ss-error)] text-sm mt-4">{error}</p>}

@@ -1,6 +1,7 @@
+import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import { useMyProfile } from '../hooks/useMyProfile';
-import { invalidateChapter } from '../lib/cache';
+import { invalidateChapter, invalidateProfileViews } from '../lib/cache';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -9,6 +10,8 @@ import { useGroup } from '../contexts/GroupContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import Button from '../components/Button';
+import Avatar from '../components/Avatar';
+import EmailVerification from '../components/EmailVerification';
 import { requestRoleChange, MembershipRole } from '../lib/groups';
 import { updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
@@ -37,7 +40,7 @@ export const ProfileContent = () => {
 
   const { data: profile, isPending: profileLoading, error: profileError } = useMyProfile();
   const loadError = profileError?.message ?? '';
-  const seeded = useRef(false);
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [major, setMajor] = useState('');
@@ -50,7 +53,6 @@ export const ProfileContent = () => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [saveError, setSaveError] = useState('');
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [signOutConfirming, setSignOutConfirming] = useState(false);
@@ -61,8 +63,7 @@ export const ProfileContent = () => {
   const [deleteSaving, setDeleteSaving] = useState(false);
 
   useEffect(() => {
-    if (!profile || seeded.current) return;
-    seeded.current = true;
+    if (!profile || editing) return;
     setName(profile.name ?? '');
     setBio(profile.bio ?? '');
     setMajor(profile.major ?? '');
@@ -70,7 +71,7 @@ export const ProfileContent = () => {
     setYear(profile.year ?? '');
     setHometown(profile.hometown ?? '');
     setAvatarUrl(profile.avatar_url);
-  }, [profile]);
+  }, [profile, editing]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,7 +87,6 @@ export const ProfileContent = () => {
       return;
     }
     setAvatarUrl(url);
-    setSaved(false);
     setAvatarUploading(false);
   };
 
@@ -94,15 +94,15 @@ export const ProfileContent = () => {
     event.preventDefault();
     setSaving(true);
     setSaveError('');
-    setSaved(false);
     try {
       const { profile: updated, error } = await updateMyProfile(name.trim(), bio.trim(), avatarUrl, major.trim(), college.trim(), year.trim(), hometown.trim());
       if (error) setSaveError(error);
       else {
-        setSaved(true);
         if (updated) queryClient.setQueryData(queryKeys.myProfile(user!.id), updated);
         else await queryClient.invalidateQueries({ queryKey: queryKeys.myProfile(user!.id) });
-        if (membership) await invalidateChapter(queryClient, user!.id, membership.group_id, membership.group.active_cycle_id);
+        await invalidateProfileViews(queryClient, user!.id);
+        setEditing(false);
+        toast.success('Changes saved', { duration: 2500 });
       }
     } catch {
       setSaveError('Could not save your profile. Please try again.');
@@ -188,11 +188,30 @@ export const ProfileContent = () => {
     <div className="w-full">
       <h1 className="font-sans text-[30px] font-semibold leading-[1.2] tracking-[-0.9px] text-[color:var(--ss-ink-1)]">Your profile</h1>
       <p className="mt-2 mb-7 text-[color:var(--ss-ink-5)]">A little about you, all in one place.</p>
-      <form onSubmit={handleSave} onChange={() => setSaved(false)} className="rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60 p-5 sm:p-7">
-        <div className="flex flex-wrap items-center gap-4 border-b border-[color:var(--ss-surface-border)] pb-6 mb-6">
-          <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-[color:var(--ss-pill-bg)] flex items-center justify-center">
-            {avatarUrl ? <img src={avatarUrl} alt="Your profile" className="w-full h-full object-cover" /> : <span className="font-display text-3xl">{name.trim().split(/\s+/).map(part => part[0]).slice(0, 2).join('').toUpperCase() || '?'}</span>}
+      {!editing ? (
+        <section aria-label="Saved profile" className="rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60 p-5 sm:p-7">
+          <div className="flex flex-wrap items-center gap-5">
+            <Avatar src={avatarUrl} name={name} email={user?.email} size="xl" alt="Your profile" />
+            <div className="flex-1 min-w-[140px]">
+              <h2 className="font-display text-3xl sm:text-4xl break-words">{name || 'Your profile'}</h2>
+              <p className="mt-1 text-sm text-[color:var(--ss-ink-5)]">{[college, year && `Class of ${year}`].filter(Boolean).join(' · ')}</p>
+            </div>
+            <Button variant="outline" size="sm" disabled={profileLoading || !!loadError} onClick={() => { setSaveError(''); setAvatarError(''); setEditing(true); }}>Edit profile</Button>
           </div>
+          {profileLoading ? <p role="status" className="mt-6 ss-caption">Loading profile…</p> : loadError ? <p role="alert" className="mt-6 text-brick">Could not load your profile: {loadError}. Please reload to try again.</p> : <>
+            {bio && <p className="mt-7 whitespace-pre-wrap break-words leading-relaxed text-[color:var(--ss-ink-2)]">{bio}</p>}
+            <dl className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
+              {[['Major', major], ['College', college], ['Graduating year', year], ['Hometown', hometown]].filter(([, value]) => value).map(([label, value]) => <div key={label}>
+                <dt className="text-xs tracking-wide text-[color:var(--ss-ink-5)]">{label}</dt>
+                <dd className="mt-1 text-base break-words text-[color:var(--ss-ink-2)]">{value}</dd>
+              </div>)}
+            </dl>
+            {!bio && !major && !college && !year && !hometown && <p className="mt-6 ss-caption">Add a little about yourself using Edit profile.</p>}
+          </>}
+        </section>
+      ) : <form aria-label="Edit profile" onSubmit={handleSave} className="rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60 p-5 sm:p-7">
+        <div className="flex flex-wrap items-center gap-4 border-b border-[color:var(--ss-surface-border)] pb-6 mb-6">
+          <Avatar src={avatarUrl} name={name} email={user?.email} size="xl" alt="Your profile" />
           <div className="flex-1 min-w-[140px]">
             <h2 className="font-display text-2xl sm:text-3xl break-words">{name || 'Your name'}</h2>
             <p className="text-sm text-[color:var(--ss-ink-5)] break-words">{[college, year && `Class of ${year}`].filter(Boolean).join(' · ') || 'Make yourself at home.'}</p>
@@ -210,10 +229,14 @@ export const ProfileContent = () => {
           </div>
         </fieldset>
         <div className="mt-7 pt-5 border-t border-[color:var(--ss-surface-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div><p className="ss-caption">Your profile helps your chapter get to know you.</p><p role="status" className="text-sm text-jade-700">{profileLoading ? 'Loading profile…' : saved ? 'Changes saved.' : ''}</p>{saveError && <p role="alert" className="text-brick text-sm">{saveError}</p>}</div>
+          <div><p className="ss-caption">Your profile helps your chapter get to know you.</p><p role="status" className="text-sm text-jade-700">{profileLoading ? 'Loading profile…' : ''}</p>{saveError && <p role="alert" className="text-brick text-sm">{saveError}</p>}</div>
+          <div className="flex gap-3">
+          <Button variant="ghost" disabled={saving || avatarUploading} onClick={() => { setEditing(false); setSaveError(''); setAvatarError(''); }}>Cancel</Button>
           <Button type="submit" disabled={saving || profileLoading || avatarUploading || !!loadError}>{saving ? 'Saving…' : 'Save changes'}</Button>
+          </div>
         </div>
-      </form>
+      </form>}
+      <EmailVerification key={user?.id} />
       <details className="group mt-4 rounded-xl border border-[color:var(--ss-surface-border)] bg-white/60">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:px-7 [&::-webkit-details-marker]:hidden">
           <span className="flex flex-wrap items-center gap-3">

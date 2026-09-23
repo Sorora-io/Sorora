@@ -1,3 +1,4 @@
+import Avatar from '../../components/Avatar';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
@@ -21,7 +22,6 @@ type SortMode = 'role' | 'az' | 'za';
 const SORT_KEY = 'sorora-roster-sort';
 
 const displayName = (r: RosterEntry) => r.name || r.email;
-const initial = (r: RosterEntry) => (r.name || r.email || '?').charAt(0).toUpperCase();
 
 const roleWord: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
@@ -101,17 +101,7 @@ const Roster = () => {
   );
 
   const avatar = (r: RosterEntry, size: 'sm' | 'md' = 'sm') => (
-    <span
-      className={`${
-        size === 'md' ? 'w-12 h-12 text-lg' : 'w-9 h-9 text-sm'
-      } flex-shrink-0 rounded-full overflow-hidden bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center font-medium`}
-    >
-      {r.avatarUrl ? (
-        <img src={r.avatarUrl} alt={displayName(r)} className="w-full h-full object-cover" />
-      ) : (
-        initial(r)
-      )}
-    </span>
+    <Avatar src={r.avatarUrl} name={r.name} email={r.email} size={size === 'md' ? 'lg' : 'md'} />
   );
 
   const renderRow = (r: RosterEntry) => {

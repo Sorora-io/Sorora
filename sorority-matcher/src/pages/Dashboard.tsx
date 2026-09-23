@@ -5,10 +5,12 @@ import { Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
+import Avatar from '../components/Avatar';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import { ProfileContent } from './Profile';
-import { isEffectiveAdmin, MembershipWithGroup, groupLabel } from '../lib/groups';
+import { isEffectiveAdmin, MembershipWithGroup, groupLabel, getPendingMemberships } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
+import { getPairingRevealStatus } from '../lib/pairings';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys, STALE } from '../lib/queryKeys';
@@ -43,9 +45,6 @@ const formatDeadline = (iso: string | null) =>
         day: 'numeric',
       })
     : 'TBD';
-
-const initial = (name: string | null | undefined, email?: string) =>
-  (name || email || '?').charAt(0).toUpperCase();
 
 // Design canvas deliberately drops the Georgia serif once the visitor is
 // past onboarding — the dashboard headings are Arial-family sans, 30px,
@@ -88,7 +87,7 @@ const SectionHeading = ({ children }: { children: React.ReactNode }) => (
 // Dashboard tab (two-card layout from the design)
 // ---------------------------------------------------------------------------
 
-const DashboardTab = ({
+export const DashboardTab = ({
   membership,
   onNavigate,
   onReplayTour,
@@ -116,11 +115,77 @@ const DashboardTab = ({
     enabled: isAdmin && !!cycleId,
   });
 
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: queryKeys.pendingCount(user?.id ?? '', membership.group_id),
+    queryFn: () => getPendingMemberships(membership.group_id).then(({ memberships: m }) => m.length),
+    enabled: isAdmin,
+    staleTime: STALE.short,
+  });
+
+  const { data: reveal } = useQuery({
+    queryKey: queryKeys.revealStatus(user?.id ?? '', cycleId ?? ''),
+    queryFn: () => getPairingRevealStatus(membership.group_id, cycleId!).then(({ status }) => status),
+    enabled: isAdmin && !!cycleId,
+    staleTime: STALE.short,
+  });
+
   const submitted = (rankedIds?.length ?? 0) > 0;
   const bigs = (statusRows ?? []).filter(r => r.role === 'big');
   const littles = (statusRows ?? []).filter(r => r.role === 'little');
   const bigsDone = bigs.filter(r => r.submitted).length;
   const littlesDone = littles.filter(r => r.submitted).length;
+
+  // "Needs attention" means exactly that: things blocked on the admin,
+  // most-blocking first. Progress meters are ambient status and live
+  // below, not here — a half-full bar isn't a task.
+  const rosterSize = bigs.length + littles.length;
+  const outstanding = rosterSize - (bigsDone + littlesDone);
+  const pairingsRun = (reveal?.total ?? 0) > 0;
+  const unrevealed = (reveal?.total ?? 0) - (reveal?.sent ?? 0);
+
+  const attention: { tone: 'urgent' | 'waiting' | 'ready'; title: string; detail: string; action: string; to: string }[] = [];
+  if (pendingCount > 0) {
+    attention.push({
+      tone: 'urgent',
+      title: `${pendingCount} join request${pendingCount === 1 ? '' : 's'} waiting`,
+      detail: `${pendingCount === 1 ? 'Someone' : 'They'} can't rank until you approve ${pendingCount === 1 ? 'them' : 'them'}.`,
+      action: 'Review',
+      to: '/group/approvals',
+    });
+  }
+  if (rosterSize > 0 && outstanding > 0) {
+    attention.push({
+      tone: 'waiting',
+      title: `${outstanding} of ${rosterSize} haven't submitted rankings`,
+      detail: 'You can still run matching — they’ll count as having no preferences.',
+      action: 'View submissions',
+      to: '/group/status',
+    });
+  }
+  if (rosterSize > 0 && outstanding === 0 && !pairingsRun) {
+    attention.push({
+      tone: 'ready',
+      title: 'Everyone has submitted',
+      detail: 'Your chapter is ready to match.',
+      action: 'Run matching',
+      to: '/group/status',
+    });
+  }
+  if (pairingsRun && unrevealed > 0) {
+    attention.push({
+      tone: 'ready',
+      title: `${unrevealed} Big${unrevealed === 1 ? '' : 's'} not notified yet`,
+      detail: 'Pairings are ready to reveal by email.',
+      action: 'Reveal',
+      to: '/group/pairings',
+    });
+  }
+
+  const toneDot: Record<'urgent' | 'waiting' | 'ready', string> = {
+    urgent: 'bg-brick-500',
+    waiting: 'bg-gold-400',
+    ready: 'bg-[color:var(--ss-jade)]',
+  };
 
   return (
     <div>
@@ -159,16 +224,66 @@ const DashboardTab = ({
 
         {isAdmin && (
           <section className="ss-surface flex flex-col gap-3">
-            <div className="ss-kicker" style={{ marginBottom: 0 }}>
-              01 · Needs attention
+            <div className="flex items-center justify-between gap-3">
+              <div className="ss-kicker" style={{ marginBottom: 0 }}>
+                01 · Needs attention
+              </div>
+              {attention.length > 0 && (
+                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brick-500 px-1.5 text-[11px] font-semibold text-white tabular-nums">
+                  {attention.length}
+                </span>
+              )}
             </div>
             <SectionHeading>
-              Chapter progress
+              {rosterSize === 0
+                ? 'Nothing here yet'
+                : attention.length === 0
+                  ? 'You’re all caught up'
+                  : 'What needs you'}
             </SectionHeading>
-            {bigs.length + littles.length === 0 ? (
-              <p className="ss-caption">No Bigs or Littles approved yet.</p>
+
+            {rosterSize === 0 ? (
+              <p className="ss-caption">
+                No Bigs or Littles approved yet — once people join with your chapter code, their
+                requests show up here.
+              </p>
+            ) : attention.length === 0 ? (
+              <p className="ss-caption">
+                {pairingsRun
+                  ? 'Nothing is waiting on you right now. Pairings are matched and every Big has been notified.'
+                  : 'Nothing is waiting on you right now.'}
+              </p>
             ) : (
-              <div className="flex flex-col gap-2">
+              <ul className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
+                {attention.map(item => (
+                  // Stacked, not title-beside-button: this card sits in a
+                  // half-width dashboard column (~390px), where a side-by-side
+                  // action squeezes the copy to one word per line.
+                  <li key={item.title} className="flex items-start gap-2.5 py-3 first:pt-1">
+                    <span
+                      aria-hidden="true"
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${toneDot[item.tone]}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[color:var(--ss-ink-2)]">{item.title}</p>
+                      <p className="ss-caption mt-0.5">{item.detail}</p>
+                      <Button
+                        size="sm"
+                        variant="quiet"
+                        className="mt-2"
+                        onClick={() => onNavigate(item.to)}
+                      >
+                        {item.action}
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {rosterSize > 0 && (
+              <div className="mt-1 pt-3 border-t border-[color:var(--ss-surface-border)] flex flex-col gap-2">
+                <div className="ss-kicker" style={{ marginBottom: 0 }}>Chapter progress</div>
                 <div className="flex items-center justify-between text-sm text-[color:var(--ss-ink-3)]">
                   <span>Bigs</span>
                   <span className="tabular-nums">
@@ -189,16 +304,17 @@ const DashboardTab = ({
                 </div>
               </div>
             )}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button size="sm" variant="quiet" onClick={() => onNavigate('/group/approvals')}>
-                Approvals
-              </Button>
-              <Button size="sm" variant="quiet" onClick={() => onNavigate('/group/status')}>
-                Submissions
-              </Button>
-              <Button size="sm" variant="quiet" onClick={() => onNavigate('/group/pairings')}>
-                Pairings
-              </Button>
+
+            <div className="mt-1 pt-3 border-t border-[color:var(--ss-surface-border)] flex flex-wrap gap-2">
+              {[
+                { label: 'Approvals', to: '/group/approvals' },
+                { label: 'Submissions', to: '/group/status' },
+                { label: 'Pairings', to: '/group/pairings' },
+              ].map(({ label, to }) => (
+                <Button key={to} size="sm" variant="quiet" onClick={() => onNavigate(to)}>
+                  {label}
+                </Button>
+              ))}
             </div>
           </section>
         )}
@@ -322,13 +438,7 @@ const RankingsTab = ({
                   <span className="w-6 text-right text-[color:var(--ss-ink-5)] tabular-nums">
                     {i + 1}
                   </span>
-                  <span className="w-8 h-8 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
-                    {r.avatarUrl ? (
-                      <img src={r.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      initial(r.name, r.email)
-                    )}
-                  </span>
+                  <Avatar src={r.avatarUrl} name={r.name} email={r.email} size="sm" />
                   <span className="min-w-0 truncate">{r.name ?? r.email}</span>
                 </div>
               ))}
@@ -489,13 +599,7 @@ const RosterTab = ({
               <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
                 {filtered.map(m => (
                   <div key={m.userId} className="flex items-center gap-3 py-3">
-                    <span className="w-9 h-9 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
-                      {m.avatarUrl ? (
-                        <img src={m.avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
-                      ) : (
-                        initial(m.name, m.email)
-                      )}
-                    </span>
+                    <Avatar src={m.avatarUrl} name={m.name} email={m.email} size="md" />
                     <div className="min-w-0 flex-1">
                       <div className="text-[color:var(--ss-ink-2)] truncate">
                         {m.name ?? m.email}

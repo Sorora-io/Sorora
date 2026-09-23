@@ -11,3 +11,16 @@ test('chapter changes invalidate related data but leave other users and chapters
   affected.forEach(key => expect(client.getQueryState(key)?.isInvalidated).toBe(true));
   untouched.forEach(key => expect(client.getQueryState(key)?.isInvalidated).toBe(false));
 });
+
+test('profile changes refresh roster caches across chapters without invalidating another account', async () => {
+  const { invalidateProfileViews } = require('./cache');
+  const client = new QueryClient();
+  const first = queryKeys.fullRoster('alice', 'chapter-a');
+  const second = queryKeys.fullRoster('alice', 'chapter-b');
+  const other = queryKeys.fullRoster('bob', 'chapter-b');
+  for (const key of [first, second, other]) client.setQueryData(key, []);
+  await invalidateProfileViews(client, 'alice');
+  expect(client.getQueryState(first)?.isInvalidated).toBe(true);
+  expect(client.getQueryState(second)?.isInvalidated).toBe(true);
+  expect(client.getQueryState(other)?.isInvalidated).toBe(false);
+});

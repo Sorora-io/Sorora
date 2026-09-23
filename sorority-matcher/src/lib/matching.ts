@@ -32,7 +32,8 @@ export function runDeferredAcceptance(
   littles: string[],
   bigRankings: PreferenceMap,
   littleRankings: PreferenceMap,
-  bigsWillingToTakeTwins: Set<string>
+  bigsWillingToTakeTwins: Set<string>,
+  wantedLittleCounts: Record<string, 2 | 3> = {}
 ): DeferredAcceptanceResult[] {
   const littlePrefs: PreferenceMap = {};
   for (const little of littles) {
@@ -51,7 +52,7 @@ export function runDeferredAcceptance(
 
   const capacity: { [big: string]: number } = {};
   for (const big of bigs) {
-    capacity[big] = bigsWillingToTakeTwins.has(big) ? 2 : 1;
+    capacity[big] = wantedLittleCounts[big] ?? (bigsWillingToTakeTwins.has(big) ? 2 : 1);
   }
 
   const nextProposalIndex: { [little: string]: number } = {};
