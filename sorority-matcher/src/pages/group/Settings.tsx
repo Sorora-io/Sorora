@@ -1,6 +1,7 @@
+import { toast } from 'sonner';
 import PageHeader from '../../components/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import {
@@ -37,20 +38,36 @@ const clamp = (value: number, min: number, max: number | undefined) => {
 const Settings = () => {
   const { membership, refresh } = useGroup();
   const group = membership?.group;
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState<string | null>(null);
+  const beginEdit = (section: string) => {
+    setName(group?.name ?? '');
+    setSchool(group?.school ?? '');
+    setDescription(group?.description ?? '');
+    setRevealSubject(group?.reveal_email_subject ?? '');
+    setRevealBody(group?.reveal_email_body ?? '');
+    setMinBig(group?.min_big_rankings ?? 5);
+    setMinLittle(group?.min_little_rankings ?? 5);
+    setDeadline(group?.ranking_deadline ?? '');
+    setProfileError(''); setDescError(''); setRevealError(''); setError('');
+    setEditing(section);
+  };
+  const finishSave = () => {
+    setEditing(null);
+    toast.success('Changes saved', { duration: 2500 });
+  };
 
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacyError, setPrivacyError] = useState('');
-  const [privacySaved, setPrivacySaved] = useState(false);
   const toggleBlindRankings = async () => {
     if (!group) return;
     setPrivacySaving(true);
     setPrivacyError('');
-    setPrivacySaved(false);
     try {
       const result = await updateBlindRankings(group.id, !(group.blind_rankings ?? true));
       if (result.error) throw new Error(result.error);
       await refresh();
-      setPrivacySaved(true);
+      finishSave();
     } catch (failure) {
       setPrivacyError(failure instanceof Error ? failure.message : 'Could not save ranking privacy.');
     } finally {
@@ -62,7 +79,6 @@ const Settings = () => {
   const [revealBody, setRevealBody] = useState(group?.reveal_email_body ?? '');
   const [revealSaving, setRevealSaving] = useState(false);
   const [revealError, setRevealError] = useState('');
-  const [revealSaved, setRevealSaved] = useState(false);
   const revealUsingDefault = !revealSubject.trim() && !revealBody.trim();
   const previewSubject = renderRevealTemplate(revealSubject.trim() || DEFAULT_REVEAL_SUBJECT, {
     first_name: 'Sarah', little_names: 'Emma Davis', chapter_name: group?.name || 'Your chapter', little_count: 1,
@@ -74,7 +90,6 @@ const Settings = () => {
     if (!group) return;
     setRevealSaving(true);
     setRevealError('');
-    setRevealSaved(false);
     // Empty string = "clear my override, fall back to the default template"
     // — clients don't have to know the default string themselves.
     const result = await updateRevealEmailTemplate(
@@ -85,8 +100,8 @@ const Settings = () => {
     if (result.error) {
       setRevealError(result.error);
     } else {
-      setRevealSaved(true);
       await refresh();
+      finishSave();
     }
     setRevealSaving(false);
   };
@@ -94,24 +109,20 @@ const Settings = () => {
     setRevealSubject('');
     setRevealBody('');
     setRevealError('');
-    setRevealSaved(false);
   };
 
   const [name, setName] = useState(group?.name ?? '');
   const [school, setSchool] = useState(group?.school ?? '');
-  const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
 
   const [description, setDescription] = useState(group?.description ?? '');
-  const [descSaved, setDescSaved] = useState(false);
   const [descError, setDescError] = useState('');
   const [descSaving, setDescSaving] = useState(false);
 
   const [minBig, setMinBig] = useState(group?.min_big_rankings ?? 5);
   const [minLittle, setMinLittle] = useState(group?.min_little_rankings ?? 5);
   const [deadline, setDeadline] = useState(group?.ranking_deadline ?? '');
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -218,13 +229,12 @@ const Settings = () => {
     }
     setProfileSaving(true);
     setProfileError('');
-    setProfileSaved(false);
     const { error: saveError } = await updateGroupProfile(group.id, name.trim(), school.trim());
     if (saveError) {
       setProfileError(saveError);
     } else {
-      setProfileSaved(true);
       await refresh();
+      finishSave();
     }
     setProfileSaving(false);
   };
@@ -232,13 +242,12 @@ const Settings = () => {
   const handleSaveDescription = async () => {
     setDescSaving(true);
     setDescError('');
-    setDescSaved(false);
     const { error: saveError } = await updateGroupDescription(group.id, description.trim());
     if (saveError) {
       setDescError(saveError);
     } else {
-      setDescSaved(true);
       await refresh();
+      finishSave();
     }
     setDescSaving(false);
   };
@@ -246,7 +255,6 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     setError('');
-    setSaved(false);
     const clampedMinBig = clamp(minBig, 1, maxBig);
     const clampedMinLittle = clamp(minLittle, 1, maxLittle);
     setMinBig(clampedMinBig);
@@ -258,8 +266,8 @@ const Settings = () => {
     if (saveError || deadlineError) {
       setError(saveError ?? deadlineError ?? 'Could not save.');
     } else {
-      setSaved(true);
       await refresh();
+      finishSave();
     }
     setSaving(false);
   };
@@ -271,20 +279,19 @@ const Settings = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
             <ArrowLeft size={14} /> Back to dashboard
-          </Link>
+          </Button>
         </PageHeader>
 
         <span className="ss-kicker">Chapter</span>
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] mb-8">
-          Group settings
+          Organization settings
         </h1>
 
-        <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
+        <section className="mb-6 pb-6 border-b border-[color:var(--ss-surface-border)]">
+          {editing === 'profile' ? <div className="flex flex-col gap-4">
+
           <div>
             <label className="block text-sm font-medium mb-1">Sorority group name</label>
             <input
@@ -307,14 +314,21 @@ const Settings = () => {
           </div>
 
           {profileError && <p className="text-brick text-sm">{profileError}</p>}
-          {profileSaved && <p className="text-jade-700 text-sm">Saved.</p>}
 
           <Button onClick={handleSaveProfile} disabled={profileSaving} fullWidth>
             {profileSaving ? '...' : 'Save Name & School'}
           </Button>
-        </div>
 
-        <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-gray-200">
+            <Button variant="ghost" disabled={profileSaving} onClick={() => setEditing(null)}>Cancel</Button>
+          </div> : <>
+            <dl className="space-y-4"><div><dt className="ss-label">Sorority group name</dt><dd className="mt-1 text-xl font-medium">{group.name}</dd></div><div><dt className="ss-label">School</dt><dd className="mt-1">{group.school || 'Not added'}</dd></div></dl>
+            <Button className="mt-4" variant="outline" size="sm" onClick={() => beginEdit('profile')} disabled={editing !== null}>Edit organization</Button>
+          </>}
+        </section>
+
+        <section className="mb-6 pb-6 border-b border-[color:var(--ss-surface-border)]">
+          {editing === 'description' ? <div className="flex flex-col gap-4">
+
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
             <textarea
@@ -327,23 +341,29 @@ const Settings = () => {
           </div>
 
           {descError && <p className="text-brick text-sm">{descError}</p>}
-          {descSaved && <p className="text-jade-700 text-sm">Saved.</p>}
 
           <Button onClick={handleSaveDescription} disabled={descSaving} fullWidth>
             {descSaving ? '...' : 'Save Description'}
           </Button>
-        </div>
+
+            <Button variant="ghost" disabled={descSaving} onClick={() => setEditing(null)}>Cancel</Button>
+          </div> : <>
+            <h2 className="ss-label">Description</h2><p className="mt-2 whitespace-pre-wrap">{group.description || 'No description added.'}</p>
+            <Button className="mt-4" variant="outline" size="sm" onClick={() => beginEdit('description')} disabled={editing !== null}>Edit description</Button>
+          </>}
+        </section>
 
         <section className="ss-surface mb-6" aria-labelledby="ranking-privacy-title">
           <div className="flex items-center justify-between gap-4">
             <h2 id="ranking-privacy-title" className="text-base font-medium">Blind rankings</h2>
-            <button type="button" role="switch" aria-checked={group.blind_rankings ?? true}
+            {editing === 'privacy' ? <button type="button" role="switch" aria-checked={group.blind_rankings ?? true}
               aria-label="Blind rankings" aria-describedby="ranking-privacy-description"
               disabled={privacySaving} onClick={toggleBlindRankings}
               className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${(group.blind_rankings ?? true) ? 'bg-[color:var(--ss-jade-deep)]' : 'bg-gray-300'}`}>
               <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${(group.blind_rankings ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            </button> : <Button variant="outline" size="sm" disabled={editing !== null} onClick={() => beginEdit('privacy')}>Edit privacy</Button>}
           </div>
+          {editing === 'privacy' && <Button className="mt-3" variant="ghost" size="sm" disabled={privacySaving} onClick={() => setEditing(null)}>Cancel</Button>}
           <p id="ranking-privacy-description" className="ss-caption mt-3">
             {(group.blind_rankings ?? true)
               ? 'On — only members can view their own preferences. Admins see submission status and final pairings, even when they participate in matching.'
@@ -351,11 +371,11 @@ const Settings = () => {
           </p>
           <p className="ss-caption mt-2">Matching runs on the server either way. Turning this on cannot erase preferences an admin has already seen.</p>
           {privacyError && <p role="alert" className="mt-2 text-sm text-brick">{privacyError}</p>}
-          {privacySaved && <p role="status" className="mt-2 text-sm text-jade-700">Privacy setting saved.</p>}
         </section>
 
         <section className="ss-surface mb-6" aria-labelledby="reveal-template-title">
           <h2 id="reveal-template-title" className="text-base font-medium">Pairing reveal email</h2>
+          {editing === 'reveal' ? <>
           <p className="ss-caption mt-1">
             Sent to each Big when you reveal pairings. Leave blank to use the default. Merge tags:
             {' '}<code className="text-[color:var(--ss-ink-2)]">{'{{first_name}}'}</code>,
@@ -393,7 +413,6 @@ const Settings = () => {
           </div>
 
           {revealError && <p role="alert" className="mt-3 text-sm text-brick">{revealError}</p>}
-          {revealSaved && <p role="status" className="mt-3 text-sm text-jade-700">Template saved.</p>}
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={handleSaveReveal} disabled={revealSaving}>
@@ -403,8 +422,19 @@ const Settings = () => {
               Reset to default
             </Button>
           </div>
+          <Button variant="ghost" disabled={revealSaving} onClick={() => setEditing(null)}>Cancel</Button>
+          </> : <>
+            <p className="ss-caption mt-2">{group.reveal_email_subject || group.reveal_email_body ? 'Custom email template' : 'Default email template'}</p>
+            <p className="mt-4 font-medium">{renderRevealTemplate(group.reveal_email_subject || DEFAULT_REVEAL_SUBJECT, { first_name: 'Sarah', little_names: 'Emma Davis', chapter_name: group.name, little_count: 1 })}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm">{renderRevealTemplate(group.reveal_email_body || DEFAULT_REVEAL_BODY, { first_name: 'Sarah', little_names: 'Emma Davis', chapter_name: group.name, little_count: 1 })}</p>
+            <p className="ss-caption mt-2">Example shown with Sarah and Emma Davis.</p>
+            <Button className="mt-4" variant="outline" size="sm" disabled={editing !== null} onClick={() => beginEdit('reveal')}>Edit email template</Button>
+          </>}
         </section>
 
+        <section>
+          <h2 className="text-base font-medium mb-4">Ranking rules</h2>
+          {editing === 'rules' ? <>
         <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -450,12 +480,22 @@ const Settings = () => {
           </div>
 
           {error && <p className="text-brick text-sm">{error}</p>}
-          {saved && <p className="text-jade-700 text-sm">Saved.</p>}
 
           <Button onClick={handleSave} disabled={saving} fullWidth>
             {saving ? '...' : 'Save Ranking Rules'}
           </Button>
         </div>
+
+          <Button className="mt-3" variant="ghost" disabled={saving} onClick={() => setEditing(null)}>Cancel</Button>
+          </> : <>
+            <dl className="space-y-4">
+              <div><dt className="ss-label">Minimum Bigs a Little must rank</dt><dd className="mt-1">{group.min_little_rankings}</dd></div>
+              <div><dt className="ss-label">Minimum Littles a Big must rank</dt><dd className="mt-1">{group.min_big_rankings}</dd></div>
+              <div><dt className="ss-label">Ranking deadline</dt><dd className="mt-1">{group.ranking_deadline ? formatDate(`${group.ranking_deadline}T12:00:00`) : 'No deadline set'}</dd></div>
+            </dl>
+            <Button className="mt-4" variant="outline" size="sm" disabled={editing !== null} onClick={() => beginEdit('rules')}>Edit ranking rules</Button>
+          </>}
+        </section>
 
         <div className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-200">
           <h3 className="text-sm font-semibold">Rush Cycle</h3>
@@ -482,9 +522,9 @@ const Settings = () => {
                       </span>
                     </div>
                   ))}
-                  <Link to="/group/pairings" className="text-xs text-gray-500 underline hover:text-black mt-1">
+                  <Button variant="quiet" size="sm" onClick={() => navigate('/group/pairings')}>
                     View a past cycle's pairings
-                  </Link>
+                  </Button>
                 </div>
               )}
 

@@ -310,6 +310,7 @@ export const DashboardTab = ({
                 { label: 'Approvals', to: '/group/approvals' },
                 { label: 'Submissions', to: '/group/status' },
                 { label: 'Pairings', to: '/group/pairings' },
+                { label: 'Organization settings', to: '/group/settings' },
               ].map(({ label, to }) => (
                 <Button key={to} size="sm" variant="quiet" onClick={() => onNavigate(to)}>
                   {label}

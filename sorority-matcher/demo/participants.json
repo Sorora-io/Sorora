@@ -1,0 +1,1051 @@
+{
+  "source": "Google spreadsheet 1uqeULhkxRMQoATmLcezDcBqlWFHwLJmiEvQh8eOmAsc, exported 2026-09-23",
+  "notes": [
+    "Latest timestamp used for duplicate Little submission",
+    "Repeated choices removed; dash treated as blank",
+    "WANTING Yes means 2 littles; takes precedence over WILLING",
+    "Names appearing only in rankings/pairings included without invented rankings",
+    "Original pairing results are not imported"
+  ],
+  "people": [
+    {
+      "name": "Adeline Bennett",
+      "role": "big",
+      "rankings": [
+        "Brielle Carter",
+        "Camille Hayes",
+        "Delaney Morgan",
+        "Elodie Parker",
+        "Freya Reed",
+        "Giselle Sullivan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Brielle Carter",
+      "role": "little",
+      "rankings": [
+        "Talia Sullivan",
+        "Adeline Bennett",
+        "Noelle Carter",
+        "Gemma Sullivan",
+        "Sabrina Turner",
+        "Jocelyn Foster",
+        "Lena Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Camille Hayes",
+      "role": "little",
+      "rankings": [
+        "Lena Carter",
+        "Adeline Bennett",
+        "Wendy Walker",
+        "Daphne Reed",
+        "Sylvie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Delaney Morgan",
+      "role": "little",
+      "rankings": [
+        "Adeline Bennett",
+        "Celeste Hayes",
+        "Wendy Walker",
+        "Blythe Carter",
+        "Wren Ellis",
+        "Autumn Hayes",
+        "Joy Brooks",
+        "Rosalie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Elodie Parker",
+      "role": "little",
+      "rankings": [
+        "Viola Turner",
+        "Zinnia Brooks",
+        "Adeline Bennett",
+        "Autumn Hayes",
+        "Noelle Carter",
+        "Sylvie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Freya Reed",
+      "role": "little",
+      "rankings": [
+        "Celeste Hayes",
+        "Adeline Bennett",
+        "Gemma Sullivan",
+        "Olive Hayes",
+        "Rosalie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Giselle Sullivan",
+      "role": "little",
+      "rankings": [
+        "Wendy Walker",
+        "Talia Sullivan",
+        "Adeline Bennett",
+        "Joy Brooks",
+        "Viola Turner",
+        "Noelle Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Harper Turner",
+      "role": "big",
+      "rankings": [
+        "Imogen Walker",
+        "Juniper Brooks",
+        "Kira Ellis",
+        "Leona Foster",
+        "Maisie Bennett"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Imogen Walker",
+      "role": "little",
+      "rankings": [
+        "Harper Turner",
+        "Hazel Brooks",
+        "Mira Bennett",
+        "Gloria Parker",
+        "Talia Sullivan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Juniper Brooks",
+      "role": "little",
+      "rankings": [
+        "Harper Turner",
+        "Zinnia Brooks",
+        "Autumn Hayes",
+        "Zelda Foster",
+        "Gemma Sullivan",
+        "Jocelyn Foster"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Kira Ellis",
+      "role": "little",
+      "rankings": [
+        "Harper Turner",
+        "Mira Bennett",
+        "Amelie Ellis",
+        "Sabrina Turner",
+        "Jocelyn Foster",
+        "Zelda Foster",
+        "Gloria Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Leona Foster",
+      "role": "little",
+      "rankings": [
+        "Amelie Ellis",
+        "Celeste Hayes",
+        "Talia Sullivan",
+        "Gemma Sullivan",
+        "Zinnia Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Maisie Bennett",
+      "role": "little",
+      "rankings": [
+        "Odette Parker",
+        "Harper Turner",
+        "Eden Parker",
+        "Esme Hayes",
+        "Mira Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Noelle Carter",
+      "role": "big",
+      "rankings": [
+        "Brielle Carter",
+        "Opal Hayes",
+        "Elodie Parker",
+        "Penelope Morgan",
+        "Camille Hayes",
+        "Giselle Sullivan",
+        "Quinn Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Opal Hayes",
+      "role": "little",
+      "rankings": [
+        "Noelle Carter",
+        "Viola Turner",
+        "Talia Sullivan",
+        "Joy Brooks",
+        "Mira Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Penelope Morgan",
+      "role": "little",
+      "rankings": [
+        "Fiona Turner",
+        "Gemma Sullivan",
+        "Daphne Reed",
+        "Hazel Brooks",
+        "Nell Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Quinn Parker",
+      "role": "little",
+      "rankings": [
+        "Rosalie Reed",
+        "Daphne Reed",
+        "Autumn Hayes",
+        "Demi Morgan",
+        "Wren Ellis",
+        "Zinnia Brooks",
+        "Fiona Turner",
+        "Noelle Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Rosalie Reed",
+      "role": "big",
+      "rankings": [
+        "Quinn Parker",
+        "Serena Sullivan",
+        "Tessa Turner",
+        "Uma Walker",
+        "Delaney Morgan",
+        "Vivienne Brooks"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Serena Sullivan",
+      "role": "little",
+      "rankings": [
+        "Rosalie Reed",
+        "Sylvie Reed",
+        "Joy Brooks",
+        "Hazel Brooks",
+        "Lena Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Tessa Turner",
+      "role": "little",
+      "rankings": [
+        "Joy Brooks",
+        "Viola Turner",
+        "Rosalie Reed",
+        "Sylvie Reed",
+        "Talia Sullivan",
+        "Noelle Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Uma Walker",
+      "role": "little",
+      "rankings": [
+        "Daphne Reed",
+        "Amelie Ellis",
+        "Joy Brooks",
+        "Blythe Carter",
+        "Rosalie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Vivienne Brooks",
+      "role": "little",
+      "rankings": [
+        "Blythe Carter",
+        "Odette Parker",
+        "Wendy Walker",
+        "Gemma Sullivan",
+        "Zinnia Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Willa Ellis",
+      "role": "big",
+      "rankings": [
+        "Xenia Foster",
+        "Yasmin Bennett",
+        "Maisie Bennett",
+        "Zara Carter",
+        "Delaney Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Xenia Foster",
+      "role": "little",
+      "rankings": [
+        "Willa Ellis",
+        "Talia Sullivan",
+        "Joy Brooks",
+        "Wendy Walker",
+        "Esme Hayes"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Yasmin Bennett",
+      "role": "little",
+      "rankings": [
+        "Laurel Foster",
+        "Zinnia Brooks",
+        "Eden Parker",
+        "Wendy Walker",
+        "Gloria Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Zara Carter",
+      "role": "little",
+      "rankings": [
+        "Wren Ellis",
+        "Noelle Carter",
+        "Willa Ellis",
+        "Zinnia Brooks",
+        "Sylvie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Autumn Hayes",
+      "role": "big",
+      "rankings": [
+        "Blair Morgan",
+        "Quinn Parker",
+        "Elodie Parker",
+        "Juniper Brooks",
+        "Delaney Morgan",
+        "Cora Parker"
+      ],
+      "willing": true,
+      "wanted": null
+    },
+    {
+      "name": "Blair Morgan",
+      "role": "little",
+      "rankings": [
+        "Autumn Hayes",
+        "Daphne Reed",
+        "Odette Parker",
+        "Mira Bennett",
+        "Wren Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Cora Parker",
+      "role": "little",
+      "rankings": [
+        "Zinnia Brooks",
+        "Sylvie Reed",
+        "Autumn Hayes",
+        "Demi Morgan",
+        "Eden Parker",
+        "Celeste Hayes"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Daphne Reed",
+      "role": "big",
+      "rankings": [
+        "Uma Walker",
+        "Estelle Sullivan",
+        "Penelope Morgan",
+        "Blair Morgan",
+        "Quinn Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Estelle Sullivan",
+      "role": "little",
+      "rankings": [
+        "Odette Parker",
+        "Daphne Reed",
+        "Rosalie Reed",
+        "Hazel Brooks",
+        "Adeline Bennett",
+        "Esme Hayes"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Fiona Turner",
+      "role": "big",
+      "rankings": [
+        "Penelope Morgan",
+        "Delaney Morgan",
+        "Vivienne Brooks",
+        "Uma Walker",
+        "Greta Walker"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Greta Walker",
+      "role": "little",
+      "rankings": [
+        "Laurel Foster",
+        "Reese Parker",
+        "Fiona Turner",
+        "Harper Turner",
+        "Wendy Walker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Hazel Brooks",
+      "role": "big",
+      "rankings": [
+        "Imogen Walker",
+        "Camille Hayes",
+        "Penelope Morgan",
+        "Serena Sullivan",
+        "Yasmin Bennett",
+        "Iris Ellis",
+        "Estelle Sullivan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Iris Ellis",
+      "role": "little",
+      "rankings": [
+        "Talia Sullivan",
+        "Eden Parker",
+        "Celeste Hayes",
+        "Adeline Bennett",
+        "Hazel Brooks",
+        "Joy Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Jocelyn Foster",
+      "role": "big",
+      "rankings": [
+        "Juniper Brooks",
+        "Kira Ellis",
+        "Brielle Carter",
+        "Kaia Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Kaia Bennett",
+      "role": "little",
+      "rankings": [
+        "Adeline Bennett",
+        "Joy Brooks",
+        "Esme Hayes",
+        "Rosalie Reed",
+        "Daphne Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Lena Carter",
+      "role": "big",
+      "rankings": [
+        "Camille Hayes",
+        "Brielle Carter",
+        "Serena Sullivan",
+        "Maeve Hayes",
+        "Nora Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Maeve Hayes",
+      "role": "little",
+      "rankings": [
+        "Zinnia Brooks",
+        "Lena Carter",
+        "Joy Brooks",
+        "Wendy Walker",
+        "Gloria Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Nora Morgan",
+      "role": "little",
+      "rankings": [
+        "Hazel Brooks",
+        "Sylvie Reed",
+        "Zinnia Brooks",
+        "Wren Ellis",
+        "Harper Turner"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Odette Parker",
+      "role": "big",
+      "rankings": [
+        "Estelle Sullivan",
+        "Phoebe Reed",
+        "Maisie Bennett",
+        "Blair Morgan",
+        "Delaney Morgan",
+        "Vivienne Brooks",
+        "Rhea Sullivan"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Phoebe Reed",
+      "role": "little",
+      "rankings": [
+        "Viola Turner",
+        "Sylvie Reed",
+        "Joy Brooks",
+        "Wren Ellis",
+        "Odette Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Rhea Sullivan",
+      "role": "little",
+      "rankings": [
+        "Zinnia Brooks",
+        "Hazel Brooks",
+        "Olive Hayes",
+        "Noelle Carter",
+        "Joy Brooks",
+        "Reese Parker",
+        "Fiona Turner",
+        "Wren Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Sabrina Turner",
+      "role": "big",
+      "rankings": [
+        "Brielle Carter",
+        "Thea Walker",
+        "Leona Foster",
+        "Vera Brooks",
+        "Kira Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Thea Walker",
+      "role": "little",
+      "rankings": [
+        "Sabrina Turner",
+        "Harper Turner",
+        "Zelda Foster",
+        "Gemma Sullivan",
+        "Amelie Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Vera Brooks",
+      "role": "little",
+      "rankings": [
+        "Laurel Foster",
+        "Reese Parker",
+        "Sabrina Turner",
+        "Gemma Sullivan",
+        "Amelie Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Wren Ellis",
+      "role": "big",
+      "rankings": [
+        "Delaney Morgan",
+        "Zara Carter",
+        "Phoebe Reed",
+        "Quinn Parker",
+        "Blair Morgan",
+        "Rhea Sullivan",
+        "Penelope Morgan"
+      ],
+      "willing": true,
+      "wanted": null
+    },
+    {
+      "name": "Zelda Foster",
+      "role": "big",
+      "rankings": [
+        "Thea Walker",
+        "Juniper Brooks",
+        "Leona Foster",
+        "April Bennett",
+        "Vera Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "April Bennett",
+      "role": "little",
+      "rankings": [
+        "Laurel Foster",
+        "Mira Bennett",
+        "Sabrina Turner",
+        "Zelda Foster",
+        "Esme Hayes",
+        "Amelie Ellis",
+        "Celeste Hayes",
+        "Joy Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Blythe Carter",
+      "role": "big",
+      "rankings": [
+        "Vivienne Brooks",
+        "Uma Walker",
+        "Delaney Morgan",
+        "Brielle Carter",
+        "Greta Walker"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Celeste Hayes",
+      "role": "big",
+      "rankings": [
+        "Delaney Morgan",
+        "Iris Ellis",
+        "Freya Reed",
+        "Leona Foster",
+        "Cora Parker"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Demi Morgan",
+      "role": "big",
+      "rankings": [
+        "Quinn Parker",
+        "Cora Parker",
+        "Penelope Morgan",
+        "Vivienne Brooks",
+        "Juniper Brooks",
+        "Xenia Foster",
+        "Yasmin Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Eden Parker",
+      "role": "big",
+      "rankings": [
+        "Iris Ellis",
+        "Cora Parker",
+        "Flora Reed",
+        "Kaia Bennett",
+        "Maisie Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Flora Reed",
+      "role": "little",
+      "rankings": [
+        "Mira Bennett",
+        "Eden Parker",
+        "Hazel Brooks",
+        "Blythe Carter",
+        "Demi Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Gemma Sullivan",
+      "role": "big",
+      "rankings": [
+        "Hope Turner",
+        "Delaney Morgan",
+        "Penelope Morgan",
+        "Ines Walker",
+        "Brielle Carter",
+        "Freya Reed",
+        "Leona Foster",
+        "Vivienne Brooks"
+      ],
+      "willing": true,
+      "wanted": null
+    },
+    {
+      "name": "Hope Turner",
+      "role": "little",
+      "rankings": [
+        "Gemma Sullivan",
+        "Amelie Ellis",
+        "Sylvie Reed",
+        "Celeste Hayes",
+        "Zinnia Brooks",
+        "Autumn Hayes",
+        "Noelle Carter",
+        "Zelda Foster"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Ines Walker",
+      "role": "little",
+      "rankings": [
+        "Gemma Sullivan",
+        "Laurel Foster",
+        "Noelle Carter",
+        "Zinnia Brooks",
+        "Willa Ellis",
+        "Joy Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Joy Brooks",
+      "role": "big",
+      "rankings": [
+        "Tessa Turner",
+        "Phoebe Reed",
+        "Serena Sullivan",
+        "Uma Walker",
+        "Giselle Sullivan",
+        "Maeve Hayes",
+        "Ines Walker",
+        "Kyra Ellis"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Kyra Ellis",
+      "role": "little",
+      "rankings": [
+        "Reese Parker",
+        "Joy Brooks",
+        "Gemma Sullivan",
+        "Talia Sullivan",
+        "Harper Turner"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Laurel Foster",
+      "role": "big",
+      "rankings": [
+        "Yasmin Bennett",
+        "Ines Walker",
+        "Greta Walker",
+        "Vera Brooks",
+        "April Bennett"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Mira Bennett",
+      "role": "big",
+      "rankings": [
+        "Blair Morgan",
+        "Imogen Walker",
+        "Kira Ellis",
+        "Flora Reed",
+        "Opal Hayes"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Nell Carter",
+      "role": "big",
+      "rankings": [
+        "Thea Walker",
+        "Quinn Parker",
+        "Yasmin Bennett",
+        "Penelope Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Olive Hayes",
+      "role": "big",
+      "rankings": [
+        "Freya Reed",
+        "Elodie Parker",
+        "Imogen Walker",
+        "Rhea Sullivan",
+        "Pearl Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Pearl Morgan",
+      "role": "little",
+      "rankings": [
+        "Beatrice Foster",
+        "Daphne Reed",
+        "Reese Parker",
+        "Olive Hayes",
+        "Rosalie Reed"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Reese Parker",
+      "role": "big",
+      "rankings": [
+        "Kyra Ellis",
+        "Greta Walker",
+        "Kira Ellis",
+        "Tessa Turner",
+        "Vera Brooks"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Sylvie Reed",
+      "role": "big",
+      "rankings": [
+        "Serena Sullivan",
+        "Phoebe Reed",
+        "Elodie Parker",
+        "Tessa Turner",
+        "Cora Parker",
+        "Ines Walker",
+        "Delaney Morgan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Talia Sullivan",
+      "role": "big",
+      "rankings": [
+        "Brielle Carter",
+        "Iris Ellis",
+        "Xenia Foster",
+        "Imogen Walker",
+        "Giselle Sullivan"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Viola Turner",
+      "role": "big",
+      "rankings": [
+        "Elodie Parker",
+        "Tessa Turner",
+        "Giselle Sullivan",
+        "Opal Hayes",
+        "Phoebe Reed"
+      ],
+      "willing": true,
+      "wanted": null
+    },
+    {
+      "name": "Wendy Walker",
+      "role": "big",
+      "rankings": [
+        "Giselle Sullivan",
+        "Delaney Morgan",
+        "Vivienne Brooks",
+        "Maeve Hayes",
+        "Serena Sullivan"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Zinnia Brooks",
+      "role": "big",
+      "rankings": [
+        "Cora Parker",
+        "Maeve Hayes",
+        "Rhea Sullivan",
+        "Yasmin Bennett",
+        "Elodie Parker"
+      ],
+      "willing": false,
+      "wanted": 2
+    },
+    {
+      "name": "Amelie Ellis",
+      "role": "big",
+      "rankings": [
+        "Leona Foster",
+        "Thea Walker",
+        "Hope Turner",
+        "Uma Walker",
+        "Kira Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Beatrice Foster",
+      "role": "big",
+      "rankings": [
+        "Pearl Morgan",
+        "April Bennett",
+        "Brielle Carter",
+        "Kyra Ellis"
+      ],
+      "willing": true,
+      "wanted": null
+    },
+    {
+      "name": "Gloria Parker",
+      "role": "big",
+      "rankings": [],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Esme Hayes",
+      "role": "big",
+      "rankings": [],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Fern Morgan",
+      "role": "little",
+      "rankings": [
+        "Sylvie Reed",
+        "Demi Morgan",
+        "Talia Sullivan",
+        "Autumn Hayes",
+        "Amelie Ellis"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Heidi Reed",
+      "role": "little",
+      "rankings": [
+        "Esme Hayes",
+        "Joy Brooks",
+        "Gemma Sullivan",
+        "Rosalie Reed",
+        "Beatrice Foster",
+        "Wren Ellis",
+        "Talia Sullivan",
+        "Zelda Foster"
+      ],
+      "willing": false,
+      "wanted": null
+    },
+    {
+      "name": "Isolde Sullivan",
+      "role": "little",
+      "rankings": [
+        "Zelda Foster",
+        "Reese Parker",
+        "Jocelyn Foster",
+        "Laurel Foster",
+        "Eden Parker",
+        "Viola Turner",
+        "Nell Carter"
+      ],
+      "willing": false,
+      "wanted": null
+    }
+  ]
+}

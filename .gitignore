@@ -2,3 +2,4 @@
 .claude/launch.json
 .DS_Store
 supabase/.temp/
+.demo/
