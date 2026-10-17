@@ -7,21 +7,21 @@ const cell = (value: string) => {
   return '"' + safe.replace(/"/g, '""') + '"';
 };
 
-export function pairingExportCsv(chapter: string, cycle: string, pairings: PairingRow[]): string {
+export function pairingExportCsv(cycle: string, pairings: PairingRow[]): string {
   const rows = [
-    ['Chapter', 'Cycle', 'Big', 'Little'],
-    ...pairings.map(pair => [chapter, cycle, pair.bigName || 'Unknown Big', pair.littleName || 'Unknown Little']),
+    ['Cycle', 'Big', 'Little'],
+    ...pairings.map(pair => [cycle, pair.bigName || 'Unknown Big', pair.littleName || 'Unknown Little']),
   ];
   return '\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
-export async function downloadPairingExport(chapter: string, cycle: string, cycleId: string): Promise<void> {
+export async function downloadPairingExport(cycle: string, cycleId: string): Promise<void> {
   // Fetch again so a download reflects saved edits and current access, rather
   // than an earlier page snapshot. Existing pairing RLS applies to this read.
   const { pairings, error } = await getPairings(cycleId);
   if (error) throw new Error(error);
   if (!pairings.length) throw new Error('No pairings to export for this cycle.');
-  const url = URL.createObjectURL(new Blob([pairingExportCsv(chapter, cycle, pairings)], { type: 'text/csv;charset=utf-8;' }));
+  const url = URL.createObjectURL(new Blob([pairingExportCsv(cycle, pairings)], { type: 'text/csv;charset=utf-8;' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = 'sorora-pairings.csv';

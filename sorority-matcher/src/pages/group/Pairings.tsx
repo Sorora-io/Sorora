@@ -120,7 +120,7 @@ const Pairings = () => {
     setExporting(true);
     setExportError('');
     try {
-      await downloadPairingExport(group.name, cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId);
+      await downloadPairingExport(cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId);
     } catch (failure) {
       setExportError(failure instanceof Error ? failure.message : 'Could not export pairings. Please try again.');
     } finally {
