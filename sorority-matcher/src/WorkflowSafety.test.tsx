@@ -1,3 +1,4 @@
+jest.mock('./components/PairingGroups',()=>()=>null);
 jest.mock('./components/MatchingReview',()=>()=>null);
 jest.mock('./components/ClearPairings',()=>()=>null);
 jest.mock('./lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));

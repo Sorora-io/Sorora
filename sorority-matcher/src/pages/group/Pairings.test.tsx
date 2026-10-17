@@ -29,7 +29,7 @@ test('exports the selected historical cycle and leaves failures visible for retr
   (downloadPairingExport as jest.Mock).mockRejectedValue(new Error('Download unavailable'));
   fireEvent.click(screen.getByRole('button',{name:'Export pairings CSV'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Download unavailable');
-  expect(downloadPairingExport).toHaveBeenCalledWith('Past','past',undefined);
+  expect(downloadPairingExport).toHaveBeenCalledWith('Past','past',undefined,'g');
   expect(screen.getByRole('button',{name:'Export pairings CSV'})).toBeEnabled();
 });
 test('empty cycles cannot export',async()=>{

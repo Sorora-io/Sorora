@@ -1,7 +1,9 @@
+import type { PairingDecision } from './pairingConfirmations';
 import type { PairingRow } from './rankings';
 import type { RankingExport } from './rankingExport';
 
-export function reviewPairings(pairings: PairingRow[], rankings: RankingExport) {
+export function reviewPairings(pairings: PairingRow[], rankings: Pick<RankingExport, 'members'>, decisions: PairingDecision[] = []) {
+  const saved = new Map(decisions.map(decision => [`${decision.bigId}:${decision.littleId}`, decision]));
   const members = new Map(rankings.members.map(member => [member.userId, member]));
   const rank = (person: string, partner: string): number | 'Not submitted' | 'Not ranked' | 'Unavailable' => {
     const member = members.get(person);
@@ -20,6 +22,7 @@ export function reviewPairings(pairings: PairingRow[], rankings: RankingExport) 
       : bigRanked && littleRanked ? 'Mutually ranked'
       : bigRanked || littleRanked ? 'One-sided ranking'
       : 'Neither ranked the other — review';
-    return { ...pair, bigRank, littleRank, mutualFirst, matchType };
+    const decision = saved.get(`${pair.bigId}:${pair.littleId}`);
+    return { ...pair, bigRank, littleRank, mutualFirst, matchType, decision, confirmed: decision ? decision.confirmed : mutualFirst };
   });
 }

@@ -1,46 +1,86 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { getRankingExport } from '../lib/rankingExport';
 import { PairingRow } from '../lib/rankings';
 import { reviewPairings } from '../lib/pairingReview';
+import { getPairingConfirmations, setPairingConfirmation } from '../lib/pairingConfirmations';
 import Button from './Button';
 
-export default function PairingGroups({groupId,cycleId,blind,pairings}:{groupId:string;cycleId:string;blind:boolean;pairings:PairingRow[]}) {
+export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}:{
+  groupId:string;cycleId:string;blind:boolean;pairings:PairingRow[];onRefresh?:()=>Promise<void>;
+}) {
   const {user}=useAuth();
-  const [showFirst,setShowFirst]=useState(false);
-  const query=useQuery({
-    queryKey:['user',user?.id,'pairing-ranks',groupId,cycleId,pairings.map(p=>`${p.bigId}:${p.littleId}`).sort().join(',')],
+  const queryClient=useQueryClient();
+  const [showConfirmed,setShowConfirmed]=useState(false);
+  const [saving,setSaving]=useState<string|null>(null);
+  const [saveError,setSaveError]=useState('');
+  const signature=pairings.map(p=>`${p.bigId}:${p.littleId}`).sort().join(',');
+  const confirmations=useQuery({
+    queryKey:['user',user?.id,'pairing-confirmations',groupId,cycleId,signature],
+    queryFn:()=>getPairingConfirmations(groupId,cycleId),
+    enabled:!!user && pairings.length>0,gcTime:0,staleTime:0,retry:false,refetchInterval:15000,
+  });
+  const rankings=useQuery({
+    queryKey:['user',user?.id,'pairing-ranks',groupId,cycleId,signature],
     queryFn:()=>getRankingExport(groupId,cycleId,true),
     enabled:!!user && !blind && pairings.length>0,
     gcTime:0,staleTime:0,retry:false,refetchInterval:15000,
   });
-  const plainRows=()=> <ul className="divide-y divide-[color:var(--ss-surface-border)]">{pairings.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="py-3 text-sm break-words"><span className="font-medium">{pair.bigName || 'Unknown Big'}</span> → {pair.littleName || 'Unknown Little'}</li>)}</ul>;
-  if(blind || !query.data || query.error) return <section className="ss-surface" aria-label="Saved pairings">
+  const changeConfirmation=async(pair:PairingRow,confirmed:boolean)=>{
+    if(!confirmations.data || saving || confirmations.data.lockReason)return;
+    setSaving(`${pair.bigId}:${pair.littleId}`);setSaveError('');
+    try {
+      await setPairingConfirmation(groupId,cycleId,pair.bigId,pair.littleId,confirmations.data.version,confirmed);
+    } catch(failure) {
+      setSaveError(failure instanceof Error ? failure.message : 'Could not confirm whether the status was saved. Refresh before trying again.');
+    } finally {
+      await Promise.allSettled([
+        confirmations.refetch(),onRefresh?.(),
+        queryClient.invalidateQueries({queryKey:['user',user?.id,'matching-review',groupId,cycleId]}),
+        queryClient.invalidateQueries({queryKey:['user',user?.id,'pairing-editor',groupId,cycleId]}),
+      ]);
+      setSaving(null);
+    }
+  };
+  if(!confirmations.data || confirmations.error)return <section className="ss-surface" aria-label="Saved pairings">
     <h2 className="font-medium">Saved pairings ({pairings.length})</h2>
-    <p className="ss-caption mt-2">{blind ? 'Blind rankings are on. Rank positions and mutual first-choice grouping are hidden.' : query.error ? 'Could not load ranking details. Pairings remain visible; no first-choice assumptions have been made.' : 'Checking mutual first choices…'}</p>
-    {!blind && query.error && <Button variant="quiet" size="sm" className="mt-2" onClick={()=>void query.refetch()}>Retry rank grouping</Button>}
-    {plainRows()}
+    <p className="ss-caption mt-2">{confirmations.error ? 'Could not load saved confirmations. Refresh before reviewing these pairs.' : 'Loading saved confirmations…'}</p>
+    {confirmations.error && <Button variant="quiet" size="sm" className="mt-2" onClick={()=>void confirmations.refetch()}>Retry confirmations</Button>}
+    <ul className="mt-3 space-y-3">{pairings.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="text-sm break-words">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</li>)}</ul>
   </section>;
-  const reviewed=reviewPairings(pairings,query.data);
-  const first=reviewed.filter(pair=>pair.mutualFirst);
-  const rest=reviewed.filter(pair=>!pair.mutualFirst);
+  const visibleRankings=!blind && !rankings.error ? rankings.data : undefined;
+  const reviewed=reviewPairings(pairings,visibleRankings ?? {members:[]},confirmations.data.decisions);
+  const confirmed=reviewed.filter(pair=>pair.confirmed);
+  const needsReview=reviewed.filter(pair=>!pair.confirmed);
   const rows=(pairs:typeof reviewed)=><ul className="mt-3 divide-y divide-[color:var(--ss-surface-border)]">{pairs.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="py-3 text-sm break-words">
     <p className="font-medium">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</p>
-    <p className="mt-1 font-medium">{pair.matchType}</p>
-    <p className="ss-caption mt-1">Big’s rank of Little: {typeof pair.bigRank==='number' ? `#${pair.bigRank}` : pair.bigRank}</p>
-    <p className="ss-caption">Little’s rank of Big: {typeof pair.littleRank==='number' ? `#${pair.littleRank}` : pair.littleRank}</p>
+    {visibleRankings && <p className="ss-caption mt-1">
+      Big {typeof pair.bigRank==='number' ? `#${pair.bigRank}` : pair.bigRank==='Not ranked' ? '—' : pair.bigRank} · Little {typeof pair.littleRank==='number' ? `#${pair.littleRank}` : pair.littleRank==='Not ranked' ? '—' : pair.littleRank}
+      {!pair.mutualFirst && <span> · {pair.matchType}</span>}
+    </p>}
+    {pair.decision && <p className="ss-caption mt-2">{pair.decision.confirmed?'Confirmed':'Marked for review'} by {pair.decision.reviewedBy || 'Chapter admin'} · {new Date(pair.decision.reviewedAt).toLocaleString()}</p>}
+    <Button variant="quiet" size="sm" className="mt-3" disabled={!!saving || confirmations.isFetching || !!confirmations.data?.lockReason}
+      aria-label={`${pair.confirmed?'Move pairing to needs review':'Confirm pairing'}: ${pair.bigName || 'Unknown Big'} and ${pair.littleName || 'Unknown Little'}`}
+      onClick={()=>void changeConfirmation(pair,!pair.confirmed)}>
+      {saving===`${pair.bigId}:${pair.littleId}` ? 'Saving…' : pair.confirmed ? 'Move to needs review' : 'Confirm pairing'}
+    </Button>
   </li>)}</ul>;
   return <div className="space-y-4">
-    <p className="ss-caption"><strong>Review key:</strong> Confirmed = both ranked each other #1. Needs review = all other pairs. #1 = first choice. Not ranked = omitted from that person’s list. Not submitted = no ranking submitted for this cycle.</p>
+    <p className="ss-caption"><strong>Review key:</strong> Confirmed = mutual first choice by default, or confirmed by an admin. Needs review = not yet confirmed. Big/Little show each person’s rank of their partner. #1 = first choice; — = not ranked.</p>
+    {blind ? <p className="ss-caption">Blind rankings are on. Rank positions and automatic mutual first-choice confirmation are hidden. Admin confirmations are still saved.</p>
+      : rankings.error ? <div role="alert"><p className="ss-caption">Could not load ranking details. Saved admin confirmations remain visible; automatic first-choice confirmation is unavailable.</p><Button variant="quiet" size="sm" className="mt-2" onClick={()=>void rankings.refetch()}>Retry rank grouping</Button></div>
+      : rankings.isPending && <p role="status" className="ss-caption">Checking mutual first choices…</p>}
+    {saveError && <p role="alert" className="text-sm text-brick">{saveError}</p>}
+    {confirmations.data.lockReason && <p className="ss-caption">{confirmations.data.lockReason}</p>}
     <section className="ss-surface" aria-label="Confirmed pairings">
-      <h2 className="font-medium">Confirmed ({first.length})</h2>
-      <p className="ss-caption mt-2">Confirmed automatically because both ranked each other #1. This status does not lock or change a pairing.</p>
-      {first.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showFirst} aria-controls="mutual-first-pairs" onClick={()=>setShowFirst(!showFirst)}>{showFirst?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showFirst && <div id="mutual-first-pairs">{rows(first)}</div>}</> : <p className="ss-caption mt-3">No pairs are confirmed automatically.</p>}
+      <h2 className="font-medium">Confirmed ({confirmed.length})</h2>
+      <p className="ss-caption mt-2">Mutual first choices start here automatically when rankings are visible. Admins can confirm other pairs or move a pair back to review. Confirming does not lock or change the pairing.</p>
+      {confirmed.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showConfirmed} aria-controls="confirmed-pairs" onClick={()=>setShowConfirmed(!showConfirmed)}>{showConfirmed?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showConfirmed && <div id="confirmed-pairs">{rows(confirmed)}</div>}</> : <p className="ss-caption mt-3">No confirmed pairs yet.</p>}
     </section>
     <section className="ss-surface" aria-label="Pairings needing review">
-      <h2 className="font-medium">Needs review ({rest.length})</h2>
-      {rest.length ? rows(rest) : <p className="ss-caption mt-3">All saved pairs are confirmed mutual first choices.</p>}
+      <h2 className="font-medium">Needs review ({needsReview.length})</h2>
+      {needsReview.length ? rows(needsReview) : <p className="ss-caption mt-3">All saved pairs are confirmed.</p>}
     </section>
   </div>;
 }

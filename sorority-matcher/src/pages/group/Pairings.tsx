@@ -72,12 +72,12 @@ const Pairings = () => {
     });
   }, [group]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (showLoading = true) => {
     if (!selectedCycleId) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (showLoading) setLoading(true);
     const { pairings: p, error: loadError } = await getPairings(selectedCycleId);
     if (loadError) setError(loadError);
     setPairings(p);
@@ -115,7 +115,7 @@ const Pairings = () => {
     setExporting(true);
     setExportError('');
     try {
-      await downloadPairingExport(cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId, group.blind_rankings === false ? group.id : undefined);
+      await downloadPairingExport(cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId, group.blind_rankings === false ? group.id : undefined, group.id);
     } catch (failure) {
       setExportError(failure instanceof Error ? failure.message : 'Could not export pairings. Please try again.');
     } finally {
@@ -250,7 +250,7 @@ const Pairings = () => {
               <p className="ss-caption mt-2">Run matching from the Status page to generate this cycle's pairings.</p>
             </div>
           ) : (
-            <PairingGroups key={`${group.id}:${selectedCycleId}:${group.blind_rankings}`} groupId={group.id} cycleId={selectedCycleId!} blind={group.blind_rankings ?? true} pairings={pairings} />
+            <PairingGroups key={`${group.id}:${selectedCycleId}:${group.blind_rankings}`} groupId={group.id} cycleId={selectedCycleId!} blind={group.blind_rankings ?? true} pairings={pairings} onRefresh={() => load(false)} />
           )}
         </div>
 
