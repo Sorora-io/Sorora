@@ -71,4 +71,12 @@ review=(await db.query('select get_matching_review($1,$2) as d',[g,c])).rows[0].
 let v=await version();await db.exec('reset role');await db.query('update cycles set pairing_edits_locked_at=now() where id=$1',[c]);await login(admin);await assert.rejects(()=>clear(v),/Reveal sending/);
 await db.exec('reset role');await db.query('update cycles set pairing_edits_locked_at=null,ended_at=now() where id=$1',[c]);await login(admin);await assert.rejects(()=>clear(v),/active open/);
 await db.exec('reset role;set role anon');await assert.rejects(()=>clear(v),/permission denied/);
+await db.exec('reset role');
+await db.exec(await readFile(new URL('../migrations/0048_pairing_confirmations.sql',import.meta.url),'utf8'));
+await db.query('update cycles set ended_at=null,pairing_edits_locked_at=null where id=$1',[c]);
+await login(admin);
+const confirmations=(await db.query('select get_pairing_confirmations($1,$2) as d',[g,c])).rows[0].d;
+await db.query('select set_pairing_confirmation($1,$2,$3,$4,$5,true)',[g,c,big,little,confirmations.version]);
+review=(await db.query('select get_matching_review($1,$2) as d',[g,c])).rows[0].d;
+assert.equal(review.oneSidedPairings.length,0,'confirmed one-sided pairs leave the outstanding queue');
 await db.close();console.log('Ranking connections, admin review, clearing, saved rankings, cycle isolation, capacity reset, audit, confirmation and reveal locks passed.');
