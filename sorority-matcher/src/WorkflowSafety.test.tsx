@@ -1,3 +1,5 @@
+jest.mock('./components/MatchingReview',()=>()=>null);
+jest.mock('./components/ClearPairings',()=>()=>null);
 jest.mock('./lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
 jest.mock('./components/PairingChanges', () => () => null);
 import { act, render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';

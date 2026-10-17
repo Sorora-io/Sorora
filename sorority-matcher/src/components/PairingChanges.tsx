@@ -70,6 +70,7 @@ export default function PairingChanges({ groupId, cycleId, onSaved }: {
       reset(); setSaved(true);
       await Promise.all([
         client.invalidateQueries({ queryKey: key }),
+        client.invalidateQueries({ queryKey: ['user', user?.id, 'matching-review', groupId, cycleId] }),
         client.invalidateQueries({ queryKey: queryKeys.revealStatus(user?.id ?? '', cycleId) }),
         onSaved(),
       ]);

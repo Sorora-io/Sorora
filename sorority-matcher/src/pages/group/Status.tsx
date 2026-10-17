@@ -1,3 +1,4 @@
+import MatchingReview from '../../components/MatchingReview';
 import { trackEvent } from '../../lib/analytics';
 import { littlePreferenceLabel } from '../../lib/littlePreference';
 import { groupRankingDeadline } from '../../lib/rankingDeadline';
@@ -183,6 +184,7 @@ const Status = () => {
 
         {cycleId && <p className="mt-3 ss-caption">Twins/triplets labels show saved capacity preferences, including up to 3 Littles. A saved/default value of 1 cannot distinguish an explicit choice from the original default. Preferences may carry over between cycles; the submission label refers to this cycle. Twins do not apply to Littles.</p>}
 
+        {cycleId && <MatchingReview groupId={group.id} cycleId={cycleId} />}
         {cycleId && <UnrankedMemberReview groupId={group.id} cycleId={cycleId} deadline={groupRankingDeadline(group)} blind={group.blind_rankings ?? true} />}
 
         {cycleId && <section className="mt-6 ss-surface">

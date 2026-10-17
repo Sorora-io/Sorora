@@ -28,7 +28,7 @@ export default function UnrankedMemberReview({groupId, cycleId, deadline, blind}
       : query.error ? <div role="alert"><p className="ss-caption mt-2">Could not check rankings received. Review is unavailable until this loads.</p><Button variant="outline" size="sm" className="mt-2" onClick={() => void query.refetch()}>Retry review</Button></div>
       : query.data?.state === 'ready' ? <>
         {query.data.members.length ? <>
-          <p className="ss-caption mt-2">These members received no rankings from approved members of the opposite role this cycle. Review their pairings before reveal. They remain eligible for matching, and their own submitted preferences can still be used.</p>
+          <p className="ss-caption mt-2">These members received no rankings from approved members of the opposite role this cycle. Review their pairings before reveal. Automatic matching requires a ranking connection in at least one direction; review unmatched members for manual assignment.</p>
           <ul className="mt-3 space-y-2">{query.data.members.map(member => <li key={member.userId} className="flex flex-wrap justify-between gap-2 text-sm"><span>{member.name} · {member.role === 'big' ? 'Big' : 'Little'}</span><span className="font-medium text-[color:var(--ss-error)]">No rankings received</span></li>)}</ul>
         </> : <p className="ss-caption mt-2">Every approved Big and Little received at least one ranking this cycle.</p>}
       </> : <p className="ss-caption mt-2">Review is available after the active cycle’s ranking deadline.</p>}

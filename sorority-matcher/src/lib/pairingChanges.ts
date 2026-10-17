@@ -36,3 +36,8 @@ export async function changePairings(groupId: string, cycleId: string, operation
   });
   if (error) throw new Error(error.message);
 }
+
+export async function clearCyclePairings(groupId:string,cycleId:string,version:string,confirmation:string):Promise<number> {
+ const {data,error}=await supabase.rpc('clear_cycle_pairings',{p_group_id:groupId,p_cycle_id:cycleId,p_expected_version:version,p_confirmation:confirmation});
+ if(error)throw new Error(error.message);return data as number;
+}

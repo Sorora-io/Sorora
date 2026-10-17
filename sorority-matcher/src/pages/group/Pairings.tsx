@@ -1,3 +1,5 @@
+import ClearPairings from '../../components/ClearPairings';
+import MatchingReview from '../../components/MatchingReview';
 import { trackEvent } from '../../lib/analytics';
 import { groupRankingDeadline } from '../../lib/rankingDeadline';
 import UnrankedMemberReview from '../../components/UnrankedMemberReview';
@@ -240,7 +242,10 @@ const Pairings = () => {
           )}
         </div>
 
+        {selectedCycleId && <MatchingReview groupId={group.id} cycleId={selectedCycleId} />}
         {selectedCycleId && <UnrankedMemberReview groupId={group.id} cycleId={selectedCycleId} deadline={groupRankingDeadline(group)} blind={group.blind_rankings ?? true} />}
+
+        {selectedCycleId && <ClearPairings key={`clear:${group.id}:${selectedCycleId}`} groupId={group.id} cycleId={selectedCycleId} onCleared={async () => { await Promise.all([load(), loadReveal(false)]); }} />}
 
         {selectedCycleId && <PairingChanges key={`${group.id}:${selectedCycleId}`} groupId={group.id} cycleId={selectedCycleId} onSaved={async () => { await Promise.all([load(), loadReveal(false)]); }} />}
 

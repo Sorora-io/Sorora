@@ -1,3 +1,4 @@
+jest.mock('../../components/MatchingReview',()=>()=>null);
 import { getSubmissionStatus, runMatching } from '../../lib/rankings';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

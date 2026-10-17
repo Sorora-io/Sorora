@@ -9,7 +9,7 @@ beforeEach(()=>jest.clearAllMocks());
 test('only post-deadline admin review identifies unranked members',async()=>{
  (supabase.rpc as jest.Mock).mockResolvedValue({data:{state:'ready',members:[{userId:'one',name:'Amy',role:'little'}]},error:null});
  mount();expect(await screen.findByText('No rankings received')).toBeInTheDocument();expect(screen.getByText('Amy · Little')).toBeInTheDocument();
- expect(screen.getByText(/remain eligible for matching/)).toBeInTheDocument();
+ expect(screen.getByText(/requires a ranking connection/)).toBeInTheDocument();
 });
 test('blind chapters do not fetch or identify unranked members',()=>{mount(true);expect(screen.getByText(/keep preferences private/)).toBeInTheDocument();expect(supabase.rpc).not.toHaveBeenCalled();});
 test('no deadline produces no warning or request',()=>{mount(false,null);expect(screen.queryByRole('region')).not.toBeInTheDocument();expect(supabase.rpc).not.toHaveBeenCalled();});
