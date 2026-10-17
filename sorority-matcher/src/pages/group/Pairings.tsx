@@ -1,3 +1,4 @@
+import { downloadPairingExport } from '../../lib/pairingExport';
 import ClearPairings from '../../components/ClearPairings';
 import MatchingReview from '../../components/MatchingReview';
 import { trackEvent } from '../../lib/analytics';
@@ -48,6 +49,8 @@ const Pairings = () => {
   const [pairings, setPairings] = useState<PairingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   const [reveal, setReveal] = useState<RevealStatus | null>(null);
   const [revealBusy, setRevealBusy] = useState(false);
@@ -111,6 +114,19 @@ const Pairings = () => {
     if (!byBig.has(p.bigId)) byBig.set(p.bigId, { bigName: p.bigName, littles: [] });
     byBig.get(p.bigId)!.littles.push(p.littleName || 'Unknown');
   }
+
+  const handleExport = async () => {
+    if (!group || !selectedCycleId || exporting) return;
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadPairingExport(group.name, cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId);
+    } catch (failure) {
+      setExportError(failure instanceof Error ? failure.message : 'Could not export pairings. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleRevealNow = async () => {
     if (!group || !selectedCycleId) return;
@@ -201,7 +217,9 @@ const Pairings = () => {
           {cycles.length > 1 && (
             <select
               value={selectedCycleId ?? ''}
-              onChange={e => setSelectedCycleId(e.target.value)}
+              aria-label="Pairing cycle"
+              disabled={exporting}
+              onChange={e => { setSelectedCycleId(e.target.value); setExportError(''); }}
               className="flex-shrink-0 text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill px-4 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
             >
               {cycles.map(c => (
@@ -212,6 +230,14 @@ const Pairings = () => {
               ))}
             </select>
           )}
+        </div>
+
+        <div className="mt-5">
+          <Button variant="outline" size="sm" disabled={exporting || loading || !selectedCycleId || !hasPairings} onClick={handleExport}>
+            {exporting ? 'Exporting…' : 'Export pairings CSV'}
+          </Button>
+          <p className="ss-caption mt-2">Downloads the selected cycle’s saved pairings, one Big–Little pair per row.</p>
+          {exportError && <p role="alert" className="mt-2 text-sm text-brick">{exportError}</p>}
         </div>
 
         {error && <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>}
