@@ -1,0 +1,24 @@
+import { StrictMode } from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, Link } from 'react-router-dom';
+import AnalyticsConsent from './AnalyticsConsent';
+import { CONSENT_KEY } from '../lib/analytics';
+const mockTrack = jest.fn(); const mockInit = jest.fn();
+jest.mock('../contexts/AuthContext', () => ({useAuth:()=>({loading:false})}));
+jest.mock('mixpanel-browser', () => ({__esModule:true,default:{init:(...args:any[])=>mockInit(...args),track:(...args:any[])=>mockTrack(...args),reset:jest.fn(),has_opted_out_tracking:()=>false,opt_out_tracking:jest.fn()}}));
+beforeEach(() => { localStorage.clear(); jest.clearAllMocks(); process.env.REACT_APP_MIXPANEL_TOKEN='test-token'; });
+afterEach(() => {delete process.env.REACT_APP_MIXPANEL_TOKEN;});
+test('choice, route changes, reopening and withdrawal are keyboard-accessible and remembered', () => {
+  render(<StrictMode><MemoryRouter><AnalyticsConsent /><Link to="/about">About page</Link></MemoryRouter></StrictMode>);
+  expect(mockInit).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'Allow analytics'}));
+  expect(localStorage.getItem(CONSENT_KEY)).toBe('accepted');
+  expect(mockTrack).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByText('About page')); expect(mockTrack).toHaveBeenCalledTimes(2);
+  fireEvent.click(screen.getByRole('button',{name:'Analytics preferences'}));
+  expect(screen.getByRole('heading',{name:'Help improve Sorora?'})).toHaveFocus();
+  fireEvent.click(screen.getByRole('button',{name:'Decline analytics'}));
+  expect(localStorage.getItem(CONSENT_KEY)).toBe('declined');
+  expect(screen.getByRole('button',{name:'Analytics preferences'})).toHaveFocus();
+  expect(screen.queryByText('Help improve Sorora?')).not.toBeInTheDocument();
+});

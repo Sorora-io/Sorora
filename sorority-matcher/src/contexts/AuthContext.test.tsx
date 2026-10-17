@@ -5,8 +5,16 @@ import { queryKeys } from '../lib/queryKeys';
 
 let mockListener: (event: string, session: any) => void;
 const mockGetSession = jest.fn();
+const mockSignUp = jest.fn();
+const mockSignIn = jest.fn();
+const mockTrack = jest.fn();
+const mockReset = jest.fn();
+jest.mock('../lib/analytics', () => ({ trackEvent: (...args: any[]) => mockTrack(...args), resetAnalyticsSession: () => mockReset() }));
+beforeEach(() => { jest.clearAllMocks(); });
 jest.mock('../lib/supabase', () => ({ supabase: { auth: {
   getSession: () => mockGetSession(),
+  signUp: (...args: any[]) => mockSignUp(...args),
+  signInWithPassword: (...args: any[]) => mockSignIn(...args),
   onAuthStateChange: (listener: typeof mockListener) => { mockListener = listener; return { data: { subscription: { unsubscribe: jest.fn() } } }; },
 } } }));
 const Consumer = () => { const { user } = useAuth(); return <div>{user?.id || 'signed-out'}</div>; };
@@ -18,9 +26,11 @@ test('retains cache on token refresh, clears it on account switch and sign-out',
   client.setQueryData(queryKeys.myProfile('alice'), { name: 'Alice' });
   act(() => mockListener('TOKEN_REFRESHED', { user: { id: 'alice' } }));
   expect(client.getQueryData(queryKeys.myProfile('alice'))).toEqual({ name: 'Alice' });
+  expect(mockReset).not.toHaveBeenCalled();
   act(() => mockListener('SIGNED_IN', { user: { id: 'bob' } }));
   await screen.findByText('bob');
   expect(client.getQueryCache().getAll()).toHaveLength(0);
+  expect(mockReset).toHaveBeenCalledTimes(1);
   client.setQueryData(queryKeys.myProfile('bob'), { name: 'Bob' });
   act(() => mockListener('SIGNED_OUT', null));
   expect(client.getQueryCache().getAll()).toHaveLength(0);
@@ -47,4 +57,25 @@ test('authentication does not remount an in-progress signup form', async () => {
   fireEvent.change(input, { target: { value: 'My chapter' } });
   act(() => mockListener('SIGNED_IN', { user: { id: 'new-user' } }));
   expect(screen.getByLabelText('Chapter draft')).toHaveValue('My chapter');
+});
+
+test('tracks only confirmed signup creation and successful explicit login, without account details', async () => {
+  mockGetSession.mockResolvedValue({data:{session:null}});
+  let auth: ReturnType<typeof useAuth>;
+  const Actions = () => { auth = useAuth(); return null; };
+  render(<QueryClientProvider client={new QueryClient()}><AuthProvider><Actions /></AuthProvider></QueryClientProvider>);
+  await waitFor(() => expect(auth.loading).toBe(false));
+  mockSignUp.mockResolvedValue({data:{user:{id:'private',identities:[{}]},session:null},error:null});
+  await act(async () => { await auth.signUp('private@example.com','password','Private Name'); });
+  expect(mockTrack).toHaveBeenLastCalledWith('sign_up_completed');
+  mockSignUp.mockResolvedValue({data:{user:{identities:[]},session:null},error:null});
+  await act(async () => { await auth.signUp('private@example.com','password'); });
+  expect(mockTrack).toHaveBeenCalledTimes(1);
+  mockSignIn.mockResolvedValueOnce({error:Error('failed')}).mockResolvedValueOnce({error:null});
+  await act(async () => { await auth.signIn('private@example.com','password'); });
+  expect(mockTrack).toHaveBeenCalledTimes(1);
+  await act(async () => { await auth.signIn('private@example.com','password'); });
+  expect(mockTrack).toHaveBeenLastCalledWith('login_completed');
+  act(() => mockListener('TOKEN_REFRESHED',{user:{id:'private'}}));
+  expect(mockTrack).toHaveBeenCalledTimes(2);
 });

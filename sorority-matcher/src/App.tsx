@@ -1,3 +1,4 @@
+import AnalyticsConsent from './components/AnalyticsConsent';
 import Button from './components/Button';
 import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/toaster";
@@ -78,6 +79,7 @@ const AppShell = () => {
           </Button>
         </div>
       )}
+      <AnalyticsConsent />
       <main className="flex-1 flex flex-col">
       <Suspense fallback={<LoadingScreen />}>
         <Routes>

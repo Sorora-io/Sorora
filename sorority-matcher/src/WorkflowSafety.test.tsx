@@ -6,6 +6,8 @@ import { useGroup } from './contexts/GroupContext';
 import SubmitRanking from './pages/group/SubmitRanking';
 import Pairings from './pages/group/Pairings';
 import { getRoster, getMyRanking, submitRanking, getPairings } from './lib/rankings';
+import { trackEvent } from './lib/analytics';
+jest.mock('./lib/analytics', () => ({ trackEvent: jest.fn() }));
 import { getGroupCycles } from './lib/groups';
 import { getPairingRevealStatus, sendPairingReveal } from './lib/pairings';
 
@@ -51,6 +53,7 @@ test('roster failure cannot seed an empty draft over existing rankings',async()=
  fireEvent.click(screen.getByRole('button',{name:'Try again'}));
  await waitFor(()=>expect(screen.getByText('Your ranking (1)')).toBeInTheDocument());
  expect(screen.getByRole('button',{name:'Save ranking'})).toBeEnabled();
+ expect(trackEvent).not.toHaveBeenCalled();
 });
 test('failed reveal stays visible after mounting a fresh page, without sending again',async()=>{
  (getPairingRevealStatus as jest.Mock).mockResolvedValue({status:{total:2,sent:1,completedAt:'2026-09-26',failureMessage:'Some reveal emails failed. No automatic retry will be made.'},error:null});
@@ -126,4 +129,6 @@ test('ranking network failure preserves choices and enables a deliberate retry',
  expect(screen.getByRole('button',{name:'Save ranking'})).toBeEnabled();
  fireEvent.click(screen.getByRole('button',{name:'Save ranking'}));
  await waitFor(()=>expect(submitRanking).toHaveBeenCalledTimes(2));
+ await waitFor(()=>expect(trackEvent).toHaveBeenCalledWith('ranking_submitted'));
+ expect(trackEvent).toHaveBeenCalledTimes(1);
 });

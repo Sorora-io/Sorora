@@ -12,3 +12,8 @@
 | App structure, membership, authorization, database or Edge Functions | [Architecture and data](docs/agents/architecture.md) |
 | Tests, build checks or database verification | [Validation](docs/agents/validation.md) |
 | Commits, pushes, migrations, deployments or reconciliation | [Shipping and Git](docs/agents/shipping.md) |
+
+## Analytics
+
+- Mixpanel is optional and consent-gated. Read [analytics tracking plan and handoff](docs/releases/2026-10-16-mixpanel.md) before changing tracking.
+- Use src/lib/analytics.ts wrappers; never call SDK tracking directly from components or add identify/profile/autocapture calls. Preserve the outgoing-property allowlist and anonymous session resets. Never send member details, IDs, rankings, or arbitrary URLs.

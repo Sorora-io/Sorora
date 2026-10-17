@@ -1,3 +1,4 @@
+import { trackEvent } from '../lib/analytics';
 import PairingBoard from './PairingBoard';
 import { useRef, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -65,6 +66,7 @@ export default function PairingChanges({ groupId, cycleId, onSaved }: {
       } else {
         await changePairing(groupId, cycleId, littleId, toBigId, swapId || null, draft.version, reason.trim());
       }
+      trackEvent('pairings_updated');
       reset(); setSaved(true);
       await Promise.all([
         client.invalidateQueries({ queryKey: key }),

@@ -1,3 +1,4 @@
+import { trackEvent } from '../../lib/analytics';
 import { groupRankingDeadline } from '../../lib/rankingDeadline';
 import UnrankedMemberReview from '../../components/UnrankedMemberReview';
 import { ArrowLeft } from 'lucide-react';
@@ -118,6 +119,7 @@ const Pairings = () => {
     if (sendError) {
       setRevealError(sendError);
     } else if (result) {
+      trackEvent('reveal_requested');
       if (result.failures?.length || (result.unsent ?? 0) > 0) {
         setRevealError('Some reveal emails could not be confirmed as sent. No automatic retry will be made. Please review the pairing status.');
       } else setRevealMessage(
@@ -142,6 +144,7 @@ const Pairings = () => {
     if (scheduleError) {
       setRevealError(scheduleError);
     } else {
+      trackEvent('reveal_scheduled');
       setRevealMessage(`Scheduled for ${formatDateTime(when.toISOString())}.`);
       await loadReveal();
     }
@@ -156,6 +159,7 @@ const Pairings = () => {
     if (cancelError) {
       setRevealError(cancelError);
     } else {
+      trackEvent('reveal_cancelled');
       setRevealMessage('Schedule cancelled.');
       await loadReveal();
     }

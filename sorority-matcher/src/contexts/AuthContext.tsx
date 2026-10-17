@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { useQueryClient } from '@tanstack/react-query';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { resetAnalyticsSession, trackEvent } from '../lib/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -40,7 +41,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const applySession = (next: Session | null) => {
       if (!active) return;
       const nextId = next?.user.id ?? null;
-      if (previousId !== nextId) queryClient.clear();
+      if (previousId !== nextId) {
+        queryClient.clear();
+        if (previousId) resetAnalyticsSession();
+      }
       previousId = nextId;
       setSession(next);
       setUser(next?.user ?? null);
@@ -62,11 +66,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       password,
       options: { data: { name } },
     });
+    // Supabase returns an empty identities array for an existing account.
+    if (!error && data.user?.identities?.length) trackEvent('sign_up_completed');
     return { session: data.session, error };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) trackEvent('login_completed');
     return { error };
   };
 

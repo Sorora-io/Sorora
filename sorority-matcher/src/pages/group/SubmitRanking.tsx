@@ -1,3 +1,4 @@
+import { trackEvent } from '../../lib/analytics';
 import { useCycleParticipation } from '../../lib/cycleParticipation';
 import { rankingDeadlinePassed, useRankingDeadline, groupRankingDeadline, formatRankingDeadline } from '../../lib/rankingDeadline';
 import PageHeader from '../../components/PageHeader';
@@ -120,6 +121,7 @@ const RankingEditor = () => {
         // Other pages (Dashboard's OrgCard) cache this same query — without
         // invalidating it here, they'd keep showing "not submitted" until
         // their own cache happens to go stale on its own.
+        trackEvent('ranking_submitted');
         queryClient.setQueryData(queryKeys.myRanking(user!.id, cycleId), [...rankedIds]);
         await invalidateChapter(queryClient, user!.id, group.id, cycleId);
         await refresh();

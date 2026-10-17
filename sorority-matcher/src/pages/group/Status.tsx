@@ -1,3 +1,4 @@
+import { trackEvent } from '../../lib/analytics';
 import { littlePreferenceLabel } from '../../lib/littlePreference';
 import { groupRankingDeadline } from '../../lib/rankingDeadline';
 import MemberRankings from '../../components/MemberRankings';
@@ -60,6 +61,7 @@ const Status = () => {
     try {
       const { error: runFailure } = await runMatching(group.id, cycleId);
       if (runFailure) { setRunError(runFailure); return; }
+      trackEvent('matching_completed');
       navigate('/group/pairings');
     } catch {
       setRunError('Could not confirm whether matching finished. Check Pairings before running matching again.');
