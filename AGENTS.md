@@ -4,7 +4,7 @@
 - Check Git status first. Preserve unrelated edits and deletions; never stage the whole checkout blindly.
 - UI actions and navigation CTAs use the shared `<Button>`. Underlined links are only for inline prose or footer navigation. Load the UI guide for variants and exceptions.
 - Keep credentials, private environment files, generated builds and dependency directories out of commits.
-- Shipping includes committing intended changes, pushing them, verifying the remote commit, and recording its deployment. Never silently deploy local-only work. Respect an explicit user request to keep work local.
+- Before every deployment, commit all intended source changes (including backend migrations and functions), push to GitHub, and verify the remote commit. Deploy that pushed revision; never deploy uncommitted or local-only intended source. Preserve unrelated local work instead of blindly committing it. Record the deployed revision.
 
 | Task | Load first |
 |---|---|

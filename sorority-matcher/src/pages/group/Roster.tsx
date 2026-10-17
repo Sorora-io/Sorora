@@ -118,7 +118,7 @@ const Roster = () => {
       >
         {avatar(r)}
         <div className="min-w-0 flex-1">
-          <p className="text-[color:var(--ss-ink-2)] truncate font-medium">{displayName(r)}</p>
+          <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}`)}><span className="truncate">{displayName(r)}</span></Button>
           {details ? (
             <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{details}</p>
           ) : (
@@ -144,7 +144,7 @@ const Roster = () => {
         <div className="flex items-center gap-3">
           {avatar(r, 'md')}
           <div className="min-w-0 flex-1">
-            <p className="text-[color:var(--ss-ink-2)] font-medium truncate">{displayName(r)}</p>
+            <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}`)}><span className="truncate">{displayName(r)}</span></Button>
             <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{r.email}</p>
           </div>
           {rolePill(r)}

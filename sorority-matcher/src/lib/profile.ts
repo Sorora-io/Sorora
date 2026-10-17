@@ -91,3 +91,13 @@ export async function uploadAvatar(file: File): Promise<{ url: string | null; er
   const url = `${data.publicUrl}?t=${Date.now()}`;
   return { url, error: null };
 }
+
+/** Reads only roster-visible fields; memberships and profiles RLS enforce access. */
+export type RosterProfile = Pick<MyProfile, 'name' | 'email' | 'bio' | 'avatar_url' | 'major' | 'college' | 'year' | 'hometown'>;
+export async function getRosterProfile(groupId: string, memberId: string): Promise<{ profile: RosterProfile | null; error: string | null }> {
+  const { data, error } = await supabase.from('memberships')
+    .select('profile:profiles(name, email, bio, avatar_url, major, college, year, hometown)')
+    .eq('group_id', groupId).eq('user_id', memberId).eq('status', 'approved').maybeSingle();
+  if (error) return { profile: null, error: 'Could not load this profile. Please try again.' };
+  return { profile: (data?.profile as unknown as RosterProfile) || null, error: null };
+}

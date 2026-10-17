@@ -1,9 +1,9 @@
 jest.mock('../lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DashboardTab, OrganizationTab } from './Dashboard';
+import { DashboardTab, OrganizationTab, RosterTab } from './Dashboard';
 import { getPendingMemberships } from '../lib/groups';
-import { getSubmissionStatus, getMyRanking } from '../lib/rankings';
+import { getSubmissionStatus, getMyRanking, getFullRoster } from '../lib/rankings';
 import { getPairingRevealStatus } from '../lib/pairings';
 
 jest.mock('react-router-dom', () => ({ Link: ({ to, children }: any) => <a href={to}>{children}</a> }), { virtual: true });
@@ -161,4 +161,12 @@ test('submission lookup failure is not presented as an empty or caught-up chapte
   expect(screen.queryByText('Nothing here yet')).not.toBeInTheDocument();
   expect(screen.queryByText('You’re all caught up')).not.toBeInTheDocument();
   expect(screen.getByRole('button',{name:'View member rankings'})).toBeEnabled();
+});
+
+test('dashboard roster names open the member profile with a roster return path', async () => {
+  (getFullRoster as jest.Mock).mockResolvedValue({ roster: [{ userId: 'member', name: 'Alex Member', email: 'alex@example.com', role: 'little' }], error: null });
+  const navigate = jest.fn();
+  render(<QueryClientProvider client={new QueryClient()}><RosterTab membership={membership} onNavigate={navigate} /></QueryClientProvider>);
+  fireEvent.click(await screen.findByRole('button', { name: 'Alex Member' }));
+  expect(navigate).toHaveBeenCalledWith('/group/roster/member?from=dashboard');
 });

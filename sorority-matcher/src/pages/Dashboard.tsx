@@ -454,7 +454,7 @@ type RosterSort = 'az' | 'za';
 // big/little role — matches how the row's role pill labels them.
 const isRosterAdmin = (m: RosterEntry) => m.role === 'admin' || m.isAdmin;
 
-const RosterTab = ({
+export const RosterTab = ({
   membership,
   onNavigate,
 }: {
@@ -587,9 +587,7 @@ const RosterTab = ({
                   <div key={m.userId} className="flex items-center gap-3 py-3">
                     <Avatar src={m.avatarUrl} name={m.name} email={m.email} size="md" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[color:var(--ss-ink-2)] truncate">
-                        {m.name ?? m.email}
-                      </div>
+                      <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={m.name || m.email} onClick={() => onNavigate(`/group/roster/${encodeURIComponent(m.userId)}?from=dashboard`)}><span className="truncate">{m.name || m.email}</span></Button>
                       {m.major && (
                         <div className="text-xs text-[color:var(--ss-ink-5)] truncate">{m.major}</div>
                       )}

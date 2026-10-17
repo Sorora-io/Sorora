@@ -37,6 +37,7 @@ const GroupSettings = lazy(() => import("./pages/group/Settings"));
 const GroupSubmitRanking = lazy(() => import("./pages/group/SubmitRanking"));
 const GroupStatus = lazy(() => import("./pages/group/Status"));
 const GroupPairings = lazy(() => import("./pages/group/Pairings"));
+const MemberProfile = lazy(() => import("./pages/group/MemberProfile"));
 const GroupRoster = lazy(() => import("./pages/group/Roster"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -98,6 +99,7 @@ const AppShell = () => {
           <Route path="/group/pairings" element={<RequireGroupRole allow={['admin']}><GroupPairings /></RequireGroupRole>} />
           <Route path="/group/submit-ranking" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupSubmitRanking /></RequireGroupRole>} />
           <Route path="/group/roster" element={<RequireGroupRole allow={['admin', 'big', 'little']}><GroupRoster /></RequireGroupRole>} />
+          <Route path="/group/roster/:memberId" element={<RequireGroupRole allow={['admin', 'big', 'little']}><MemberProfile /></RequireGroupRole>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
