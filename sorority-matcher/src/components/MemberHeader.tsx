@@ -8,7 +8,7 @@ const tabs: { id: MemberTab; label: string }[] = [
   { id: 'rankings', label: 'My rankings' },
   { id: 'roster', label: 'Roster' },
   { id: 'organization', label: 'Organization' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'settings', label: 'Org Settings' },
 ];
 
 export default function MemberHeader({ activeTab, onSelect, onPrefetch, showNavigation = true, isAdmin = false }: {

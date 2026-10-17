@@ -6,6 +6,7 @@ import { getPairings } from '../../lib/rankings';
 const mockGroup={id:'g',name:'Sample chapter',active_cycle_id:'current'};
 jest.mock('../../contexts/GroupContext',()=>({useGroup:()=>({membership:{group:mockGroup}})}));
 jest.mock('../../components/PageHeader',()=>({__esModule:true,default:({children}:any)=><header>{children}</header>}));
+jest.mock('../../components/PairingGroups',()=>()=>null);
 jest.mock('../../components/ClearPairings',()=>()=>null);
 jest.mock('../../components/MatchingReview',()=>()=>null);
 jest.mock('../../components/UnrankedMemberReview',()=>()=>null);
@@ -28,7 +29,7 @@ test('exports the selected historical cycle and leaves failures visible for retr
   (downloadPairingExport as jest.Mock).mockRejectedValue(new Error('Download unavailable'));
   fireEvent.click(screen.getByRole('button',{name:'Export pairings CSV'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Download unavailable');
-  expect(downloadPairingExport).toHaveBeenCalledWith('Past','past');
+  expect(downloadPairingExport).toHaveBeenCalledWith('Past','past',undefined);
   expect(screen.getByRole('button',{name:'Export pairings CSV'})).toBeEnabled();
 });
 test('empty cycles cannot export',async()=>{

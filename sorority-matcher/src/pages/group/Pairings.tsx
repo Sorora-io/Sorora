@@ -1,3 +1,4 @@
+import PairingGroups from '../../components/PairingGroups';
 import { downloadPairingExport } from '../../lib/pairingExport';
 import ClearPairings from '../../components/ClearPairings';
 import MatchingReview from '../../components/MatchingReview';
@@ -109,18 +110,12 @@ const Pairings = () => {
   }, [reveal?.scheduledAt, loadReveal]);
 
   const deliveryWarning = revealDeliveryWarning(reveal);
-  const byBig = new Map<string, { bigName: string | null; littles: string[] }>();
-  for (const p of pairings) {
-    if (!byBig.has(p.bigId)) byBig.set(p.bigId, { bigName: p.bigName, littles: [] });
-    byBig.get(p.bigId)!.littles.push(p.littleName || 'Unknown');
-  }
-
   const handleExport = async () => {
     if (!group || !selectedCycleId || exporting) return;
     setExporting(true);
     setExportError('');
     try {
-      await downloadPairingExport(cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId);
+      await downloadPairingExport(cycles.find(c => c.id === selectedCycleId)?.label || 'Selected cycle', selectedCycleId, group.blind_rankings === false ? group.id : undefined);
     } catch (failure) {
       setExportError(failure instanceof Error ? failure.message : 'Could not export pairings. Please try again.');
     } finally {
@@ -236,7 +231,7 @@ const Pairings = () => {
           <Button variant="outline" size="sm" disabled={exporting || loading || !selectedCycleId || !hasPairings} onClick={handleExport}>
             {exporting ? 'Exporting…' : 'Export pairings CSV'}
           </Button>
-          <p className="ss-caption mt-2">Downloads the selected cycle’s saved pairings, one Big–Little pair per row.</p>
+          <p className="ss-caption mt-2">Downloads the selected cycle’s saved pairings, one Big–Little pair per row. When rankings are visible, mutual first choices come first with both rank positions.</p>
           {exportError && <p role="alert" className="mt-2 text-sm text-brick">{exportError}</p>}
         </div>
 
@@ -247,7 +242,7 @@ const Pairings = () => {
             <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
               <LoadingLogo size={20} /> Loading…
             </div>
-          ) : byBig.size === 0 ? (
+          ) : !hasPairings ? (
             <div className="ss-surface">
               <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
                 No pairings yet.
@@ -255,16 +250,7 @@ const Pairings = () => {
               <p className="ss-caption mt-2">Run matching from the Status page to generate this cycle's pairings.</p>
             </div>
           ) : (
-            <div className="ss-surface">
-              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-                {Array.from(byBig.values()).map(({ bigName, littles }) => (
-                  <div key={bigName} className="flex justify-between items-center gap-4 py-3">
-                    <span className="font-medium text-[color:var(--ss-ink-2)] truncate">{bigName}</span>
-                    <span className="text-[color:var(--ss-ink-4)] text-right truncate">{littles.join(', ')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <PairingGroups key={`${group.id}:${selectedCycleId}:${group.blind_rankings}`} groupId={group.id} cycleId={selectedCycleId!} blind={group.blind_rankings ?? true} pairings={pairings} />
           )}
         </div>
 
