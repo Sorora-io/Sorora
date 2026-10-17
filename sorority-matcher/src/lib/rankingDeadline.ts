@@ -63,8 +63,9 @@ export const deadlineTimeZones: string[] = ['UTC', ...Array.from(new Set([
 
 export function useRankingDeadline(deadline?: string | null) {
   const [now, setNow] = useState(Date.now);
+  // Refresh once when the deadline changes, not whenever the clock ticks.
+  useEffect(() => { setNow(Date.now()); }, [deadline]);
   useEffect(() => {
-    setNow(Date.now());
     if (!deadline) return;
     const remaining = Date.parse(deadlineInstant(deadline)!) - Date.now();
     if (remaining <= 0) return;
