@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from './Button';
 import { CONSENT_EVENT, CONSENT_KEY, getConsent, initializeAnalytics, isAnalyticsEnabled, setConsent, syncConsent, trackPage } from '../lib/analytics';
 
-export default function AnalyticsConsent() {
+export default function AnalyticsConsent({ children }: { children?: ReactNode }) {
   const [consent, updateConsent] = useState(getConsent);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
@@ -27,20 +27,21 @@ export default function AnalyticsConsent() {
     if (!setConsent(choice)) { setError('Your browser could not save this choice. Optional analytics remain off.'); return; }
     setError(''); setEditing(false); preferences.current?.focus();
   };
-  return <aside aria-label="Analytics preferences" className="w-full px-5 md:px-8 pb-6">
-    <div className="mx-auto max-w-4xl">
+  return <aside aria-label="Analytics preferences" className="w-full">
+    <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
+      {children}
       <Button ref={preferences} variant="ghost" size="sm" onClick={() => setEditing(true)} aria-expanded={editing}>Analytics preferences</Button>
-      {editing && <section aria-labelledby="analytics-heading" className="mt-3 rounded-2xl border border-[color:var(--ss-surface-border)] bg-white p-5 shadow-sm">
-        <h2 ref={heading} tabIndex={-1} id="analytics-heading" className="font-display text-2xl">Analytics preferences</h2>
-        <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Sorora uses Mixpanel to understand page visits and actions such as signing in, submitting rankings, and running matching. We use a random browser identifier, never your account ID, name, email, ranking choices, or pairing details.</p>
-        <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Your choice is saved in this browser. Change it here anytime. Sorora works either way.</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button variant="outline" size="sm" onClick={() => choose('declined')}>Decline analytics</Button>
-          <Button variant="outline" size="sm" onClick={() => choose('accepted')}>Allow analytics</Button>
-          <Button variant="ghost" size="sm" onClick={() => { setEditing(false); preferences.current?.focus(); }}>Close</Button>
-        </div>
-        {error && <p role="alert" className="mt-3 text-sm">{error}</p>}
-      </section>}
     </div>
+    {editing && <section aria-labelledby="analytics-heading" className="mt-3 rounded-2xl border border-[color:var(--ss-surface-border)] bg-white p-5 shadow-sm">
+      <h2 ref={heading} tabIndex={-1} id="analytics-heading" className="font-display text-2xl">Analytics preferences</h2>
+      <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Sorora uses Mixpanel to understand page visits and actions such as signing in, submitting rankings, and running matching. We use a random browser identifier, never your account ID, name, email, ranking choices, or pairing details.</p>
+      <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Your choice is saved in this browser. Change it here anytime. Sorora works either way.</p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button variant="outline" size="sm" onClick={() => choose('declined')}>Decline analytics</Button>
+        <Button variant="outline" size="sm" onClick={() => choose('accepted')}>Allow analytics</Button>
+        <Button variant="ghost" size="sm" onClick={() => { setEditing(false); preferences.current?.focus(); }}>Close</Button>
+      </div>
+      {error && <p role="alert" className="mt-3 text-sm">{error}</p>}
+    </section>}
   </aside>;
 }

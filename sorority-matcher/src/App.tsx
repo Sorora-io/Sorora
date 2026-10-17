@@ -1,4 +1,3 @@
-import AnalyticsConsent from './components/AnalyticsConsent';
 import Button from './components/Button';
 import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/toaster";
@@ -107,7 +106,6 @@ const AppShell = () => {
       </Suspense>
       </main>
       <Footer />
-      <AnalyticsConsent />
     </div>
   );
 };
