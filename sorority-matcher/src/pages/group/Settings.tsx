@@ -510,12 +510,12 @@ const Settings = ({ superuserContext }: { superuserContext?: SuperuserSettingsCo
               <option value={2}>2 Littles (twins)</option>
               <option value={3}>3 Littles (triplets)</option>
             </select>
-            <p className="ss-caption mt-2">Matching and pairing edits respect this limit and each Big’s preference. Existing pairings stay as they are. To lower the limit, first adjust any active pairings that exceed it.</p>
+            <p className="ss-caption mt-2">Lowering this limit automatically caps saved preferences for matching. A Big who chose 3 can receive up to 2 when the limit is 2, without resubmitting. Existing pairings stay as they are; first adjust any active pairings that exceed the new limit.</p>
             {maximumError && <p role="alert" className="text-brick text-sm mt-2">{maximumError}</p>}
             <SettingsActions saving={maximumSaving} onSave={saveMaximum} onCancel={() => setEditing(null)} />
           </> : <>
             <dl><dt className="ss-label">Maximum Littles per Big</dt><dd className="mt-1 text-sm">{group.max_littles_per_big ?? 3}</dd></dl>
-            <p className="ss-caption mt-2">Each Big can choose fewer Littles within this limit.</p>
+            <p className="ss-caption mt-2">Each Big can choose fewer Littles within this limit. Saved preferences above the limit are automatically capped when matching runs.</p>
             <Button className="mt-4" variant="outline" size="sm" disabled={editing !== null || privacyDirty || privacySaving} onClick={() => beginEdit('matching')}>Edit matching rules</Button>
           </>}
         </section>
