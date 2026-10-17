@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const {PGlite}=await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+const db=new PGlite();
+await db.exec(`create role authenticated;create role anon;create schema auth;
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+grant usage on schema auth to authenticated,anon;
+create table groups(id uuid primary key,name text,blind_rankings boolean);
+create table cycles(id uuid primary key,group_id uuid,label text);
+create table profiles(id uuid primary key,name text,email text);
+create table memberships(group_id uuid,user_id uuid,role text,status text,is_admin boolean default false,willing_to_take_twins boolean default false,wanted_little_count integer,excluded boolean default false,created_at timestamptz default now());
+create table rankings(group_id uuid,cycle_id uuid,ranker_id uuid,ranked_ids uuid[],updated_at timestamptz default now());
+create function is_group_admin(g uuid) returns boolean language sql stable security definer set search_path='' as $$select exists(select 1 from public.memberships where group_id=g and user_id=auth.uid() and is_admin and status='approved')$$;
+create function cycle_memberships(g uuid,c uuid) returns setof memberships language sql stable security definer set search_path='' as $$select * from public.memberships where group_id=g and not excluded$$;
+`);
+const prev=await readFile(new URL('../migrations/0038_cycle_participation.sql',import.meta.url),'utf8');
+const start=prev.indexOf('create or replace function public.get_blind_submission_status('),end=prev.indexOf('$$;',prev.indexOf('as $$',start))+3;
+await db.exec(prev.slice(start,end));
+await db.exec(await readFile(new URL('../migrations/0033_ranking_exports.sql',import.meta.url),'utf8'));
+const migration=await readFile(new URL('../migrations/0040_submission_capacity_preferences.sql',import.meta.url),'utf8');await db.exec(migration);await db.exec(migration);
+const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const g=id(10),c=id(11),admin=id(1),little=id(6);
+await db.query("insert into groups values($1,'Test',true)",[g]);await db.query("insert into cycles values($1,$2,'Fall')",[c,g]);
+for(const [n,count,willing,role,submitted,excluded] of [[1,null,true,'big',true,false],[2,2,false,'big',true,false],[3,3,false,'big',true,false],[4,null,false,'big',true,false],[5,null,false,'big',false,false],[6,null,false,'little',true,false],[7,3,false,'big',true,true]]) {
+ await db.query("insert into memberships(group_id,user_id,role,status,is_admin,willing_to_take_twins,wanted_little_count,excluded) values($1,$2,$3,'approved',$4,$5,$6,$7)",[g,id(n),role,n===1,willing,count,excluded]);
+ await db.query('insert into profiles values($1,$2,$3)',[id(n),'Member '+n,'member'+n+'@example.com']);
+ if(submitted) await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,id(n),role==='big'?[little]:[admin]]);
+}
+const login=async who=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[who]);await db.exec('set role authenticated');};
+const status=async cycle=>db.query('select * from get_submission_status_details($1,$2)',[g,cycle||c]);
+const exported=async preferences=>(await db.query('select export_chapter_rankings($1,$2,$3) as d',[g,c,preferences])).rows[0].d;
+await login(admin);const rows=(await status()).rows;assert.equal(rows.length,6);assert.equal(rows.find(r=>r.user_id===id(1)).willing_to_take_twins,true);assert.equal(rows.find(r=>r.user_id===id(2)).wanted_little_count,2);assert.equal(rows.find(r=>r.user_id===id(3)).wanted_little_count,3);assert.equal(rows.find(r=>r.user_id===id(5)).submitted,false);assert.equal(rows.find(r=>r.user_id===little).willing_to_take_twins,null);assert.ok(rows.every(r=>!('ranked_ids' in r)));
+const blind=await exported(false);assert.equal(blind.members.find(m=>m.userId===id(3)).wantedLittleCount,3);assert.equal(blind.members.find(m=>m.userId===id(1)).willingToTakeTwins,true);assert.ok(blind.members.every(m=>m.preferences===null));await assert.rejects(()=>exported(true),/Blind rankings/);
+await assert.rejects(()=>status(id(99)),/does not belong/);
+await login(little);await assert.rejects(status,/Only a chapter admin/);await assert.rejects(()=>exported(false),/Only a chapter admin/);
+await db.exec('reset role');await db.exec('update groups set blind_rankings=false');await login(admin);assert.equal((await exported(true)).members[0].preferences[0].rank,1);
+await db.exec('reset role');await db.exec('set role anon');await assert.rejects(status,/permission denied/);
+console.log('Submission capacity: saved counts/legacy flag, waiting/default/null applicability, blind status without choices, export privacy, cycle isolation, exclusions and admin/anonymous access passed.');await db.close();

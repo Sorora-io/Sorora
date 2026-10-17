@@ -1,13 +1,15 @@
+import CycleParticipationControls from '../../components/CycleParticipationControls';
+import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { LayoutGrid, List, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LayoutGrid, List, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getFullRoster, RosterEntry } from '../../lib/rankings';
-import { groupLabel, MembershipRole } from '../../lib/groups';
+import { groupLabel, MembershipRole, isEffectiveAdmin } from '../../lib/groups';
 import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
@@ -26,6 +28,7 @@ const displayName = (r: RosterEntry) => r.name || r.email;
 const roleWord: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Roster = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { membership } = useGroup();
   const group = membership?.group;
@@ -180,12 +183,9 @@ const Roster = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-pill border border-[color:var(--ss-jade-line)] px-4 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-white/60"
-          >
-            <ArrowLeft size={14} /> Back to dashboard
-          </Link>
+          <Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={14} aria-hidden="true" /> Back to dashboard
+          </Button>
         </PageHeader>
 
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
@@ -193,16 +193,21 @@ const Roster = () => {
         </h1>
         <p className="mt-2 ss-caption">{groupLabel(group)}</p>
 
+        {membership && isEffectiveAdmin(membership) && group.active_cycle_id && <CycleParticipationControls userId={user?.id ?? ''} groupId={group.id} cycleId={group.active_cycle_id} roster={roster} />}
         <div className="mt-6 flex items-center justify-end gap-2 flex-wrap">
+          <div className="relative">
           <select
+            aria-label="Sort roster"
             value={sortMode}
             onChange={e => changeSort(e.target.value as SortMode)}
-            className="text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill px-4 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
+            className="appearance-none text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill pl-4 pr-10 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
           >
             <option value="role">By member type</option>
             <option value="az">Name (A–Z)</option>
             <option value="za">Name (Z–A)</option>
           </select>
+          <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--ss-ink-3)]" />
+          </div>
           <div className="inline-flex items-center gap-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill p-1">
             <button
               type="button"

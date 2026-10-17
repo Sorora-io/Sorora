@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,6 +7,7 @@ import { getSuperuserOrganizations, deleteSuperuserOrganization, transferSuperus
 import Button from './Button';
 
 export default function SuperuserOrganizations() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const client = useQueryClient();
   const [draft, setDraft] = useState('');
@@ -91,6 +93,7 @@ export default function SuperuserOrganizations() {
           <tbody>{organizations.data.organizations.map(org => <tr key={org.id} className="border-b last:border-0">
             <td className="p-4 font-medium">{org.name}</td><td className="p-4">{org.school || '—'}</td><td className="p-4">{org.owner_email || '—'}</td><td className="p-4"><div className="flex items-center gap-2"><code className="select-all whitespace-nowrap font-mono tracking-wider">{org.join_code || '—'}</code><Button size="sm" variant="ghost" disabled={!org.join_code} aria-label={`Copy join code for ${org.name}`} onClick={() => void copyCode(org.join_code)}>Copy</Button></div></td><td className="p-4">{org.member_count}</td>
             <td className="p-4"><div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => navigate(`/superuser/organizations/${org.id}/settings`)}>Edit settings</Button>
               <Button size="sm" variant="outline" disabled={transfer.isPending} onClick={() => { setTransferTarget(org); setNewOwnerEmail(''); setNotice(''); transfer.reset(); }}>Transfer ownership</Button>
               <Button size="sm" variant="danger-outline" disabled={remove.isPending} onClick={() => { setTarget(org); setConfirmation(''); setNotice(''); remove.reset(); }}>Delete organization</Button>
             </div></td>

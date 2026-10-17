@@ -37,7 +37,7 @@ const steps = [
     label: 'Pass 03',
     title: 'Twins and triplets',
     body:
-      'Bigs can distinguish wanting multiple Littles from being willing to take twins. Wanting allows a choice of 2 or 3 Littles; willingness alone allows up to 2. Matching respects that limit while considering everyone’s rankings, so the requested number is not guaranteed.',
+      'Bigs choose a maximum of 1, 2, or 3 Littles. Matching considers everyone’s rankings within that limit; the final number depends on rankings and availability.',
   },
 ];
 
@@ -67,7 +67,7 @@ const About = () => {
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm min-h-[36px] rounded-pill border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] font-medium hover:bg-white/60 transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm min-h-[36px] rounded-pill border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] font-medium hover:bg-[color:var(--ss-button-hover)] transition-colors whitespace-nowrap"
           >
             <ArrowLeft size={14} /> Back to home
           </Link>

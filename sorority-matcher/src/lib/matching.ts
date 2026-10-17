@@ -1,3 +1,7 @@
+// Reference implementation used by matching tests.
+// Production chapter matching runs in PostgreSQL via run_blind_matching.
+// Tests compare this implementation with SQL to catch behavioral differences.
+
 export interface PreferenceMap {
   [id: string]: string[];
 }
@@ -25,15 +29,15 @@ const completeList = (ranked: string[], universe: string[]): string[] => {
 // little-optimal stable matching (every little ends up with the best big it
 // could get in any stable matching).
 //
-// Ids are opaque strings — callers may pass names (guest/local mode) or
-// database user ids (real group mode); the algorithm doesn't care which.
+// IDs are opaque strings; tests can use simple labels or database user IDs.
 export function runDeferredAcceptance(
   bigs: string[],
   littles: string[],
   bigRankings: PreferenceMap,
   littleRankings: PreferenceMap,
   bigsWillingToTakeTwins: Set<string>,
-  wantedLittleCounts: Record<string, 2 | 3> = {}
+  wantedLittleCounts: Record<string, 2 | 3> = {},
+  maxLittlesPerBig: 1 | 2 | 3 = 3
 ): DeferredAcceptanceResult[] {
   const littlePrefs: PreferenceMap = {};
   for (const little of littles) {
@@ -52,7 +56,7 @@ export function runDeferredAcceptance(
 
   const capacity: { [big: string]: number } = {};
   for (const big of bigs) {
-    capacity[big] = wantedLittleCounts[big] ?? (bigsWillingToTakeTwins.has(big) ? 2 : 1);
+    capacity[big] = Math.min(maxLittlesPerBig, wantedLittleCounts[big] ?? (bigsWillingToTakeTwins.has(big) ? 2 : 1));
   }
 
   const nextProposalIndex: { [little: string]: number } = {};

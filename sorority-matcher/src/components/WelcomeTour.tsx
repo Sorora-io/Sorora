@@ -1,3 +1,4 @@
+import { formatRankingDeadline } from '../lib/rankingDeadline';
 import { useState, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -45,12 +46,7 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
       ? 'Admin'
       : 'Member';
   const targetPlural = oppositePlural(membership.role);
-  const deadlineLabel = membership.group.ranking_deadline
-    ? new Date(membership.group.ranking_deadline + 'T00:00:00').toLocaleDateString(undefined, {
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'TBD';
+  const deadlineLabel = formatRankingDeadline(membership.group);
 
   const tourSteps: TourStep[] = [
     {
@@ -157,7 +153,7 @@ const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
     return (
       <div className="w-full flex flex-col items-center text-center">
         <h1 className="font-display italic text-[38px] md:text-[52px] leading-[1.05] font-medium text-[color:var(--ss-ink-1)]">
-          You’re going to be a {roleLabel}!
+          You’re going to be {roleLabel === 'Admin' ? 'an' : 'a'} {roleLabel}!
         </h1>
         <p className="mt-5 max-w-lg text-[color:var(--ss-ink-5)] text-lg leading-relaxed">
           Welcome{firstName ? `, ${firstName}` : ''}. This is such an exciting time. Let’s show

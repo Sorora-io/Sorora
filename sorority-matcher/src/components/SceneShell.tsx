@@ -9,6 +9,7 @@ interface SceneShellProps {
   markTo?: string;
   /** Text for the top-right action. Set to null to hide it entirely. */
   topRightLabel?: string | null;
+  topRightAction?: ReactNode;
   onTopRight?: () => void;
   /** Rendered under the Continue button — dot indicators and Back. */
   footer?: ReactNode;
@@ -26,6 +27,7 @@ const SceneShell = ({
   children,
   markTo = '/',
   topRightLabel = 'Start over',
+  topRightAction,
   onTopRight,
   footer,
   wide = false,
@@ -48,11 +50,11 @@ const SceneShell = ({
           >
             sorora
           </Link>
-          {topRightLabel !== null && (
+          {topRightAction ?? (topRightLabel !== null && (
             <Button variant="outline" size="sm" onClick={handleTopRight}>
               {topRightLabel}
             </Button>
-          )}
+          ))}
         </PageHeader>
 
         <div className="flex-1 flex flex-col items-center text-center">

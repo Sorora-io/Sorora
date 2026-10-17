@@ -1,10 +1,9 @@
 import { toast } from 'sonner';
-import PageHeader from '../components/PageHeader';
+import MemberHeader from '../components/MemberHeader';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { invalidateChapter, invalidateProfileViews } from '../lib/cache';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,7 +11,7 @@ import { queryKeys } from '../lib/queryKeys';
 import Button from '../components/Button';
 import Avatar from '../components/Avatar';
 import EmailVerification from '../components/EmailVerification';
-import { requestRoleChange, MembershipRole } from '../lib/groups';
+import { requestRoleChange, setMyAdminMatchingRole, MembershipRole } from '../lib/groups';
 import { updateMyProfile, uploadAvatar, deleteMyAccount } from '../lib/profile';
 
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
@@ -155,7 +154,10 @@ export const ProfileContent = () => {
   const handleRequestRoleChange = async (membershipId: string, groupId: string, role: MembershipRole) => {
     setRoleSavingId(membershipId);
     setRoleErrorByOrg(prev => ({ ...prev, [membershipId]: '' }));
-    const { error } = await requestRoleChange(groupId, role);
+    const isAdmin = membership?.is_admin || membership?.role === 'admin';
+    const { error } = isAdmin
+      ? role === 'little' ? { error: 'Admins cannot be Littles.' } : await setMyAdminMatchingRole(groupId, role)
+      : await requestRoleChange(groupId, role);
     if (error) {
       setRoleErrorByOrg(prev => ({ ...prev, [membershipId]: error }));
     } else {
@@ -180,8 +182,9 @@ export const ProfileContent = () => {
   };
 
   const m = membership;
+  const adminRole = !!m && (m.is_admin || m.role === 'admin');
   const roleChangeOpen = !!m && roleChangeOpenId === m.id;
-  const requestedRole = m ? requestedRoleByOrg[m.id] ?? 'big' : 'big';
+  const requestedRole = m ? requestedRoleByOrg[m.id] ?? (adminRole ? m.role : 'big') : 'big';
   const inputClass = 'ss-input !min-h-[44px] !py-2.5 !px-3.5';
 
   return (
@@ -248,8 +251,8 @@ export const ProfileContent = () => {
         <div className="px-5 sm:px-7 pb-6">
           {m ? <>
             <p className="ss-caption mb-3">{m.group.school && `${m.group.school} · `}Membership status: {m.status}</p>
-            {m.status === 'approved' && !m.requested_role && <Button variant="outline" size="sm" onClick={() => setRoleChangeOpenId(roleChangeOpen ? null : m.id)}>{roleChangeOpen ? 'Cancel' : 'Request role change'}</Button>}
-                      {m.status === 'approved' && m.requested_role && (
+            {m.status === 'approved' && (adminRole || !m.requested_role) && <Button variant="outline" size="sm" onClick={() => setRoleChangeOpenId(roleChangeOpen ? null : m.id)}>{roleChangeOpen ? 'Cancel' : adminRole ? 'Change my role' : 'Request role change'}</Button>}
+                      {m.status === 'approved' && !adminRole && m.requested_role && (
                         <p className="text-xs text-gray-500 mt-2">
                           Your request to become {roleLabel[m.requested_role]} is waiting on your
                           admin's approval.
@@ -259,26 +262,27 @@ export const ProfileContent = () => {
                       {roleChangeOpen && (
                         <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-100">
                           <select
-                            aria-label="Requested chapter role"
+                            aria-label={adminRole ? "My chapter role" : "Requested chapter role"}
                             value={requestedRole}
                             onChange={(e) =>
                               setRequestedRoleByOrg(prev => ({ ...prev, [m.id]: e.target.value as MembershipRole }))
                             }
                             className="w-full p-2 text-sm border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                           >
-                            <option value="admin">Admin</option>
-                            <option value="big">Big</option>
-                            <option value="little">Little</option>
+                            <option value="admin">{adminRole ? 'Admin only' : 'Admin'}</option>
+                            <option value="big">{adminRole ? 'Big + admin' : 'Big'}</option>
+                            {!m.is_admin && m.role !== 'admin' && <option value="little">Little</option>}
                           </select>
                           {roleErrorByOrg[m.id] && <p className="text-brick text-xs">{roleErrorByOrg[m.id]}</p>}
-                          {roleSentByOrg[m.id] && <p className="text-jade-700 text-xs">Request sent to your admin.</p>}
-                          <button
+                          {roleSentByOrg[m.id] && <p className="text-jade-700 text-xs">{adminRole ? 'Your role was updated. You still have admin access.' : 'Request sent to your admin.'}</p>}
+                          {adminRole && <p className="ss-caption">Change your own role directly. You’ll keep admin access; admins cannot be Littles.</p>}
+                          <Button variant="outline" size="sm"
                             onClick={() => handleRequestRoleChange(m.id, m.group_id, requestedRole)}
                             disabled={roleSavingId === m.id || requestedRole === m.role}
                             className="w-full py-2 text-sm border border-jade-300 rounded-md hover:bg-jade-50 transition-colors disabled:opacity-50"
                           >
-                            {roleSavingId === m.id ? '...' : `Request to become ${roleLabel[requestedRole]}`}
-                          </button>
+                            {roleSavingId === m.id ? 'Saving…' : adminRole ? 'Save my role' : `Request to become ${roleLabel[requestedRole]}`}
+                          </Button>
                         </div>
                       )}
 
@@ -424,19 +428,16 @@ export const ProfileContent = () => {
   );
 };
 
-const Profile = () => (
-  <div className="min-h-screen px-5 sm:px-8 pb-12">
-    <PageHeader className="max-w-5xl mx-auto py-5 flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--ss-surface-border)]">
-      <Link to="/" className="font-display text-3xl text-[color:var(--ss-ink-1)]">Sorora</Link>
-      <nav aria-label="Main navigation" className="flex flex-wrap gap-1">
-        {['Dashboard', 'Profile', 'Rankings', 'Roster', 'FAQ'].map(label => <Link key={label} to={label === 'Profile' ? '/profile' : `/dashboard?tab=${label.toLowerCase()}`} className="ss-tab !px-3 !text-sm" aria-current={label === 'Profile' ? 'page' : undefined}>{label}</Link>)}
-      </nav>
-    </PageHeader>
-    <main className="max-w-4xl mx-auto pt-7">
-      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-[color:var(--ss-ink-5)] mb-6"><ArrowLeft size={14} />Back to dashboard</Link>
-      <ProfileContent />
-    </main>
+const Profile = () => {
+  const { membership } = useGroup();
+  return (
+  <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+    <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+      <MemberHeader isAdmin={!!membership && (membership.is_admin || membership.role === 'admin')} />
+      <main><ProfileContent /></main>
+    </section>
   </div>
 );
+};
 
 export default Profile;

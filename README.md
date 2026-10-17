@@ -16,7 +16,7 @@ Chapters can configure ranking deadlines, send submission reminders, and manage 
 
 ### Capacity-aware deferred acceptance
 
-Sorora uses Little-proposing deferred acceptance, a capacity-aware version of Gale–Shapley. Each Little proposes to their next preferred Big. Each Big holds their preferred proposals up to their capacity of one or two, rejecting others so those Littles can continue proposing.
+Sorora uses Little-proposing deferred acceptance, a capacity-aware version of Gale–Shapley. Each Little proposes to their next preferred Big. Each Big holds their preferred proposals up to their capacity of one, two, or three, capped by the organization’s maximum Littles per Big, rejecting others so those Littles can continue proposing.
 
 Partial preference lists are completed by appending eligible, unranked members in deterministic roster order. This treats unranked members as acceptable fallback choices, rather than exclusions. If demand exceeds available slots, some Littles remain unmatched.
 
@@ -30,7 +30,7 @@ Row-level security restricts ranking reads. In blind mode, even chapter administ
 
 Matching locks the chapter row and replaces results in a transaction, so a failed run does not leave partially replaced pairings. This adds database complexity, but lets administrators run matching without receiving other members' preferences in their browser.
 
-A TypeScript implementation is also included. Database tests compare it with the SQL implementation across generated fixtures to help prevent their behavior from diverging.
+A TypeScript reference implementation is retained for tests only; the chapter UI does not execute it. Database tests compare it with the SQL implementation across generated fixtures to help prevent their behavior from diverging.
 
 ## Architecture
 
@@ -43,7 +43,7 @@ A TypeScript implementation is also included. Database tests compare it with the
 | Email | Supabase Edge Functions; Resend for reminders and Gmail SMTP for contact messages and reveals |
 | Web deployment | Root Vercel configuration |
 
-The current frontend connects directly to Supabase. The separate `backend/` directory contains an Express service with authentication and saved-result endpoints, but it is not required to run the current frontend.
+The frontend connects directly to Supabase. Authentication, database functions, row-level security, and Edge Functions provide the deployed backend. The legacy Express `backend/` is outside the Vercel build.
 
 ## Local setup
 
@@ -51,7 +51,9 @@ You need Node.js, npm, and a Supabase project with Auth, PostgreSQL, and Storage
 
 ### Configure Supabase
 
-For a new development project, apply the SQL files in [supabase/migrations](supabase/migrations) in numeric order, from `0001` through `0019`, using the Supabase SQL Editor. These define the schema, access policies, storage setup, and database functions.
+For a new development project, apply the SQL files in [supabase/migrations](supabase/migrations) in numeric order, from `0001` through `0041`, using the Supabase SQL Editor. These define the schema, access policies, storage setup, and database functions.
+
+Before migration `0025`, create and verify the initial platform account and seed its grant as described in that migration. It intentionally refuses to run when no superuser grant exists. Do not store the bootstrap account’s personal details or credentials in Git.
 
 Enable email/password authentication. Configure the Auth site URL and allowed redirect URLs for the local app, including `http://localhost:3000/reset-password` for password recovery. Configure equivalent URLs for deployment.
 
@@ -122,3 +124,38 @@ These tests do not connect to a deployed Supabase project.
 ## Deployment
 
 The root [vercel.json](vercel.json) installs and builds the frontend in `sorority-matcher/` and serves `sorority-matcher/build`. Set the two `REACT_APP_SUPABASE_*` variables in the hosting environment before building. Database migrations, Auth URLs, Edge Functions, and email secrets are configured separately in Supabase.
+
+
+## Admin pairing changes
+
+The Pairings page lets chapter admins move a matched Little to a different Big or swap two Littles. Changes require a reason, a before/after review, and explicit confirmation. The database checks approved membership, capacity, cycle state, reveal state, and the version originally reviewed, then saves both the assignments and the audit entry atomically. History includes the admin name and participant names as snapshots and remains readable by chapter admins after closure. Manual changes may no longer satisfy the matching algorithm’s stability guarantee.
+
+Once manual changes exist, rerunning matching is blocked to avoid silently replacing reviewed assignments. Further adjustments use the same audited editor. Unmatched Littles are not assigned through this first version of the editor.
+
+Before enabling this feature, apply `0028_pairing_changes.sql` after existing migrations, deploy the updated `send-pairing-reveal` Edge Function, then deploy the frontend. Pause scheduled reveal jobs and avoid manual sends during the backend rollout so an older sender cannot read mutable pairings. The updated sender acquires a permanent edit lock before reading assignments for SMTP; a failed or uncertain reveal attempt also leaves editing locked. Cancelling or rescheduling does not remove this lock. No email is sent by the pairing editor.
+
+Validation (isolated data, no email):
+
+```bash
+PGLITE_MODULE=/tmp/sorora-test-tools/node_modules/@electric-sql/pglite/dist/index.js node supabase/tests/pairing-changes.mjs
+node supabase/tests/reveal-outcomes.cjs
+```
+
+Ranking deadlines now accept a local date/time and a required named time zone in Organization settings → Edit ranking rules. Migration `0039_zoned_ranking_deadlines.sql` adds the canonical timestamp and chosen zone; existing date-only deadlines remain unchanged and still close at 00:00 UTC the following day. Apply migration 0039 and deploy the updated `send-ranking-reminders` function before the corresponding frontend. New deadlines close at the exact selected instant; skipped or repeated daylight-saving times must be corrected before saving. Apply migrations 0029–0032 before deploying the corresponding frontend. Migration 0029 preserves existing memberships; existing Little/admin combinations need an explicit role decision before further role changes.
+
+## Maximum Littles per Big
+
+Organization settings → Matching rules lets chapter admins set a maximum of 1, 2, or 3 Littles per Big. The default is 3, preserving existing twins/triplets preferences. Bigs can choose fewer Littles. Matching and manual pairing edits enforce the lower of the Big’s preference and the organization maximum. Lowering the maximum is rejected when existing active-cycle pairings exceed it; adjust those pairings first. Closed-cycle pairings are preserved.
+
+Apply `0034_max_littles_per_big.sql` before deploying this frontend. This adds the checked admin settings RPC and updates matching, pairing-editor capacities, pairing-edit validation, and member preference validation. The reveal/review guards on matching remain in place.
+
+Run the database regression check with `node supabase/tests/max-littles-per-big.mjs` (`PGLITE_MODULE` can point to an installed PGlite module).
+
+
+## Current administration and shipping
+
+Verified superusers can use Superuser → Organizations → Edit settings without chapter membership (migration `0041`). This settings capability does not grant ranked-choice access. Chapter admins retain cycle and membership approval workflows.
+
+Submission status includes saved twins/triplets capacity. Its single **Download ranked choices** action exports a readable matrix with member, role, capacity preference and ordered choices, without UUIDs or timestamps. Blind-ranking rules still apply.
+
+Repository agent instructions are indexed in [AGENTS.md](AGENTS.md), with task-specific guides under [docs/agents](docs/agents). Shipping includes committing, pushing and verifying the exact deployed source revision.

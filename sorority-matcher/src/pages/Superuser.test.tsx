@@ -4,10 +4,11 @@ import Superuser from './Superuser';
 import { getSuperuserAccounts, grantSuperuser, deleteSuperuserAccount, getSuperuserOrganizations, deleteSuperuserOrganization } from '../lib/superusers';
 let mockAccess: any = { data: true };
 let mockUser: any = { id: 'seed' };
+const mockNavigate = jest.fn();
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
 jest.mock('../hooks/useSuperuser', () => ({ useSuperuser: () => mockAccess }));
 jest.mock('../components/PageHeader', () => ({ __esModule: true, default: ({ children }: any) => <header>{children}</header> }));
-jest.mock('react-router-dom', () => ({ Link: ({ to, children }: any) => <a href={to}>{children}</a>, Navigate: ({ to }: any) => <div>Redirect {to}</div> }), { virtual: true });
+jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate, useSearchParams: () => [new URLSearchParams()], Link: ({ to, children }: any) => <a href={to}>{children}</a>, Navigate: ({ to }: any) => <div>Redirect {to}</div> }), { virtual: true });
 jest.mock('../lib/superusers', () => ({ getSuperuserAccounts: jest.fn(), grantSuperuser: jest.fn(), deleteSuperuserAccount: jest.fn(), getSuperuserOrganizations: jest.fn(), deleteSuperuserOrganization: jest.fn() }));
 const show = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><Superuser /></QueryClientProvider>);
 beforeEach(() => {
@@ -84,4 +85,11 @@ test('verified accounts without a chapter can reach promotion confirmation', asy
   expect(screen.getByRole('dialog', { name: 'Confirm promotion' })).toHaveFocus();
   fireEvent.click(screen.getByRole('button', { name: 'Confirm promotion' }));
   await waitFor(() => expect(grantSuperuser).toHaveBeenCalledWith('no-chapter', expect.anything()));
+});
+
+
+test('organization settings navigation targets the selected organization', async () => {
+  show();fireEvent.click(screen.getByRole('button',{name:'Organizations'}));
+  fireEvent.click(await screen.findByRole('button',{name:'Edit settings'}));
+  expect(mockNavigate).toHaveBeenCalledWith('/superuser/organizations/org/settings');
 });

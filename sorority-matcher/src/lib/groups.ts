@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { generateJoinCode } from './joinCode';
 
 export type MembershipRole = 'admin' | 'big' | 'little';
+export type JoinRole = 'big' | 'little';
 export type MembershipStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Group {
@@ -11,9 +12,12 @@ export interface Group {
   description: string;
   join_code: string;
   blind_rankings: boolean;
+  max_littles_per_big?: 1 | 2 | 3;
   min_big_rankings: number;
   min_little_rankings: number;
   ranking_deadline: string | null;
+  ranking_deadline_at?: string | null;
+  ranking_deadline_timezone?: string | null;
   reveal_email_subject: string | null;
   reveal_email_body: string | null;
   created_by: string;
@@ -117,22 +121,48 @@ export async function findGroupByJoinCode(
   return { group: match, error: null };
 }
 
+type JoinResult = { membership: Membership | null; error: string | null };
+const joiningMemberships = new Map<string, Promise<JoinResult>>();
+const JOIN_FAILURE = 'Could not confirm your chapter membership. Please try again. If this continues, contact your chapter admin.';
+
 export async function requestToJoinGroup(
   groupId: string,
   role: MembershipRole
-): Promise<{ error: string | null }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not signed in.' };
-
-  const { error } = await supabase.from('memberships').insert({
-    group_id: groupId,
-    user_id: user.id,
-    role,
-    status: 'pending',
-  });
-  return { error: error ? error.message : null };
+): Promise<JoinResult> {
+  if (role !== 'big' && role !== 'little') {
+    return { membership: null, error: 'Join as a Big or Little. An existing admin can grant admin access after you join.' };
+  }
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { membership: null, error: 'Please sign in again to join your chapter.' };
+    const key = `${user.id}:${groupId}`;
+    const pending = joiningMemberships.get(key);
+    if (pending) return await pending;
+    const task = (async (): Promise<JoinResult> => {
+      // Reuse every existing status, including rejected. Joining must never
+      // change a role, restore approval, or strip existing admin privileges.
+      const readMembership = () => supabase.from('memberships').select('*')
+        .eq('group_id', groupId).eq('user_id', user.id).maybeSingle();
+      const existing = await readMembership();
+      if (existing.error) return { membership: null, error: JOIN_FAILURE };
+      if (existing.data) return { membership: existing.data as Membership, error: null };
+      const { error } = await supabase.from('memberships').insert({
+        group_id: groupId, user_id: user.id, role, status: 'pending',
+      });
+      // Another tab or signup's pending-action handler may have won the insert.
+      // The unique constraint remains the authority; only recover our own row.
+      if (error && error.code !== '23505') return { membership: null, error: JOIN_FAILURE };
+      const saved = await readMembership();
+      return saved.error || !saved.data
+        ? { membership: null, error: JOIN_FAILURE }
+        : { membership: saved.data as Membership, error: null };
+    })();
+    joiningMemberships.set(key, task);
+    try { return await task; }
+    finally { if (joiningMemberships.get(key) === task) joiningMemberships.delete(key); }
+  } catch {
+    return { membership: null, error: JOIN_FAILURE };
+  }
 }
 
 export async function getMyMemberships(): Promise<{
@@ -188,17 +218,17 @@ export async function updateGroupProfile(
   name: string,
   school: string
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('groups').update({ name, school }).eq('id', groupId);
+  const { error } = await supabase.from('groups').update({ name, school }).eq('id', groupId).select('id').single();
   return { error: error ? error.message : null };
 }
 
 export async function updateGroupDescription(groupId: string, description: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('groups').update({ description }).eq('id', groupId);
+  const { error } = await supabase.from('groups').update({ description }).eq('id', groupId).select('id').single();
   return { error: error ? error.message : null };
 }
 
-export async function updateGroupDeadline(groupId: string, deadline: string | null): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('groups').update({ ranking_deadline: deadline }).eq('id', groupId);
+export async function updateGroupDeadline(groupId: string, deadline: string | null, timeZone: string | null): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('set_ranking_deadline', { p_group_id: groupId, p_deadline: deadline, p_timezone: deadline ? timeZone : null });
   return { error: error ? error.message : null };
 }
 
@@ -248,7 +278,12 @@ export async function updateGroupSettings(
   const { error } = await supabase
     .from('groups')
     .update({ min_big_rankings: minBigRankings, min_little_rankings: minLittleRankings })
-    .eq('id', groupId);
+    .eq('id', groupId).select('id').single();
+  return { error: error ? error.message : null };
+}
+
+export async function updateMaxLittlesPerBig(groupId: string, maximum: number): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('set_max_littles_per_big', { p_group_id: groupId, p_maximum: maximum });
   return { error: error ? error.message : null };
 }
 
@@ -368,7 +403,7 @@ export async function transferGroupOwnership(
 }
 
 export async function updateBlindRankings(groupId: string, blind: boolean): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('groups').update({ blind_rankings: blind }).eq('id', groupId);
+  const { error } = await supabase.from('groups').update({ blind_rankings: blind }).eq('id', groupId).select('id').single();
   return { error: error?.message ?? null };
 }
 
@@ -383,7 +418,7 @@ export async function updateRevealEmailTemplate(
   const { error } = await supabase
     .from('groups')
     .update({ reveal_email_subject: subject, reveal_email_body: body })
-    .eq('id', groupId);
+    .eq('id', groupId).select('id').single();
   return { error: error?.message ?? null };
 }
 
@@ -402,4 +437,10 @@ export function renderRevealTemplate(
     .replace(/\{\{\s*chapter_name\s*\}\}/g, vars.chapter_name)
     .replace(/\{\{\s*little_plural_s\s*\}\}/g, s)
     .replace(/\{\{\s*little_plural_is_are\s*\}\}/g, isAre);
+}
+
+// Admins change only their own matching role, without an approval request.
+export async function setMyAdminMatchingRole(groupId: string, role: 'admin' | 'big'): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('set_my_admin_matching_role', { p_group_id: groupId, p_role: role });
+  return { error: error?.message ?? null };
 }

@@ -17,3 +17,9 @@ test('willingness alone still allows two and never duplicates Littles', () => {
   expect(matched).toHaveLength(3);
   expect(new Set(matched).size).toBe(3);
 });
+
+test.each([1,2,3] as const)('organization maximum %i caps twins and triplet requests', maximum => {
+ const result=runDeferredAcceptance(['a','b'], ['l1','l2','l3','l4','l5','l6'], {}, {}, new Set(['a']), {b:3}, maximum);
+ expect(result.find(r=>r.big==='a')?.littles).toHaveLength(Math.min(2,maximum));
+ expect(result.find(r=>r.big==='b')?.littles).toHaveLength(maximum);
+});

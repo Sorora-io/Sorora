@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const {PGlite}=await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+const db=new PGlite();
+await db.exec(`create role authenticated; create role anon; create schema auth;
+create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+create table groups(id uuid,active_cycle_id uuid,ranking_deadline date,blind_rankings boolean);
+create table cycles(id uuid,group_id uuid);
+create table memberships(group_id uuid,user_id uuid,role text,status text);
+create table profiles(id uuid,name text);
+create table rankings(group_id uuid,cycle_id uuid,ranker_id uuid,ranked_ids uuid[]);
+create function is_group_admin(g uuid) returns boolean language sql as $$select auth.uid()='00000000-0000-0000-0000-000000000001'::uuid$$;
+`);
+const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const g=id(10),c=id(11),old=id(12),big=id(2),little=id(3),unranked=id(4),rejected=id(5);
+await db.query("insert into groups values($1,$2,current_date-2,false)",[g,c]);
+await db.query('insert into cycles values($1,$2),($3,$2)',[c,g,old]);
+for(const [user,role,status] of [[big,'big','approved'],[little,'little','approved'],[unranked,'little','approved'],[rejected,'big','rejected']]) {
+ await db.query('insert into memberships values($1,$2,$3,$4)',[g,user,role,status]);
+ await db.query('insert into profiles values($1,$2)',[user,'Member '+user.slice(-1)]);
+}
+await db.query('insert into rankings values($1,$2,$3,$4),($1,$2,$5,$6),($1,$7,$3,$8),($1,$2,$9,$8)',[g,c,big,[little],little,[big],old,[unranked],rejected]);
+const migration=await readFile(new URL('../migrations/0037_unranked_member_review.sql',import.meta.url),'utf8');await db.exec(migration);await db.exec(migration);
+await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id(1)]);
+const review=async(cycle=c)=>(await db.query('select get_unranked_member_review($1,$2) as data',[g,cycle])).rows[0].data;
+assert.deepEqual((await review()).members.map(m=>m.userId),[unranked]);
+assert.equal((await review(old)).state,'not_due');
+await db.exec('update groups set blind_rankings=true');assert.deepEqual(await review(),{state:'private',members:[]});
+await db.exec('update groups set blind_rankings=false,ranking_deadline=current_date+1');assert.equal((await review()).state,'not_due');
+await db.exec('update groups set ranking_deadline=null');assert.equal((await review()).state,'not_due');
+await db.query("select set_config('request.jwt.claim.sub',$1,false)",[little]);await assert.rejects(review,/Only chapter admins/);
+await db.query("select set_config('request.jwt.claim.sub','',false)");await assert.rejects(review,/Only chapter admins/);
+console.log('Unranked review: current-cycle incoming preferences, rejected voters, deadlines, historical cycles, privacy, and admin access passed.');await db.close();

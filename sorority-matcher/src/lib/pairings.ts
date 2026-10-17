@@ -6,6 +6,8 @@ export interface RevealStatus {
   lastSentAt: string | null;
   scheduledAt: string | null;
   completedAt: string | null;
+  failureMessage?: string | null;
+  unnotifiedBigs?: number;
 }
 
 export interface RevealSendResult {
@@ -29,11 +31,13 @@ export async function getPairingRevealStatus(
   if (!row) return { status: { total: 0, sent: 0, lastSentAt: null, scheduledAt: null, completedAt: null }, error: null };
   return {
     status: {
+      unnotifiedBigs: row.unnotified_bigs ?? undefined,
       total: row.total ?? 0,
       sent: row.sent ?? 0,
       lastSentAt: row.last_sent_at ?? null,
       scheduledAt: row.scheduled_at ?? null,
       completedAt: row.completed_at ?? null,
+      failureMessage: row.failure_message ?? null,
     },
     error: null,
   };

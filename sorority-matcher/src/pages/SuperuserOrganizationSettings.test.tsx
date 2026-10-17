@@ -1,0 +1,20 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import SuperuserOrganizationSettings from './SuperuserOrganizationSettings';
+import { getSuperuserOrganizationSettings } from '../lib/superusers';
+let mockGroupId='target', mockAccess:any={data:true}, mockUser:any={id:'superuser'};
+const mockRefresh=jest.fn(),mockSetActive=jest.fn();
+jest.mock('../contexts/AuthContext',()=>({useAuth:()=>({user:mockUser,loading:false})}));
+jest.mock('../contexts/GroupContext',()=>({useGroup:()=>({membership:null,refresh:mockRefresh,setActiveGroupId:mockSetActive})}));
+jest.mock('../hooks/useSuperuser',()=>({useSuperuser:()=>mockAccess}));
+jest.mock('../lib/superusers',()=>({getSuperuserOrganizationSettings:jest.fn()}));
+jest.mock('react-router-dom',()=>({useParams:()=>({groupId:mockGroupId}),useNavigate:()=>jest.fn(),Navigate:({to}:any)=><p>Redirect {to}</p>}),{virtual:true});
+jest.mock('./group/Settings',()=>({__esModule:true,default:({superuserContext:c}:any)=>{
+  const [draft,setDraft]=require('react').useState(c.group.name);return <><p>Editing {c.group.id}</p><input aria-label="Draft" value={draft} onChange={e=>setDraft(e.target.value)}/></>;
+}}));
+const mount=()=>{const client=new QueryClient({defaultOptions:{queries:{retry:false}}});const node=()=> <QueryClientProvider client={client}><SuperuserOrganizationSettings/></QueryClientProvider>;const view=render(node());return ()=>view.rerender(node());};
+beforeEach(()=>{jest.clearAllMocks();mockGroupId='target';mockAccess={data:true};mockUser={id:'superuser'};mockRefresh.mockResolvedValue(undefined);(getSuperuserOrganizationSettings as jest.Mock).mockImplementation(async id=>({group:{id,name:'Chapter '+id},bigs:2,littles:3}));});
+test('a verified superuser needs no chapter membership and never switches active chapters',async()=>{mount();expect(await screen.findByText('Editing target')).toBeInTheDocument();expect(getSuperuserOrganizationSettings).toHaveBeenCalledWith('target');expect(mockSetActive).not.toHaveBeenCalled();});
+test.each([false,null])('denies non-superusers and signed-out accounts before fetching target',async access=>{if(access===null)mockUser=null;else mockAccess={data:false};mount();expect(screen.getByText(access===null?'Redirect /login':'Superuser access required')).toBeInTheDocument();expect(getSuperuserOrganizationSettings).not.toHaveBeenCalled();});
+test('changing the URL target discards the previous organization draft',async()=>{const rerender=mount();await screen.findByText('Editing target');fireEvent.change(screen.getByLabelText('Draft'),{target:{value:'Unsaved target'}});mockGroupId='other';rerender();await screen.findByText('Editing other');expect(screen.getByLabelText('Draft')).toHaveValue('Chapter other');expect(mockSetActive).not.toHaveBeenCalled();});
+test('server denial shows an error without rendering the settings editor',async()=>{(getSuperuserOrganizationSettings as jest.Mock).mockRejectedValue(new Error('Superuser access revoked'));mount();expect(await screen.findByRole('alert')).toHaveTextContent('Superuser access revoked');expect(screen.queryByLabelText('Draft')).not.toBeInTheDocument();});

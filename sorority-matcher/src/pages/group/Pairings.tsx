@@ -1,6 +1,11 @@
+import { groupRankingDeadline } from '../../lib/rankingDeadline';
+import UnrankedMemberReview from '../../components/UnrankedMemberReview';
+import { ArrowLeft } from 'lucide-react';
+import PairingChanges from '../../components/PairingChanges';
+import { revealDeliveryWarning } from '../../lib/revealStatus';
 import PageHeader from '../../components/PageHeader';
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGroup } from '../../contexts/GroupContext';
 import { getPairings, PairingRow } from '../../lib/rankings';
 import {
@@ -31,6 +36,7 @@ const toLocalInputValue = (iso: string) => {
 };
 
 const Pairings = () => {
+  const navigate = useNavigate();
   const { membership } = useGroup();
   const group = membership?.group;
 
@@ -75,11 +81,12 @@ const Pairings = () => {
     load();
   }, [load]);
 
-  const loadReveal = useCallback(async () => {
+  const loadReveal = useCallback(async (updateSchedule = true) => {
     if (!group || !selectedCycleId) return;
-    const { status } = await getPairingRevealStatus(group.id, selectedCycleId);
+    const { status, error: statusError } = await getPairingRevealStatus(group.id, selectedCycleId);
+    if (statusError) { setRevealError('Could not refresh delivery status. Please try again.'); return; }
     setReveal(status);
-    setScheduleValue(status?.scheduledAt ? toLocalInputValue(status.scheduledAt) : '');
+    if (updateSchedule) setScheduleValue(status?.scheduledAt ? toLocalInputValue(status.scheduledAt) : '');
   }, [group, selectedCycleId]);
 
   useEffect(() => {
@@ -89,6 +96,13 @@ const Pairings = () => {
     loadReveal();
   }, [loadReveal]);
 
+  useEffect(() => {
+    if (!reveal?.scheduledAt) return;
+    const timer = window.setInterval(() => { void loadReveal(false); }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [reveal?.scheduledAt, loadReveal]);
+
+  const deliveryWarning = revealDeliveryWarning(reveal);
   const byBig = new Map<string, { bigName: string | null; littles: string[] }>();
   for (const p of pairings) {
     if (!byBig.has(p.bigId)) byBig.set(p.bigId, { bigName: p.bigName, littles: [] });
@@ -104,13 +118,16 @@ const Pairings = () => {
     if (sendError) {
       setRevealError(sendError);
     } else if (result) {
-      setRevealMessage(
+      if (result.failures?.length || (result.unsent ?? 0) > 0) {
+        setRevealError('Some reveal emails could not be confirmed as sent. No automatic retry will be made. Please review the pairing status.');
+      } else setRevealMessage(
         result.sent === 0
           ? 'All Bigs have already been notified.'
           : `Emailed ${result.bigs ?? result.sent} Big${(result.bigs ?? result.sent) === 1 ? '' : 's'}.`,
       );
       await loadReveal();
     }
+    if (sendError) await loadReveal(false);
     setRevealBusy(false);
     setConfirmingReveal(false);
   };
@@ -158,12 +175,7 @@ const Pairings = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to="/dashboard"
-            className="text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-          >
-            Back to dashboard
-          </Link>
+          <Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}><ArrowLeft size={14} aria-hidden="true" /> Back to dashboard</Button>
         </PageHeader>
 
         <span className="ss-kicker">03 · After collection</span>
@@ -223,6 +235,20 @@ const Pairings = () => {
             </div>
           )}
         </div>
+
+        {selectedCycleId && <UnrankedMemberReview groupId={group.id} cycleId={selectedCycleId} deadline={groupRankingDeadline(group)} blind={group.blind_rankings ?? true} />}
+
+        {selectedCycleId && <PairingChanges key={`${group.id}:${selectedCycleId}`} groupId={group.id} cycleId={selectedCycleId} onSaved={async () => { await Promise.all([load(), loadReveal(false)]); }} />}
+
+        {deliveryWarning && (
+          <div role="alert" className="mt-6 ss-surface border border-brick text-sm">
+            <h2 className="font-semibold">Reveal delivery needs attention</h2>
+            <p className="mt-2">{deliveryWarning}</p>
+            {reveal && reveal.total > reveal.sent && <p className="mt-2">{reveal.total - reveal.sent} of {reveal.total} pairings have not been confirmed as emailed.</p>}
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => void loadReveal(false)}>Refresh delivery status</Button>
+          </div>
+        )}
+        {revealError && <p role="alert" className="mt-4 text-brick">{revealError}</p>}
 
         {hasPairings && reveal && isViewingActiveCycle && (
           <div className="mt-6 ss-surface" aria-labelledby="reveal-heading">
@@ -305,7 +331,6 @@ const Pairings = () => {
               </div>
 
               {revealMessage && <p role="status" className="text-sm text-jade-700">{revealMessage}</p>}
-              {revealError && <p role="alert" className="text-sm text-brick">{revealError}</p>}
             </div>
           </div>
         )}

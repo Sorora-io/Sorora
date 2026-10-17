@@ -11,6 +11,8 @@ export interface RosterMember {
 export interface SubmissionStatusRow extends RosterMember {
   role: MembershipRole;
   submitted: boolean;
+  willingToTakeTwins?: boolean | null;
+  wantedLittleCount?: number | null;
 }
 
 export interface PairingRow {
@@ -24,20 +26,11 @@ export async function getRoster(
   groupId: string,
   role: MembershipRole
 ): Promise<{ roster: RosterMember[]; error: string | null }> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('user_id, profile:profiles(email, name, avatar_url)')
-    .eq('group_id', groupId)
-    .eq('role', role)
-    .eq('status', 'approved');
-
+  const { data, error } = await supabase.rpc('get_cycle_roster', { p_group_id: groupId, p_role: role });
   if (error) return { roster: [], error: error.message };
-
   const roster = (data ?? []).map((row: any) => ({
-    avatarUrl: (row.profile as Profile | null)?.avatar_url ?? null,
-    userId: row.user_id as string,
-    name: (row.profile as Profile | null)?.name ?? null,
-    email: (row.profile as Profile | null)?.email ?? '',
+    avatarUrl: row.avatar_url ?? null, userId: row.user_id as string,
+    name: row.name ?? null, email: row.email ?? '',
   }));
   return { roster, error: null };
 }
@@ -51,8 +44,10 @@ export async function getMyRanking(
   if (!cycleId) return { rankedIds: [], error: null };
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-  if (!user) return { rankedIds: [], error: null };
+  if (authError) return { rankedIds: [], error: authError.message };
+  if (!user) return { rankedIds: [], error: 'Please sign in again to load your ranking.' };
 
   const { data, error } = await supabase
     .from('rankings')
@@ -143,7 +138,7 @@ export async function getSubmissionStatus(
   cycleId: string | null
 ): Promise<{ rows: SubmissionStatusRow[]; error: string | null }> {
   if (!cycleId) return { rows: [], error: null };
-  const { data, error } = await supabase.rpc('get_blind_submission_status', {
+  const { data, error } = await supabase.rpc('get_submission_status_details', {
     p_group_id: groupId,
     p_cycle_id: cycleId,
   });
@@ -152,6 +147,7 @@ export async function getSubmissionStatus(
     rows: (data ?? []).map((row: any) => ({
       userId: row.user_id, role: row.role, name: row.name,
       email: row.email, submitted: row.submitted,
+      willingToTakeTwins: row.willing_to_take_twins, wantedLittleCount: row.wanted_little_count,
     })),
     error: null,
   };

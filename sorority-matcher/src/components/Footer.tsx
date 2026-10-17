@@ -17,14 +17,14 @@ const Footer = () => (
         <Link to="/contact" className="hover:text-[color:var(--ss-ink-2)] underline-offset-4 hover:underline">Contact us</Link>
       </nav>
       <a
-        href="https://www.instagram.com/sorora.io/"
+        href="https://www.instagram.com/sorora.app/"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Sorora on Instagram"
         className="inline-flex items-center gap-2 hover:text-[color:var(--ss-ink-2)] transition-colors"
       >
         <Instagram size={18} aria-hidden="true" />
-        <span>@sorora.io</span>
+        <span>@sorora.app</span>
       </a>
     </div>
   </footer>

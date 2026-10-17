@@ -5,7 +5,7 @@ Emails each Big in a cycle the name of their matched Little(s). Two ways to fire
 1. **Admin clicks "Reveal to Bigs now"** on the Pairings page → the function runs immediately with the caller's JWT, and mails every Big whose pairing hasn't already been revealed.
 2. **Scheduled sweep** via `pg_cron` (see below) → fires with the service role for every cycle whose `reveal_scheduled_at` is due and `reveal_completed_at` is still null.
 
-Both paths stamp `pairings.reveal_sent_at` per Big, so re-runs never double-mail.
+Both paths stamp `pairings.reveal_sent_at` after a successful send. Scheduled attempts are consumed before sending and are never retried automatically. A persistent warning appears on the admin dashboard and Pairings page if the outcome is failed or unconfirmed. SMTP acceptance confirms sending, not inbox delivery or later bounces.
 
 ## Secrets
 
@@ -21,6 +21,8 @@ Reuses the same Gmail App Password as `send-contact-message`:
 Nothing to set again if the contact form is already working — this function reads the same three Gmail secrets.
 
 ## Deploy
+
+Apply migrations `0026_ranking_write_access.sql`, `0027_reveal_failure_status.sql`, and `0028_pairing_changes.sql` before deploying the updated function and frontend. Pause scheduled jobs and avoid manual reveals during this rollout; deploy the function before the frontend exposes editing. Both reveal paths now permanently lock pairing edits before reading assignments. If this lock fails, no emails are sent. Failed or uncertain attempts remain locked to avoid changing possibly emailed assignments.
 
 ```bash
 supabase functions deploy send-pairing-reveal
@@ -81,5 +83,8 @@ To turn it off later: `select cron.unschedule('sorora-pairing-reveal-sweep');`
 ## Design notes
 
 - The Edge Function is the single sender for both paths — the admin-driven "now" path and the cron sweep share the same code, so a bug fixed in one is fixed in both.
-- `pairings.reveal_sent_at` is the idempotency key. If matching is re-run and produces the same Big → Little pairing, its stamp survives and the Big doesn't get a second email. A pairing that *changed* has no stamp on the new row and does get mailed.
-- If the sender fails halfway through (SMTP hiccup mid-run), every Big already stamped stays stamped — a retry only mails the un-notified. No batching means no partial-batch confusion.
+- Each scheduled run atomically consumes its schedule before contacting SMTP. A concurrent sweep or a crash cannot trigger an automatic retry of that schedule. Cancelling or changing the schedule before it is claimed prevents that attempt.
+- The cycle stores a public-safe `reveal_failure_message`, readable through the admin-only status RPC. A successful outcome clears it; failed or interrupted attempts remain visible after reload. Previously completed schedules with unconfirmed pairings also show a fallback warning.
+- The Pairings page refreshes a schedule's status every 30 seconds without replacing an admin's in-progress schedule edit. The admin dashboard refreshes reveal status every 30 seconds.
+- Sending again or creating a new schedule requires an explicit admin action. No retry is started by showing, refreshing, or dismissing a warning.
+- `pairings.reveal_sent_at` skips already-recorded sends. Rerunning matching currently replaces pairing rows and can clear these stamps; that separate bug-bash finding is not addressed by these changes.

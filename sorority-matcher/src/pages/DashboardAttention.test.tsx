@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+jest.mock('../lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DashboardTab } from './Dashboard';
+import { DashboardTab, OrganizationTab } from './Dashboard';
 import { getPendingMemberships } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking } from '../lib/rankings';
 import { getPairingRevealStatus } from '../lib/pairings';
@@ -8,10 +9,11 @@ import { getPairingRevealStatus } from '../lib/pairings';
 jest.mock('react-router-dom', () => ({ Link: ({ to, children }: any) => <a href={to}>{children}</a> }), { virtual: true });
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin-user' } }) }));
 jest.mock('../hooks/useMyProfile', () => ({ useMyProfile: () => ({ profile: null }) }));
+jest.mock('../components/ChooseMatchingRole', () => ({ __esModule: true, default: () => <div>Become a Big invitation</div> }));
 jest.mock('../components/WelcomeTour', () => ({ __esModule: true, default: () => null, WELCOME_TOUR_KEY: 'k' }));
 jest.mock('./Profile', () => ({ ProfileContent: () => null }));
 jest.mock('../lib/groups', () => ({
-  isEffectiveAdmin: () => true,
+  isEffectiveAdmin: (m: any) => m.is_admin || m.role === 'admin',
   groupLabel: (g: any) => g.name,
   getPendingMemberships: jest.fn(),
 }));
@@ -27,14 +29,14 @@ const membership: any = {
 
 const row = (role: string, submitted: boolean, i: number) => ({ userId: `${role}${i}`, role, submitted, name: null, email: '' });
 
-const setup = ({ pending = 0, status = [] as any[], reveal = { total: 0, sent: 0, lastSentAt: null, scheduledAt: null, completedAt: null } }) => {
+const setup = ({ pending = 0, status = [] as any[], statusError = null as string | null, reveal = { total: 0, sent: 0, lastSentAt: null, scheduledAt: null, completedAt: null } as import('../lib/pairings').RevealStatus }, m = membership, navigate = jest.fn()) => {
   (getPendingMemberships as jest.Mock).mockResolvedValue({ memberships: Array.from({ length: pending }, () => ({})), error: null });
-  (getSubmissionStatus as jest.Mock).mockResolvedValue({ rows: status, error: null });
+  (getSubmissionStatus as jest.Mock).mockResolvedValue({ rows: status, error: statusError });
   (getMyRanking as jest.Mock).mockResolvedValue({ rankedIds: [], error: null });
   (getPairingRevealStatus as jest.Mock).mockResolvedValue({ status: reveal, error: null });
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <DashboardTab membership={membership} onNavigate={jest.fn()} onReplayTour={jest.fn()} />
+      <DashboardTab membership={m} onNavigate={navigate} onReplayTour={jest.fn()} />
     </QueryClientProvider>,
   );
 };
@@ -61,9 +63,9 @@ test('a fully-submitted roster with no pairings prompts matching', async () => {
 test('matched pairings with un-notified Bigs prompt the reveal', async () => {
   setup({
     status: [row('big', true, 1), row('little', true, 1)],
-    reveal: { total: 3, sent: 1, lastSentAt: null, scheduledAt: null, completedAt: null },
+    reveal: { total: 42, sent: 0, unnotifiedBigs: 33, lastSentAt: null, scheduledAt: null, completedAt: null },
   });
-  expect(await screen.findByText('2 Bigs not notified yet')).toBeInTheDocument();
+  expect(await screen.findByText('33 Bigs not notified yet')).toBeInTheDocument();
   // Matching already ran, so it must not still be asking you to run it.
   expect(screen.queryByText('Everyone has submitted')).not.toBeInTheDocument();
 });
@@ -85,4 +87,78 @@ test('an empty roster explains how people arrive instead of showing 0/0 meters',
   setup({ status: [] });
   expect(await screen.findByText(/No Bigs or Littles approved yet/)).toBeInTheDocument();
   expect(screen.queryByText('Chapter progress')).not.toBeInTheDocument();
+});
+
+test('failed scheduled reveal is urgent even when the roster is empty', async () => {
+  setup({ reveal: {total:0,sent:0,lastSentAt:null,scheduledAt:null,completedAt:'2026-09-26',failureMessage:'Emails were not confirmed. No automatic retry will be made.'} as any });
+  expect(await screen.findByText('Reveal delivery needs attention')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Review delivery' })).toBeInTheDocument();
+  expect(screen.queryByText('You’re all caught up')).not.toBeInTheDocument();
+});
+
+test('older backend pairing counts are never labelled as people', async () => {
+  setup({ reveal: {total:42,sent:0,lastSentAt:null,scheduledAt:null,completedAt:null} });
+  expect(await screen.findByText('42 pairings not notified yet')).toBeInTheDocument();
+  expect(screen.queryByText('42 Bigs not notified yet')).not.toBeInTheDocument();
+});
+
+const mountOrganization = (m = membership) => {
+  const onNavigate = jest.fn();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <OrganizationTab membership={m} onNavigate={onNavigate} />
+  </QueryClientProvider>);
+  return onNavigate;
+};
+
+test('organization shows pending approvals and shortcuts for a Big admin', async () => {
+  (getPendingMemberships as jest.Mock).mockResolvedValue({ memberships: [{}, {}], error: null });
+  const navigate = mountOrganization({ ...membership, role: 'big' });
+  expect(await screen.findByLabelText('2 pending approvals')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'View submissions' }));
+  expect(navigate).toHaveBeenLastCalledWith('/group/status');
+  fireEvent.click(screen.getByRole('button', { name: 'View pairings' }));
+  expect(navigate).toHaveBeenLastCalledWith('/group/pairings');
+});
+
+test('approval failures do not appear as zero pending requests', async () => {
+  (getPendingMemberships as jest.Mock).mockResolvedValue({ memberships: [], error: 'Unavailable' });
+  mountOrganization();
+  expect(await screen.findByText('Count unavailable. Open approvals to review requests.')).toBeInTheDocument();
+  expect(screen.queryByLabelText('0 pending approvals')).not.toBeInTheDocument();
+});
+
+test.each(['big', 'little'])('organization does not fetch or display admin tools for a %s', role => {
+  mountOrganization({ ...membership, role, is_admin: false });
+  expect(screen.queryByText('Your organization')).not.toBeInTheDocument();
+  expect(getPendingMemberships).not.toHaveBeenCalled();
+});
+
+
+test.each(['admin', 'big', 'little'])('dashboard always offers member rankings to a %s admin', async role => {
+  const navigate = jest.fn();
+  setup({ status: [row('big', true, 1), row('little', true, 1)], reveal: {total:1,sent:1,lastSentAt:null,scheduledAt:null,completedAt:null} }, { ...membership, role }, navigate);
+  expect(await screen.findByText('Chapter progress')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'View member rankings' }));
+  expect(navigate).toHaveBeenCalledWith('/group/status?view=rankings');
+});
+
+test.each(['big', 'little'])('dashboard hides member rankings for a nonadmin %s', role => {
+  setup({}, { ...membership, role, is_admin: false });
+  expect(screen.queryByRole('button', { name: 'View member rankings' })).not.toBeInTheDocument();
+});
+
+test('organization keeps member rankings reachable when blind rankings are on', () => {
+  const navigate = mountOrganization();
+  fireEvent.click(screen.getByRole('button', { name: 'View member rankings' }));
+  expect(navigate).toHaveBeenCalledWith('/group/status?view=rankings');
+  expect(screen.getByText(/Blind rankings are on. Open this page/)).toBeInTheDocument();
+});
+
+
+test('submission lookup failure is not presented as an empty or caught-up chapter', async () => {
+  setup({statusError:'Connection failed'});
+  expect(await screen.findByRole('alert')).toHaveTextContent('Submission counts are unavailable');
+  expect(screen.queryByText('Nothing here yet')).not.toBeInTheDocument();
+  expect(screen.queryByText('You’re all caught up')).not.toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'View member rankings'})).toBeEnabled();
 });

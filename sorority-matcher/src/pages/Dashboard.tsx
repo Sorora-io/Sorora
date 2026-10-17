@@ -1,3 +1,6 @@
+import { formatRankingDeadline } from '../lib/rankingDeadline';
+import { useCycleParticipation } from '../lib/cycleParticipation';
+import { revealDeliveryWarning } from '../lib/revealStatus';
 import PageHeader from '../components/PageHeader';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,28 +9,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
 import Avatar from '../components/Avatar';
+import ChooseMatchingRole from '../components/ChooseMatchingRole';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
-import { ProfileContent } from './Profile';
+import MemberHeader, { MemberTab as TabId } from '../components/MemberHeader';
 import { isEffectiveAdmin, MembershipWithGroup, groupLabel, getPendingMemberships } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
 import { getPairingRevealStatus } from '../lib/pairings';
 import { useMyProfile } from '../hooks/useMyProfile';
 import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys, STALE } from '../lib/queryKeys';
-
-// Dashboard = the sorora-story canvas's five-tab member view (Dashboard /
-// Profile / Rankings / Roster / FAQ). Every tab lives on the same soft
-// mint background under a shared top nav; no sidebar.
-
-type TabId = 'dashboard' | 'profile' | 'rankings' | 'roster' | 'faq';
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'profile', label: 'Profile' },
-  { id: 'rankings', label: 'Rankings' },
-  { id: 'roster', label: 'Roster' },
-  { id: 'faq', label: 'FAQ' },
-];
 
 const roleLabel = (m: MembershipWithGroup) => {
   const base =
@@ -37,14 +27,6 @@ const roleLabel = (m: MembershipWithGroup) => {
 
 const opposite = (role: string) => (role === 'big' ? 'little' : 'big');
 const percent = (a: number, b: number) => (b === 0 ? 0 : Math.round((a / b) * 100));
-
-const formatDeadline = (iso: string | null) =>
-  iso
-    ? new Date(iso + 'T00:00:00').toLocaleDateString(undefined, {
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'TBD';
 
 // Design canvas deliberately drops the Georgia serif once the visitor is
 // past onboarding — the dashboard headings are Arial-family sans, 30px,
@@ -100,31 +82,34 @@ export const DashboardTab = ({
   const isRanker = membership.role === 'big' || membership.role === 'little';
   const isAdmin = isEffectiveAdmin(membership);
   const cycleId = membership.group.active_cycle_id;
+  const participation = useCycleParticipation(user?.id ?? '', membership.group_id, cycleId);
+  const excluded = participation.data?.excludedIds.includes(user?.id ?? '') ?? false;
   const targetPlural = opposite(membership.role) === 'big' ? 'Bigs' : 'littles';
 
   const { data: rankedIds } = useQuery({
     queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
-    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
+    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids, error }) => { if (error) throw new Error(error); return ids; }),
     enabled: isRanker && !!cycleId,
   });
 
-  const { data: statusRows } = useQuery({
+  const { data: statusRows, error: statusError, refetch: retryStatus } = useQuery({
     queryKey: queryKeys.submissionStatus(user?.id ?? '', cycleId ?? ''),
     queryFn: () =>
-      getSubmissionStatus(membership.group_id, cycleId).then(({ rows }) => rows),
+      getSubmissionStatus(membership.group_id, cycleId).then(({ rows, error }) => { if (error) throw new Error(error); return rows; }),
     enabled: isAdmin && !!cycleId,
   });
 
   const { data: pendingCount = 0 } = useQuery({
     queryKey: queryKeys.pendingCount(user?.id ?? '', membership.group_id),
-    queryFn: () => getPendingMemberships(membership.group_id).then(({ memberships: m }) => m.length),
+    queryFn: () => getPendingMemberships(membership.group_id).then(({ memberships: m, error }) => { if (error) throw new Error(error); return m.length; }),
     enabled: isAdmin,
     staleTime: STALE.short,
   });
 
   const { data: reveal } = useQuery({
     queryKey: queryKeys.revealStatus(user?.id ?? '', cycleId ?? ''),
-    queryFn: () => getPairingRevealStatus(membership.group_id, cycleId!).then(({ status }) => status),
+    queryFn: () => getPairingRevealStatus(membership.group_id, cycleId!).then(({ status, error }) => { if (error) throw new Error(error); return status; }),
+    refetchInterval: 30_000,
     enabled: isAdmin && !!cycleId,
     staleTime: STALE.short,
   });
@@ -141,7 +126,8 @@ export const DashboardTab = ({
   const rosterSize = bigs.length + littles.length;
   const outstanding = rosterSize - (bigsDone + littlesDone);
   const pairingsRun = (reveal?.total ?? 0) > 0;
-  const unrevealed = (reveal?.total ?? 0) - (reveal?.sent ?? 0);
+  const unrevealed = reveal?.unnotifiedBigs ?? ((reveal?.total ?? 0) - (reveal?.sent ?? 0));
+  const recipientUnit = reveal?.unnotifiedBigs === undefined ? 'pairing' : 'Big';
 
   const attention: { tone: 'urgent' | 'waiting' | 'ready'; title: string; detail: string; action: string; to: string }[] = [];
   if (pendingCount > 0) {
@@ -171,10 +157,14 @@ export const DashboardTab = ({
       to: '/group/status',
     });
   }
-  if (pairingsRun && unrevealed > 0) {
+  const deliveryWarning = revealDeliveryWarning(reveal);
+  if (deliveryWarning) {
+    attention.unshift({ tone: 'urgent', title: 'Reveal delivery needs attention', detail: deliveryWarning, action: 'Review delivery', to: '/group/pairings' });
+  }
+  if (!deliveryWarning && pairingsRun && unrevealed > 0) {
     attention.push({
       tone: 'ready',
-      title: `${unrevealed} Big${unrevealed === 1 ? '' : 's'} not notified yet`,
+      title: `${unrevealed} ${recipientUnit}${unrevealed === 1 ? '' : 's'} not notified yet`,
       detail: 'Pairings are ready to reveal by email.',
       action: 'Reveal',
       to: '/group/pairings',
@@ -198,6 +188,7 @@ export const DashboardTab = ({
         }
       />
 
+      {membership.role === 'admin' && <ChooseMatchingRole />}
       <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
         {(isRanker || isAdmin) && (
           <section className="ss-surface flex flex-col gap-3">
@@ -205,17 +196,17 @@ export const DashboardTab = ({
               {isRanker ? `My ${targetPlural} rankings` : 'My rankings'}
             </SectionHeading>
             <p className="ss-caption">
-              {submitted
+              {excluded ? "You’re not participating in this cycle. Your chapter membership and saved rankings are unchanged." : submitted
                 ? `You've submitted ${rankedIds!.length} ${
                     rankedIds!.length === 1 ? 'ranking' : 'rankings'
                   }.`
                 : "You haven't started a list yet."}
             </p>
             <span className="ss-pill w-fit">
-              Deadline: {formatDeadline(membership.group.ranking_deadline)}
+              Deadline: {formatRankingDeadline(membership.group)}
             </span>
             <div className="mt-2">
-              <Button onClick={() => onNavigate('/group/submit-ranking')}>
+              <Button disabled={excluded} onClick={() => onNavigate('/group/submit-ranking')}>
                 {submitted ? 'Update rankings' : 'Start ranking'}
               </Button>
             </div>
@@ -235,14 +226,20 @@ export const DashboardTab = ({
               )}
             </div>
             <SectionHeading>
-              {rosterSize === 0
+              {statusError && attention.length === 0
+                ? 'Chapter status unavailable'
+                : rosterSize === 0 && attention.length === 0
                 ? 'Nothing here yet'
                 : attention.length === 0
                   ? 'You’re all caught up'
                   : 'What needs you'}
             </SectionHeading>
 
-            {rosterSize === 0 ? (
+            {!!statusError && <div role="alert">
+              <p className="ss-caption">Could not load chapter submissions. Submission counts are unavailable until this loads.</p>
+              <Button variant="quiet" size="sm" className="mt-2" onClick={() => void retryStatus()}>Retry submissions</Button>
+            </div>}
+            {statusError && attention.length === 0 ? null : rosterSize === 0 && attention.length === 0 ? (
               <p className="ss-caption">
                 No Bigs or Littles approved yet — once people join with your chapter code, their
                 requests show up here.
@@ -306,33 +303,17 @@ export const DashboardTab = ({
             )}
 
             <div className="mt-1 pt-3 border-t border-[color:var(--ss-surface-border)] flex flex-wrap gap-2">
-              {[
-                { label: 'Approvals', to: '/group/approvals' },
-                { label: 'Submissions', to: '/group/status' },
-                { label: 'Pairings', to: '/group/pairings' },
-                { label: 'Organization settings', to: '/group/settings' },
-              ].map(({ label, to }) => (
-                <Button key={to} size="sm" variant="quiet" onClick={() => onNavigate(to)}>
-                  {label}
-                </Button>
-              ))}
+              <Button size="sm" variant="outline" onClick={() => onNavigate('/group/status?view=rankings')}>
+                View member rankings
+              </Button>
+              <Button size="sm" variant="quiet" onClick={() => onNavigate('/dashboard?tab=organization')}>
+                Manage organization
+              </Button>
             </div>
           </section>
         )}
 
-        <section className="ss-surface flex flex-col gap-3">
-          <SectionHeading>
-            A little more about you
-          </SectionHeading>
-          <p className="ss-caption">
-            Add a photo and a few details so your chapter can find you.
-          </p>
-          <div className="mt-1">
-            <Button variant="outline" onClick={() => onNavigate('/profile')}>
-              Edit my profile
-            </Button>
-          </div>
-        </section>
+
       </div>
 
       <div className="mt-8 flex flex-col items-start gap-3">
@@ -360,16 +341,18 @@ const RankingsTab = ({
   const target = opposite(membership.role);
   const targetPlural = target === 'big' ? 'Bigs' : 'littles';
   const cycleId = membership.group.active_cycle_id;
+  const participation = useCycleParticipation(user?.id ?? '', membership.group_id, cycleId);
+  const excluded = participation.data?.excludedIds.includes(user?.id ?? '') ?? false;
 
   const { data: rankedIds } = useQuery({
     queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
-    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids }) => ids),
+    queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids, error }) => { if (error) throw new Error(error); return ids; }),
     enabled: isRanker && !!cycleId,
   });
 
   const { data: roster } = useQuery({
     queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
-    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r, error }) => { if (error) throw new Error(error); return r; }),
     enabled: isRanker,
     staleTime: STALE.medium,
   });
@@ -383,6 +366,8 @@ const RankingsTab = ({
       .map(id => byId.get(id))
       .filter((r): r is RosterEntry => !!r);
   }, [rankedIds, roster]);
+
+  if (excluded) return <div><Heading text="Rankings" /><p className="ss-caption mt-6">You’re not participating in this cycle. Your chapter membership and saved rankings are unchanged. Contact your chapter admin with questions.</p></div>;
 
   if (!isRanker) {
     return (
@@ -445,7 +430,7 @@ const RankingsTab = ({
               ))}
             </div>
             <p className="ss-caption mt-4">
-              Ranking deadline: {formatDeadline(membership.group.ranking_deadline)}
+              Ranking deadline: {formatRankingDeadline(membership.group)}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button onClick={() => onNavigate('/group/submit-ranking')}>Update rankings</Button>
@@ -482,7 +467,7 @@ const RosterTab = ({
   const { user } = useAuth();
   const { data: roster, isLoading } = useQuery({
     queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
-    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r, error }) => { if (error) throw new Error(error); return r; }),
     staleTime: STALE.medium,
   });
 
@@ -551,7 +536,7 @@ const RosterTab = ({
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-[13px] font-medium transition-colors ${
                         active
                           ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'bg-transparent text-[color:var(--ss-ink-3)] hover:bg-white/60'
+                          : 'bg-transparent text-[color:var(--ss-ink-3)] hover:bg-[color:var(--ss-button-hover)]'
                       }`}
                     >
                       {opt.label}
@@ -582,7 +567,7 @@ const RosterTab = ({
                       className={`inline-flex items-center px-2.5 py-1.5 rounded-pill text-[12px] font-medium tracking-wide transition-colors ${
                         active
                           ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'bg-transparent text-[color:var(--ss-ink-4)] hover:bg-white/60'
+                          : 'bg-transparent text-[color:var(--ss-ink-4)] hover:bg-[color:var(--ss-button-hover)]'
                       }`}
                     >
                       {id === 'az' ? 'A → Z' : 'Z → A'}
@@ -671,7 +656,7 @@ const FaqTab = () => (
       </Link>
       <Link
         to="/contact"
-        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill border border-[color:var(--ss-jade-line)] text-[color:var(--ss-ink-2)] hover:bg-white/60 transition-colors"
+        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill border border-[color:var(--ss-jade-line)] text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors"
       >
         Contact us
       </Link>
@@ -682,6 +667,81 @@ const FaqTab = () => (
 // ---------------------------------------------------------------------------
 // Page shell
 // ---------------------------------------------------------------------------
+
+export const OrganizationTab = ({ membership, onNavigate }: {
+  membership: MembershipWithGroup;
+  onNavigate: (path: string) => void;
+}) => {
+  const { user } = useAuth();
+  const { data: pendingCount, isError } = useQuery({
+    queryKey: queryKeys.pendingCount(user?.id ?? '', membership.group_id),
+    queryFn: () => getPendingMemberships(membership.group_id).then(({ memberships, error }) => {
+      if (error) throw new Error(error);
+      return memberships.length;
+    }),
+    enabled: isEffectiveAdmin(membership),
+    staleTime: STALE.short,
+  });
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+  const [copyError, setCopyError] = useState('');
+  const joinCode = membership.group.join_code;
+  const joinLink = `${window.location.origin}/login?join=${encodeURIComponent(joinCode)}`;
+  const copyInvite = async (kind: 'code' | 'link') => {
+    setCopied(null);
+    setCopyError('');
+    try {
+      await navigator.clipboard.writeText(kind === 'code' ? joinCode : joinLink);
+      setCopied(kind);
+    } catch {
+      setCopyError('Could not copy. Select and copy the code or link below.');
+    }
+  };
+  if (!isEffectiveAdmin(membership)) return null;
+  return <div>
+    <Heading text="Your organization" />
+    <Sub text="Manage your chapter’s matching, membership, and settings." />
+    {membership.role === 'admin' && <ChooseMatchingRole />}
+    <section className="mt-6 rounded-2xl border border-[color:var(--ss-surface-border)] bg-white/40 p-5" aria-label="Invite members">
+      <SectionHeading>Invite members</SectionHeading>
+      <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Share this code or join link so members can request to join your chapter.</p>
+      <p className="ss-label mt-5">Join code</p>
+      <code className="mt-2 block select-all break-all font-mono text-3xl sm:text-4xl tracking-widest text-[color:var(--ss-ink-1)]">{joinCode}</code>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => copyInvite('code')}>Copy join code</Button>
+        <Button variant="quiet" size="sm" onClick={() => copyInvite('link')}>Copy join link</Button>
+      </div>
+      <p className="ss-label mt-4">Join link</p>
+      <p className="mt-1 break-all select-all text-sm text-[color:var(--ss-ink-3)]">{joinLink}</p>
+      {copied && <p role="status" className="ss-caption mt-2">{copied === 'code' ? 'Join code copied.' : 'Join link copied.'}</p>}
+      {copyError && <p role="alert" className="mt-2 text-sm text-[color:var(--ss-error)]">{copyError}</p>}
+    </section>
+    <div className="grid gap-4 sm:grid-cols-2 mt-6">
+      {[
+        { title: 'Submissions', description: 'Track who has ranked and get your chapter ready to match.', action: 'View submissions', path: '/group/status' },
+        { title: 'Member rankings', description: (membership.group.blind_rankings ?? true) ? 'Blind rankings are on. Open this page to review privacy settings and submission status.' : 'Review each Big or Little’s submitted preferences in order.', action: 'View member rankings', path: '/group/status?view=rankings' },
+        { title: 'Pairings', description: 'Review matches, make adjustments, and manage your reveal.', action: 'View pairings', path: '/group/pairings' },
+      ].map(item => <section key={item.path} className="rounded-2xl border border-[color:var(--ss-surface-border)] bg-white/40 p-5 flex flex-col gap-3">
+        <SectionHeading>{item.title}</SectionHeading>
+        <p className="text-sm text-[color:var(--ss-ink-3)] flex-1">{item.description}</p>
+        <Button variant="outline" className="self-start" onClick={() => onNavigate(item.path)}>{item.action}</Button>
+      </section>)}
+    </div>
+    <section className="mt-4 rounded-2xl border border-[color:var(--ss-surface-border)] p-5 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <SectionHeading>Approvals</SectionHeading>
+          {pendingCount !== undefined && !isError && <span className="rounded-full bg-white/60 px-2 py-0.5 text-sm" aria-label={`${pendingCount} pending approvals`}>{pendingCount}</span>}
+        </div>
+        <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">{isError ? 'Count unavailable. Open approvals to review requests.' : pendingCount === undefined ? 'Loading pending requests…' : pendingCount === 0 ? 'No requests waiting for review.' : 'Review requests so members can start ranking.'}</p>
+      </div>
+      <Button variant="quiet" size="sm" onClick={() => onNavigate('/group/approvals')}>Review approvals</Button>
+    </section>
+    <section className="mt-6 pt-5 border-t border-[color:var(--ss-surface-border)] flex flex-wrap items-center justify-between gap-4">
+      <div><SectionHeading>Organization settings</SectionHeading><p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Chapter details, matching preferences, and deadlines.</p></div>
+      <Button variant="ghost" size="sm" onClick={() => onNavigate('/group/settings')}>Manage settings</Button>
+    </section>
+  </div>;
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -749,18 +809,19 @@ const Dashboard = () => {
   // Hover/focus on a tab pill prefetches that tab's data so the switch is
   // instant. Cheap when the user doesn't click (React Query dedupes and
   // respects the query's staleTime), noticeable when they do. We only
-  // prefetch tabs that fetch their own data — Profile is already covered
-  // by useMyProfile at the shell level, and FAQ is static.
+  // prefetch tabs that fetch their own data; FAQ is static.
   const prefetchTab = (id: TabId) => {
     if (!user || !membership) return;
     if (id === 'roster' || id === 'rankings') {
       queryClient.prefetchQuery({
         queryKey: queryKeys.fullRoster(user.id, membership.group_id),
-        queryFn: () => getFullRoster(membership.group_id).then(({ roster: r }) => r),
+        queryFn: () => getFullRoster(membership.group_id).then(({ roster: r, error }) => { if (error) throw new Error(error); return r; }),
         staleTime: STALE.medium,
       });
     }
   };
+
+  if (searchParams.get('tab') === 'profile') return <Navigate to="/profile" replace />;
 
   if (membership && membership.status !== 'approved') {
     return <Navigate to="/group/pending" replace />;
@@ -808,12 +869,14 @@ const Dashboard = () => {
 
   const renderTab = () => {
     switch (tab) {
-      case 'profile':
-        return <ProfileContent />;
       case 'rankings':
         return <RankingsTab membership={membership} onNavigate={onNavigate} />;
       case 'roster':
         return <RosterTab membership={membership} onNavigate={onNavigate} />;
+      case 'organization':
+        return isEffectiveAdmin(membership)
+          ? <OrganizationTab membership={membership} onNavigate={onNavigate} />
+          : <Navigate to="/dashboard" replace />;
       case 'faq':
         return <FaqTab />;
       case 'dashboard':
@@ -831,11 +894,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <PageHeader className="flex items-center justify-between mb-6">
-          <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
-            sorora
-          </Link>
-        </PageHeader>
+        <MemberHeader activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} showNavigation={!tourActive} isAdmin={isEffectiveAdmin(membership)} />
 
         {tourActive ? (
           <WelcomeTour
@@ -845,23 +904,6 @@ const Dashboard = () => {
           />
         ) : (
           <>
-            <nav aria-label="Dashboard navigation" className="flex flex-wrap gap-1 justify-center mb-4">
-              {TABS.map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id)}
-                  onMouseEnter={() => prefetchTab(t.id)}
-                  onFocus={() => prefetchTab(t.id)}
-                  aria-current={tab === t.id ? 'page' : undefined}
-                  className="ss-tab"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-            <div className="ss-tab-underline mb-8" />
-
             <div className="ss-kicker text-center md:text-left">{kicker}</div>
 
             <div className="text-left">{renderTab()}</div>

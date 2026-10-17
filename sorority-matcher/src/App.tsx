@@ -1,3 +1,4 @@
+import Button from './components/Button';
 import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
@@ -21,6 +22,7 @@ import Footer from "./components/Footer";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 
+const SuperuserOrganizationSettings = lazy(() => import("./pages/SuperuserOrganizationSettings"));
 const Superuser = lazy(() => import("./pages/Superuser"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -70,9 +72,9 @@ const AppShell = () => {
       {user && groupError && (
         <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
           <p>We couldn’t finish loading your chapter: {groupError}</p>
-          <button type="button" className="mt-2 underline" onClick={() => void refresh()} disabled={groupLoading}>
+          <Button variant="quiet" size="sm" className="mt-2" onClick={() => void refresh()} disabled={groupLoading}>
             {groupLoading ? 'Trying again…' : 'Try again'}
-          </button>
+          </Button>
         </div>
       )}
       <main className="flex-1 flex flex-col">
@@ -82,6 +84,7 @@ const AppShell = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/superuser" element={<Superuser />} />
+          <Route path="/superuser/organizations/:groupId/settings" element={<SuperuserOrganizationSettings />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
           <Route path="/about" element={<About />} />

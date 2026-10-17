@@ -24,19 +24,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 // own palette so destructive actions stay visually distinct.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-[color:var(--ss-jade-deep)] text-white border border-transparent hover:bg-[color:var(--ss-jade)]',
+    'bg-[color:var(--ss-jade-deep)] text-white border border-transparent enabled:hover:bg-[color:var(--ss-button-primary-hover)]',
   outline:
-    'border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-white/60',
+    'border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] enabled:hover:bg-[color:var(--ss-button-hover)] enabled:hover:border-[color:var(--ss-jade-soft)]',
   quiet:
-    'border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-surface)] text-[color:var(--ss-ink-3)] hover:bg-white/70',
+    'border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-surface)] text-[color:var(--ss-ink-3)] enabled:hover:bg-[color:var(--ss-button-quiet-hover)] enabled:hover:border-[color:var(--ss-jade-line)]',
   ghost:
-    'border border-transparent bg-transparent text-[color:var(--ss-ink-4)] hover:bg-white/50 hover:text-[color:var(--ss-ink-2)]',
+    'border border-transparent bg-transparent text-[color:var(--ss-ink-4)] enabled:hover:bg-[color:var(--ss-button-hover)] enabled:hover:text-[color:var(--ss-ink-2)]',
   link:
-    'border-0 bg-transparent text-[color:var(--ss-ink-3)] underline underline-offset-4 hover:text-[color:var(--ss-ink-1)]',
+    'border-0 bg-transparent text-[color:var(--ss-ink-3)] underline underline-offset-4 enabled:hover:text-[color:var(--ss-ink-1)]',
   danger:
-    'bg-brick text-white border border-transparent hover:bg-brick-600',
+    'bg-brick text-white border border-transparent enabled:hover:bg-brick-600',
   'danger-outline':
-    'border border-brick text-brick bg-transparent hover:bg-brick-50',
+    'border border-brick text-brick bg-transparent enabled:hover:bg-brick-50',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, { padded: string; full: string }> = {
@@ -51,10 +51,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const shape = variant === 'link' ? '' : 'rounded-pill';
     const classes = [
       fullWidth ? 'w-full' : '',
-      'inline-flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap',
+      'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 ease-out motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ss-jade-soft)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap',
       sizeClass,
       shape,
-      VARIANT_CLASSES[variant],
+      className.split(/\s+/).includes('ss-tab') ? '' : VARIANT_CLASSES[variant],
       className,
     ]
       .filter(Boolean)

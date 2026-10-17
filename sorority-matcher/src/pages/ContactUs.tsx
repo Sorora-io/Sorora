@@ -1,11 +1,12 @@
 import PageHeader from '../components/PageHeader';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { sendContactMessage } from '../lib/contact';
 import Button from '../components/Button';
 
 const ContactUs = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -42,12 +43,9 @@ const ContactUs = () => {
         >
           sorora
         </Link>
-        <Link
-          to="/"
-          className="text-sm text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)] underline underline-offset-4"
-        >
+        <Button variant="quiet" size="sm" onClick={() => navigate('/')}>
           Back to home
-        </Link>
+        </Button>
       </PageHeader>
 
       <section className="ss-frost w-full max-w-xl rounded-[24px] px-6 py-10 md:px-10 md:py-12 shadow-card">

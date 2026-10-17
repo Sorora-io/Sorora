@@ -1,8 +1,13 @@
+import { littlePreferenceLabel } from '../../lib/littlePreference';
+import { groupRankingDeadline } from '../../lib/rankingDeadline';
+import MemberRankings from '../../components/MemberRankings';
+import UnrankedMemberReview from '../../components/UnrankedMemberReview';
+import { downloadRankingExport } from '../../lib/rankingExport';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib/rankings';
@@ -14,9 +19,14 @@ import Button from '../../components/Button';
 const Status = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const showRankings = searchParams.get('view') === 'rankings';
   const { membership } = useGroup();
   const group = membership?.group;
 
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [exportMessage, setExportMessage] = useState('');
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState('');
   const [reminding, setReminding] = useState(false);
@@ -47,13 +57,15 @@ const Status = () => {
     if (!group || !cycleId) return;
     setRunning(true);
     setRunError('');
-    const { error: runFailure } = await runMatching(group.id, cycleId);
-    if (runFailure) {
-      setRunError(runFailure);
+    try {
+      const { error: runFailure } = await runMatching(group.id, cycleId);
+      if (runFailure) { setRunError(runFailure); return; }
+      navigate('/group/pairings');
+    } catch {
+      setRunError('Could not confirm whether matching finished. Check Pairings before running matching again.');
+    } finally {
       setRunning(false);
-      return;
     }
-    navigate('/group/pairings');
   };
 
   const handleRemind = async () => {
@@ -74,6 +86,21 @@ const Status = () => {
     setReminding(false);
   };
 
+  const handleExport = async () => {
+    if (!group || !cycleId) return;
+    setExporting(true);
+    setExportError('');
+    setExportMessage('');
+    try {
+      await downloadRankingExport(group.id, cycleId, true);
+      setExportMessage('Your CSV download is ready.');
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (!group) return null;
 
   const renderList = (label: string, list: SubmissionStatusRow[]) => (
@@ -86,8 +113,11 @@ const Status = () => {
       ) : (
         <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
           {list.map(r => (
-            <div key={r.userId} className="flex items-center justify-between py-2.5">
-              <span className="text-[color:var(--ss-ink-2)] truncate">{r.name || r.email}</span>
+            <div key={r.userId} className="flex items-start justify-between gap-3 py-2.5">
+              <div className="min-w-0">
+                <span className="block text-[color:var(--ss-ink-2)] truncate">{r.name || r.email}</span>
+                {r.role === 'big' && <p className="ss-caption mt-1">Twins / triplets: {littlePreferenceLabel(r)}</p>}
+              </div>
               <span
                 className={
                   r.submitted
@@ -111,12 +141,9 @@ const Status = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-          >
-            <ArrowLeft size={14} /> Back to dashboard
-          </Link>
+          <Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={14} aria-hidden="true" /> Back to dashboard
+          </Button>
         </PageHeader>
 
         <span className="ss-kicker">02 · Preference collection</span>
@@ -144,7 +171,35 @@ const Status = () => {
           </div>
         )}
 
-        {error && <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>}
+        {cycleId && (group.blind_rankings ?? true) && <section className="mt-6 ss-surface" aria-label="Individual member rankings">
+          <h2 className="font-medium text-[color:var(--ss-ink-1)]">Individual member rankings</h2>
+          <p className="mt-2 ss-caption">Blind rankings are on. Only each member can view their own preferences. Chapter admins can turn blind rankings off in Organization settings to enable this view.</p>
+          <Button variant="quiet" size="sm" className="mt-3" onClick={() => navigate('/group/settings')}>Manage ranking privacy</Button>
+        </section>}
+
+        {cycleId && !(group.blind_rankings ?? true) && <MemberRankings key={`${user?.id}:${group.id}:${cycleId}:${showRankings}`} groupId={group.id} cycleId={cycleId} initiallyOpen={showRankings} />}
+
+        {cycleId && <p className="mt-3 ss-caption">Twins/triplets labels show saved capacity preferences, including up to 3 Littles. A saved/default value of 1 cannot distinguish an explicit choice from the original default. Preferences may carry over between cycles; the submission label refers to this cycle. Twins do not apply to Littles.</p>}
+
+        {cycleId && <UnrankedMemberReview groupId={group.id} cycleId={cycleId} deadline={groupRankingDeadline(group)} blind={group.blind_rankings ?? true} />}
+
+        {cycleId && <section className="mt-6 ss-surface">
+          <h2 className="font-medium text-[color:var(--ss-ink-1)]">Ranked choices</h2>
+          <p className="mt-2 ss-caption">One row per member, with twins/triplets preference and choices in rank order.</p>
+          <div className="mt-4">
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting || (group.blind_rankings ?? true)}>
+              {exporting ? 'Downloading…' : 'Download ranked choices'}
+            </Button>
+          </div>
+          {(group.blind_rankings ?? true) && <div className="mt-3">
+            <p className="ss-caption">Blind rankings are on. Turn them off in Organization settings to download ranked choices.</p>
+            <Button variant="quiet" size="sm" className="mt-2" onClick={() => navigate('/group/settings')}>Organization settings</Button>
+          </div>}
+          {exportError && <p role="alert" className="mt-3 text-sm text-[color:var(--ss-error)]">{exportError}</p>}
+          {exportMessage && <p role="status" className="mt-3 ss-caption">{exportMessage}</p>}
+        </section>}
+
+        {error && <p role="alert" className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>}
 
         {cycleId && !allSubmitted && !loading && (
           <div className="mt-6 ss-surface">

@@ -47,3 +47,13 @@ node sorority-matcher/demo/local.mjs verify
 Verification removes its generated pairing results afterward. Run it before, not during, a demonstration.
 
 Local database files are kept under ignored `.demo/` and Docker volumes. Scripts obtain keys from that local stack and reject non-loopback database URLs. The app starts with explicit local environment variables; existing production environment files are not edited. Stop the app with Ctrl-C; stop the local database with `npx --yes supabase@2.117.0 stop --workdir .demo`.
+
+## Apply newer migrations without resetting demo data
+
+Back up the local database first. Refresh the ignored local migration copies with `node sorority-matcher/demo/local.mjs setup`, then run:
+
+```sh
+npx --yes supabase@2.117.0 migration up --local --workdir .demo
+```
+
+This applies pending migrations to the local stack without reseeding or deleting existing chapters and pairings. Current frontend fixes require migrations through 0041. Migration 0025 requires an initial verified superuser grant; follow its bootstrap instructions for a fresh local database. New ranking deadlines use a local date/time and required named time zone; existing date-only deadlines retain their end-of-day UTC cutoff.

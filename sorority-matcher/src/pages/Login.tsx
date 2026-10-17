@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, useRef, ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -85,18 +85,22 @@ const Login = () => {
     if (!joinCodeFromLink) return;
     findGroupByJoinCode(joinCodeFromLink).then(({ group }) => {
       if (group) setInvitedGroupLabel(groupLabel(group));
-    });
+    }).catch(() => { /* The Continue action provides visible lookup recovery. */ });
   }, [joinCodeFromLink]);
 
   useEffect(() => {
     if (user && mode === 'signin' && !loading && !forgotMode) navigate('/dashboard', { replace: true });
   }, [user, mode, loading, forgotMode, navigate]);
 
+  const finishingChapter = useRef(false);
   const finishChapter = async () => {
+    if (finishingChapter.current) return;
+    finishingChapter.current = true;
     setLoading(true);
     setError('');
     try {
       let groupId = resolvedGroupId;
+      let destination = path === 'create' ? '/dashboard' : '/group/pending';
       if (path === 'create') {
         const result = await createGroup(groupName.trim(), school.trim());
         if (result.error || !result.group) throw new Error(result.error ?? 'Could not create your chapter.');
@@ -105,13 +109,15 @@ const Login = () => {
         if (!groupId) throw new Error('Please go back and verify your chapter code.');
         const result = await requestToJoinGroup(groupId, role);
         if (result.error) throw new Error(result.error);
+        if (result.membership?.status === 'approved') destination = '/dashboard';
       }
-      setActiveGroupId(groupId!);
       await refresh();
-      navigate(path === 'create' ? '/dashboard' : '/group/pending', { replace: true });
+      setActiveGroupId(groupId!);
+      navigate(destination, { replace: true });
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Could not save your chapter. Please try again.');
     } finally {
+      finishingChapter.current = false;
       setLoading(false);
     }
   };
@@ -136,15 +142,21 @@ const Login = () => {
       return false;
     }
     setLoading(true);
-    const { group, error: codeError } = await findGroupByJoinCode(joinCode);
-    setLoading(false);
-    if (codeError || !group) {
-      setError(codeError ?? 'No chapter found with that code.');
+    try {
+      const { group, error: codeError } = await findGroupByJoinCode(joinCode);
+      if (codeError || !group) {
+        setError(codeError ?? 'No chapter found with that code.');
+        return false;
+      }
+      setResolvedGroupId(group.id);
+      setInvitedGroupLabel(groupLabel(group));
+      return true;
+    } catch {
+      setError('Could not verify your chapter code. Check your connection and try again.');
       return false;
+    } finally {
+      setLoading(false);
     }
-    setResolvedGroupId(group.id);
-    setInvitedGroupLabel(groupLabel(group));
-    return true;
   };
 
   const submitAccount = async (e: React.FormEvent) => {
@@ -211,10 +223,15 @@ const Login = () => {
       e.preventDefault();
       setResetLoading(true);
       setResetError('');
-      const { error } = await sendPasswordReset(resetEmail.trim());
-      if (error) setResetError(error.message);
-      else setResetSent(true);
-      setResetLoading(false);
+      try {
+        const { error } = await sendPasswordReset(resetEmail.trim());
+        if (error) setResetError(error.message);
+        else setResetSent(true);
+      } catch {
+        setResetError('Could not send your reset link. Check your connection and try again.');
+      } finally {
+        setResetLoading(false);
+      }
     };
 
     return (
@@ -277,10 +294,15 @@ const Login = () => {
       e.preventDefault();
       setError('');
       setLoading(true);
-      const { error: signInError } = await signIn(email, password);
-      if (signInError) setError(signInError.message);
-      else navigate('/dashboard');
-      setLoading(false);
+      try {
+        const { error: signInError } = await signIn(email, password);
+        if (signInError) setError(signInError.message);
+        else navigate('/dashboard');
+      } catch {
+        setError('Could not sign in. Check your connection and try again.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     return (
@@ -519,20 +541,21 @@ const Login = () => {
         />
         {error && <p role="alert" className="mt-4 text-[color:var(--ss-error)]">{error}</p>}
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          {(['big', 'little', 'admin'] as const).map(r => (
-            <button
+          {(['big', 'little'] as const).map(r => (
+            <Button
               key={r}
+              variant={role === r ? 'primary' : 'outline'}
               type="button"
               onClick={() => setRole(r)}
               aria-pressed={role === r}
               className={`px-8 py-3 rounded-pill text-[15px] font-medium border transition-colors min-h-[48px] ${
                 role === r
                   ? 'bg-[color:var(--ss-jade-deep)] text-white border-transparent'
-                  : 'bg-transparent text-[color:var(--ss-ink-2)] border-[color:var(--ss-jade-line)] hover:bg-white/60'
+                  : 'bg-transparent text-[color:var(--ss-ink-2)] border-[color:var(--ss-jade-line)] hover:bg-[color:var(--ss-button-hover)]'
               }`}
             >
-              {r === 'big' ? "I'm a Big" : r === 'little' ? "I'm a Little" : "I'm an Admin"}
-            </button>
+              {r === 'big' ? "I'm a Big" : "I'm a Little"}
+            </Button>
           ))}
         </div>
       </SceneShell>

@@ -1,10 +1,11 @@
+import Button from '../../components/Button';
 import PageHeader from '../../components/PageHeader';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { queryKeys } from '../../lib/queryKeys';
 import { invalidateChapter } from '../../lib/cache';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import LoadingLogo from '../../components/LoadingLogo';
@@ -23,6 +24,7 @@ import {
 const roleLabel: Record<string, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
 const Approvals = () => {
+  const navigate = useNavigate();
   const { membership, refresh } = useGroup();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -118,7 +120,7 @@ const Approvals = () => {
   const primaryBtn =
     'px-4 py-2 rounded-pill text-sm bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors';
   const quietBtn =
-    'px-4 py-2 rounded-pill text-sm border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-white/60 transition-colors';
+    'px-4 py-2 rounded-pill text-sm border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors';
   const dangerBtn =
     'px-4 py-2 rounded-pill text-sm bg-brick text-white hover:bg-brick-600 transition-colors disabled:opacity-50';
   const dangerOutlineBtn =
@@ -131,12 +133,9 @@ const Approvals = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-[color:var(--ss-ink-4)] hover:text-[color:var(--ss-ink-1)] underline underline-offset-4"
-          >
-            <ArrowLeft size={14} /> Back to dashboard
-          </Link>
+          <Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={14} aria-hidden="true" /> Back to dashboard
+          </Button>
         </PageHeader>
 
         <span className="ss-kicker">01 · Needs attention</span>
@@ -221,15 +220,16 @@ const Approvals = () => {
                     </p>
                     <p className="text-sm text-[color:var(--ss-ink-5)] truncate">
                       {roleLabel[r.role]} → wants to become {roleLabel[r.requested_role!]}
+                      {(r.is_admin || r.role === 'admin') && r.requested_role === 'little' && ' · Not allowed: admins cannot be Littles.'}
                     </p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button onClick={() => handleRoleDecision(r, false)} className={quietBtn}>
                       Reject
                     </button>
-                    <button onClick={() => handleRoleDecision(r, true)} className={primaryBtn}>
+                    <Button size="sm" onClick={() => handleRoleDecision(r, true)} disabled={(r.is_admin || r.role === 'admin') && r.requested_role === 'little'}>
                       Approve
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -241,8 +241,7 @@ const Approvals = () => {
         <div className="mt-6 ss-surface">
           <div className="ss-kicker" style={{ marginBottom: 4 }}>Admin access</div>
           <p className="ss-caption mb-4">
-            Grant admin access to a Big or Little without changing their role — they'll keep ranking as
-            normal and also get admin pages.
+            Admins can be Bigs or admin-only, but cannot be Littles. Bigs keep their matching role when granted admin access.
           </p>
 
           {adminError && <p className="text-[color:var(--ss-error)] text-sm mb-3">{adminError}</p>}
@@ -254,7 +253,7 @@ const Approvals = () => {
           ) : (
             <div className="flex flex-col">
               {members
-                .filter(m => m.role === 'big' || m.role === 'little')
+                .filter(m => m.role === 'big' || (m.role === 'little' && m.is_admin))
                 .map(m => (
                   <div key={m.id} className={rowClass}>
                     <div className="min-w-0">
@@ -266,17 +265,14 @@ const Approvals = () => {
                         {m.is_admin && ' · Admin'}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleToggleAdmin(m)}
-                      disabled={adminSavingId === m.id}
-                      className={m.is_admin ? dangerOutlineBtn : primaryBtn}
-                    >
+                    <Button size="sm" variant={m.is_admin ? 'danger-outline' : 'primary'}
+                      onClick={() => handleToggleAdmin(m)} disabled={adminSavingId === m.id}>
                       {adminSavingId === m.id ? '…' : m.is_admin ? 'Revoke admin' : 'Make admin'}
-                    </button>
+                    </Button>
                   </div>
                 ))}
-              {members.filter(m => m.role === 'big' || m.role === 'little').length === 0 && (
-                <p className="ss-caption">No Bigs or Littles yet.</p>
+              {members.filter(m => m.role === 'big' || (m.role === 'little' && m.is_admin)).length === 0 && (
+                <p className="ss-caption">No Bigs available to grant admin access.</p>
               )}
             </div>
           )}
@@ -287,7 +283,7 @@ const Approvals = () => {
           <div className="ss-kicker" style={{ marginBottom: 4 }}>Members</div>
           <p className="ss-caption mb-4">
             Remove someone who's graduated or left — this only removes them from this chapter, not their
-            Sorora account, and clears their rankings/pairings/notes for it.
+            Sorora account. Their ranking and pairing history is retained; chapter notes about them are removed.
           </p>
 
           {removeError && <p className="text-[color:var(--ss-error)] text-sm mb-3">{removeError}</p>}

@@ -62,9 +62,7 @@ test('failed saves show error without claiming success', async () => {
 
 test('signed-in FAQ readers can return to the dashboard from both ends of the page', () => {
   render(<QueryClientProvider client={new QueryClient()}><FAQ /></QueryClientProvider>);
-  const links = screen.getAllByRole('link', { name: 'Back to dashboard' });
-  expect(links).toHaveLength(2);
-  links.forEach(link => expect(link).toHaveAttribute('href', '/dashboard'));
+  expect(screen.getAllByRole('button', { name: 'Back to dashboard' })).toHaveLength(2);
 });
 
 test('reuses a warm profile cache and preserves a draft during background updates', async () => {

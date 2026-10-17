@@ -32,9 +32,9 @@ const Onboarding = () => {
             setActiveGroupId(groupId);
             navigate('/dashboard');
           }}
-          onJoined={groupId => {
+          onJoined={(groupId, status) => {
             setActiveGroupId(groupId);
-            navigate('/group/pending');
+            navigate(status === 'approved' ? '/dashboard' : '/group/pending');
           }}
         />
       </div>

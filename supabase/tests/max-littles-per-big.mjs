@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+const db = new PGlite();
+await db.exec(`
+create table rankings(group_id uuid,cycle_id uuid,ranker_id uuid,ranked_ids uuid[]);
+create role authenticated; create role anon; create role service_role;
+create schema auth;
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+grant usage on schema auth to authenticated,anon;
+create table profiles(id uuid primary key, name text);
+create table groups(id uuid primary key, active_cycle_id uuid);
+create table cycles(id uuid primary key,group_id uuid,label text,created_by uuid,ended_at timestamptz,reveal_completed_at timestamptz);
+create table memberships(group_id uuid,user_id uuid,role text,status text,is_admin boolean default false,created_at timestamptz default now(),wanted_little_count integer,willing_to_take_twins boolean default false);
+create table pairings(id uuid primary key default gen_random_uuid(),group_id uuid,cycle_id uuid,big_id uuid,little_id uuid,reveal_sent_at timestamptz,computed_at timestamptz default now(),unique(cycle_id,little_id));
+create function public.is_group_admin(g uuid) returns boolean language sql stable security definer set search_path = public as $$ select exists(select 1 from memberships where group_id=g and user_id=auth.uid() and is_admin and status='approved') $$;
+create function public.run_blind_matching(uuid,uuid) returns integer language sql as $$ select 42 $$;
+grant select,insert,update,delete on pairings to authenticated;
+`);
+await db.exec("create or replace function public.complete_matching_preferences(p_ranked uuid[], p_universe uuid[])\nreturns uuid[] language sql immutable set search_path = public\nas $$\n  select coalesce(array_agg(u.id order by\n    coalesce(array_position(p_ranked, u.id), cardinality(coalesce(p_ranked, '{}'::uuid[])) + u.position)), '{}'::uuid[])\n  from unnest(p_universe) with ordinality as u(id, position);\n$$;\n\n");
+await db.exec(await readFile(new URL('../migrations/0028_pairing_changes.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0034_max_littles_per_big.sql',import.meta.url),'utf8'));
+const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const g=id(1), c=id(2), admin=id(3), b1=id(4), b2=id(5), littles=[6,7,8,9,10,11].map(id);
+await db.query('insert into groups(id,active_cycle_id) values($1,$2)',[g,c]);
+await db.query('insert into cycles(id,group_id) values($1,$2)',[c,g]);
+for(const [person,role,capacity] of [[admin,'admin',null],[b1,'big',3],[b2,'big',null],...littles.map(l=>[l,'little',null])]) {
+ await db.query('insert into profiles values($1,$2)',[person,role]);
+ await db.query("insert into memberships(group_id,user_id,role,status,is_admin,wanted_little_count,willing_to_take_twins) values($1,$2,$3,'approved',$4,$5,$6)",[g,person,role,person===admin,capacity,person===b2]);
+}
+const login=async person=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[person]);await db.exec('set role authenticated');};
+const maximum=n=>db.query('select set_max_littles_per_big($1,$2)',[g,n]);
+const match=()=>db.query('select run_blind_matching($1,$2) as n',[g,c]);
+await login(b1);await assert.rejects(()=>maximum(2),/Only chapter admins/);
+await assert.rejects(()=>db.query('select run_blind_matching_unreviewed($1,$2)',[g,c]),/permission denied/);
+await assert.rejects(()=>db.exec('update groups set max_littles_per_big=1'),/permission denied/);
+await login(admin);
+for(const invalid of [0,4,null]) await assert.rejects(()=>maximum(invalid),/between 1 and 3/);
+for(const limit of [1,2,3]) {
+ await db.exec('reset role');await db.exec('delete from pairings');await login(admin);
+ await maximum(limit);const result=await match();assert.equal(result.rows[0].n,limit+Math.min(limit,2));
+ const editor=(await db.query('select get_pairing_editor($1,$2) as data',[g,c])).rows[0].data;
+ assert.equal(editor.bigs.find(b=>b.id===b1).capacity,limit);
+ assert.equal(editor.bigs.find(b=>b.id===b2).capacity,Math.min(limit,2));
+ const counts=(await db.query('select big_id,count(*)::integer as n from pairings group by big_id')).rows;
+ assert.ok(counts.every(r=>r.n<=limit));
+ if(limit>1) await assert.rejects(()=>maximum(1),/Adjust active pairings/);
+}
+await db.exec('reset role');await db.exec('delete from pairings');await login(admin);await maximum(1);await match();
+let editor=(await db.query('select get_pairing_editor($1,$2) as data',[g,c])).rows[0].data;
+const source=editor.pairings.find(p=>p.bigId===b1);
+await assert.rejects(()=>db.query('select change_pairing($1,$2,$3,$4,null,$5,$6)',[g,c,source.littleId,b2,editor.version,'Capacity test']),/full/);
+await login(b1);await assert.rejects(()=>db.query('select set_my_little_preference($1,false,3)',[g]),/exceeds/);
+await db.query('select set_my_little_preference($1,false,null)',[g]);
+await login(littles[0]);await assert.rejects(()=>db.query('select set_my_little_preference($1,false,null)',[g]),/approved Big/);
+console.log('Maximum Littles: admin permissions, input validation, matching caps, pairing edit caps, existing pairs, and member preferences passed.');
+await db.close();

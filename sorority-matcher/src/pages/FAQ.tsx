@@ -1,6 +1,8 @@
+import Button from '../components/Button';
+import { ArrowLeft } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface QA {
@@ -39,7 +41,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: 'Can bigs request twins or triplets?',
-        a: "Yes. On your ranking page, choose WANTING and select 2 Littles (twins) or 3 Littles (triplets), or choose WILLING if you are simply open to twins. Choose one option, or select 1 Little only. The final number depends on rankings and availability.",
+        a: "Yes. On your ranking page, choose 1 Little, Up to 2 Littles, or Up to 3 Littles. Your final number depends on rankings and availability.",
       },
       {
         q: "Can I rename my chapter or update its school?",
@@ -74,7 +76,7 @@ const SECTIONS: FaqSection[] = [
       },
       {
         q: "Can I take twins?",
-        a: "Yes. On your ranking page, choose WANTING and select 2 Littles (twins) or 3 Littles (triplets), or choose WILLING if you are simply open to twins. Choose one option, or select 1 Little only. The final number depends on rankings and availability.",
+        a: "Yes. On your ranking page, choose 1 Little, Up to 2 Littles, or Up to 3 Littles. Your final number depends on rankings and availability.",
       },
       {
         q: 'When do I find out who my little is?',
@@ -120,6 +122,7 @@ const SECTIONS: FaqSection[] = [
 ];
 
 const FAQ = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const backTo = user ? "/dashboard" : "/";
   const backLabel = user ? "Back to dashboard" : "Back to home";
@@ -141,12 +144,9 @@ const FAQ = () => {
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
-          <Link
-            to={backTo}
-            className="inline-flex items-center justify-center rounded-pill border border-[color:var(--ss-jade-line)] px-5 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-white/60"
-          >
-            {backLabel}
-          </Link>
+          <Button variant="quiet" size="sm" onClick={() => navigate(backTo)}>
+            <ArrowLeft size={14} aria-hidden="true" /> {backLabel}
+          </Button>
         </PageHeader>
 
         <div className="text-center mb-8">
@@ -216,7 +216,7 @@ const FAQ = () => {
         </div>
 
         <div className="text-center mt-8">
-          <Link to={backTo} className="ss-link inline-block mb-4">{backLabel}</Link>
+          <Button variant="quiet" size="sm" className="mb-4" onClick={() => navigate(backTo)}><ArrowLeft size={14} aria-hidden="true" /> {backLabel}</Button>
           <p className="ss-caption">
             Still have questions?{' '}
             <Link to="/contact" className="underline underline-offset-4 text-[color:var(--ss-ink-2)] font-medium">

@@ -2,16 +2,15 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
-import { isEffectiveAdmin, resolveRoleChange } from '../lib/groups';
+import { isEffectiveAdmin, setMyAdminMatchingRole } from '../lib/groups';
 import { invalidateChapter } from '../lib/cache';
 import Button from './Button';
 
-// An admin keeps admin access while choosing their own side of matching.
+// An admin may participate as a Big while keeping admin access.
 const ChooseMatchingRole = () => {
   const { user } = useAuth();
   const { membership, refresh } = useGroup();
   const client = useQueryClient();
-  const [role, setRole] = useState<'big' | 'little'>('big');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,9 +20,8 @@ const ChooseMatchingRole = () => {
     setBusy(true);
     setError('');
     try {
-      // This existing RPC checks approved admin access on the server and
-      // preserves is_admin when changing the matching role.
-      const result = await resolveRoleChange(membership.id, true, role);
+      // The dedicated RPC checks this admin’s own approved membership.
+      const result = await setMyAdminMatchingRole(membership.group_id, 'big');
       if (result.error) throw new Error(result.error);
       await invalidateChapter(client, user!.id, membership.group_id, membership.group.active_cycle_id);
       await refresh();
@@ -35,15 +33,12 @@ const ChooseMatchingRole = () => {
   };
 
   return (
-    <div className="mt-6 flex w-full max-w-md flex-col gap-4">
-      <p className="ss-caption">Choose your Big or Little role to submit your own rankings. You’ll keep your admin access.</p>
-      <label className="ss-label" htmlFor="matching-role">My matching role</label>
-      <select id="matching-role" className="ss-input" value={role} disabled={busy} onChange={event => setRole(event.target.value as 'big' | 'little')}>
-        <option value="big">Big — I rank Littles</option>
-        <option value="little">Little — I rank Bigs</option>
-      </select>
+    <div className="mt-6 flex w-full flex-col gap-3 rounded-2xl border border-[color:var(--ss-surface-border)] bg-white/40 p-5">
+      <h2 className="text-base font-semibold text-[color:var(--ss-ink-1)]">Are you taking a Little?</h2>
+      <p className="ss-caption">You’re currently admin-only, so Littles cannot rank you. Become a Big to appear in their ranking lists right away, even before you submit your own rankings. You’ll keep your admin access.</p>
+      <p className="ss-caption">If you’re only managing matching, keep your current role. Admins cannot be Littles.</p>
       {error && <p role="alert" className="text-sm text-brick">{error}</p>}
-      <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Continue to my rankings'}</Button>
+      <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Become a Big'}</Button>
     </div>
   );
 };

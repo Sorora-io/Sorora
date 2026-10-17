@@ -84,3 +84,16 @@ export async function transferSuperuserOrganization(
   if (error) throw new Error(error.message);
   return data as TransferResult;
 }
+
+export interface SuperuserOrganizationSettings {
+  group: import('./groups').Group;
+  bigs: number;
+  littles: number;
+}
+
+export async function getSuperuserOrganizationSettings(groupId: string): Promise<SuperuserOrganizationSettings> {
+  const { data, error } = await supabase.rpc('superuser_organization_settings', { p_group_id: groupId });
+  if (error) throw new Error(error.message);
+  if (!data?.group || data.group.id !== groupId) throw new Error('Could not load this organization’s settings.');
+  return data as SuperuserOrganizationSettings;
+}

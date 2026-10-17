@@ -1,6 +1,7 @@
+import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSuperuser } from '../hooks/useSuperuser';
 import { getSuperuserAccounts, grantSuperuser, deleteSuperuserAccount, SuperuserAccount } from '../lib/superusers';
@@ -10,10 +11,12 @@ import Button from '../components/Button';
 import SuperuserOrganizations from '../components/SuperuserOrganizations';
 
 export default function Superuser() {
+  const navigate = useNavigate();
   const { user, loading } = useAuth();
   const access = useSuperuser();
   const client = useQueryClient();
-  const [view, setView] = useState<'accounts' | 'organizations'>('accounts');
+  const [searchParams] = useSearchParams();
+  const [view, setView] = useState<'accounts' | 'organizations'>(searchParams.get('view') === 'organizations' ? 'organizations' : 'accounts');
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [offset, setOffset] = useState(0);
@@ -59,14 +62,14 @@ export default function Superuser() {
   if (!user) return <Navigate to="/login" replace />;
   if (access.isPending) return <LoadingScreen />;
   if (access.error) return <div className="p-8" role="alert">Could not verify superuser access. <Button onClick={() => void access.refetch()}>Try again</Button></div>;
-  if (!access.data) return <div className="p-8"><h1 className="text-2xl">Superuser access required</h1><p>This view is restricted to authorized superusers.</p><Link to="/dashboard" className="underline">Back to dashboard</Link></div>;
+  if (!access.data) return <div className="p-8"><h1 className="text-2xl">Superuser access required</h1><p>This view is restricted to authorized superusers.</p><Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}><ArrowLeft size={14} aria-hidden="true" /> Back to dashboard</Button></div>;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 py-8">
       <PageHeader superuserMode><Link to="/dashboard" className="font-display italic text-2xl">sorora</Link></PageHeader>
       <h1 className="mt-10 text-3xl font-semibold">Superuser</h1>
       <p className="mt-2 text-sm">All accounts across Sorora, including chapter admins, Bigs, Littles, and accounts without a chapter.</p>
-      <p className="mt-2 text-sm">Superusers can view this directory, promote verified accounts, and delete accounts or organizations. Chapter roles are shown separately.</p>
+      <p className="mt-2 text-sm">Superusers can view this directory, promote verified accounts, edit organization settings, and delete accounts or organizations. Chapter roles are shown separately.</p>
       <nav aria-label="Superuser directories" className="mt-6 flex gap-2">
         <Button variant={view === 'accounts' ? 'primary' : 'outline'} aria-pressed={view === 'accounts'} onClick={() => setView('accounts')}>Accounts</Button>
         <Button variant={view === 'organizations' ? 'primary' : 'outline'} aria-pressed={view === 'organizations'} onClick={() => { setSelected(null); setDeleting(null); setConfirmation(''); setView('organizations'); }}>Organizations</Button>

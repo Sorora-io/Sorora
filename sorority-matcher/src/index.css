@@ -42,6 +42,9 @@
     --ss-jade: #234e39;
     --ss-jade-soft: #2c5b3c;
     --ss-jade-line: #a2b9a3;
+    --ss-button-hover: rgba(35, 78, 57, 0.07);
+    --ss-button-quiet-hover: #e8f0e5;
+    --ss-button-primary-hover: #123422;
 
     /* Surfaces (inner cards, tour previews, dashboard cards). */
     --ss-surface: #f3f7f2;
@@ -281,12 +284,14 @@
     cursor: pointer;
     transition: background 150ms ease, color 150ms ease;
   }
-  .ss-tab:hover {
+  .ss-tab:hover:not(:disabled) {
     color: var(--ss-ink-1);
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--ss-button-hover);
   }
   .ss-tab[aria-current='page'],
-  .ss-tab.is-active {
+  .ss-tab.is-active,
+  .ss-tab[aria-current='page']:hover:not(:disabled),
+  .ss-tab.is-active:hover:not(:disabled) {
     background: var(--ss-jade-deep);
     color: #fff;
   }
@@ -319,4 +324,18 @@
   .ss-meter > span {
     transition: none;
   }
+}
+
+/* Brand-only interaction: scaling never affects the header's layout. */
+.ss-wordmark {
+  background: transparent !important;
+  border-radius: 4px;
+  transform-origin: center;
+  transition: transform 180ms ease-out;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ss-wordmark:enabled:hover { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ss-wordmark { transition: none; }
 }

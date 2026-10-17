@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import Button from './Button';
 import { useGroup } from '../contexts/GroupContext';
-import { createGroup, findGroupByJoinCode, requestToJoinGroup, MembershipRole } from '../lib/groups';
+import { createGroup, findGroupByJoinCode, requestToJoinGroup, JoinRole, MembershipStatus } from '../lib/groups';
 
 interface AddOrganizationFormProps {
   onCreated: (groupId: string) => void;
-  onJoined: (groupId: string) => void;
+  onJoined: (groupId: string, status?: MembershipStatus) => void;
   onCancel?: () => void;
 }
 
@@ -14,7 +15,7 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
   const [groupName, setGroupName] = useState('');
   const [school, setSchool] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [role, setRole] = useState<MembershipRole>('big');
+  const [role, setRole] = useState<JoinRole>('big');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -40,28 +41,32 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
     onCreated(group.id);
   };
 
+  const joining = useRef(false);
   const handleJoin = async () => {
+    if (joining.current) return;
     if (joinCode.trim() === '') {
       setError("Please enter your group's join code.");
       return;
     }
+    joining.current = true;
     setLoading(true);
     setError('');
-    const { group, error: codeError } = await findGroupByJoinCode(joinCode);
-    if (codeError || !group) {
-      setError(codeError ?? 'No group found with that code.');
+    try {
+      const { group, error: codeError } = await findGroupByJoinCode(joinCode);
+      if (codeError || !group) {
+        setError(codeError ?? 'No group found with that code.');
+        return;
+      }
+      const { membership, error: joinError } = await requestToJoinGroup(group.id, role);
+      if (joinError) { setError(joinError); return; }
+      await refresh();
+      onJoined(group.id, membership?.status);
+    } catch {
+      setError('Could not join your chapter. Please try again.');
+    } finally {
+      joining.current = false;
       setLoading(false);
-      return;
     }
-    const { error: joinError } = await requestToJoinGroup(group.id, role);
-    if (joinError) {
-      setError(joinError);
-      setLoading(false);
-      return;
-    }
-    await refresh();
-    setLoading(false);
-    onJoined(group.id);
   };
 
   return (
@@ -134,22 +139,17 @@ const AddOrganizationForm = ({ onCreated, onJoined, onCancel }: AddOrganizationF
             <label className="block text-sm font-medium mb-1">I am a</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as MembershipRole)}
+              onChange={(e) => setRole(e.target.value as JoinRole)}
               className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
             >
               <option value="big">Big</option>
               <option value="little">Little</option>
-              <option value="admin">Admin</option>
             </select>
           </div>
           {error && <p className="text-brick text-sm">{error}</p>}
-          <button
-            onClick={handleJoin}
-            disabled={loading}
-            className="w-full py-2.5 bg-jade-600 text-white rounded-md hover:bg-jade-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? '...' : 'Request to Join'}
-          </button>
+          <Button onClick={handleJoin} disabled={loading} fullWidth>
+            {loading ? 'Joining…' : 'Request to Join'}
+          </Button>
         </div>
       )}
 

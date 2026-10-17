@@ -18,12 +18,15 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const GMAIL_USER = Deno.env.get('GMAIL_USER');
+const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const REMINDER_FROM = Deno.env.get('REMINDER_FROM') ?? 'Sorora <onboarding@resend.dev>';
+const REMINDER_FROM = Deno.env.get('REMINDER_FROM') ?? GMAIL_USER ?? 'Sorora <onboarding@resend.dev>';
 const APP_URL = Deno.env.get('APP_URL') ?? 'https://sorora.vercel.app';
 
 // An admin re-clicking "Send reminder emails" (or a misbehaving client
@@ -50,6 +53,9 @@ interface RemindableGroup {
   id: string;
   name: string;
   ranking_deadline: string | null;
+  ranking_deadline_at?: string | null;
+  ranking_deadline_timezone?: string | null;
+  active_cycle_id: string | null;
   reminders_last_sent_at: string | null;
 }
 
@@ -65,35 +71,53 @@ async function remindGroup(admin: ReturnType<typeof createClient>, group: Remind
     return { sent: 0, total: 0, skipped: true, retryAfterSeconds: Math.ceil(remaining / 1000) };
   }
 
-  const { data: members } = await admin
+  if (!group.active_cycle_id) return { sent: 0, total: 0, skipped: false };
+  const { data: members, error: memberError } = await admin
     .from('memberships')
     .select('user_id, role, profiles(email, name)')
     .eq('group_id', group.id)
     .eq('status', 'approved')
     .in('role', ['big', 'little']);
 
+  if (memberError) throw memberError;
   if (!members || members.length === 0) return { sent: 0, total: 0, skipped: false };
 
-  const { data: rankings } = await admin.from('rankings').select('ranker_id').eq('group_id', group.id);
+  const { data: rankings, error: rankingError } = await admin.from('rankings').select('ranker_id').eq('group_id', group.id).eq('cycle_id', group.active_cycle_id);
+  const { data: exclusions, error: exclusionError } = await admin.from('cycle_exclusions').select('user_id').eq('group_id', group.id).eq('cycle_id', group.active_cycle_id).eq('excluded', true);
+  if (rankingError || exclusionError) throw rankingError || exclusionError;
+  const excludedIds = new Set((exclusions ?? []).map(e => e.user_id as string));
   const submittedIds = new Set((rankings ?? []).map(r => r.ranker_id as string));
 
-  const toRemind = (members as unknown as MemberRow[]).filter(m => !submittedIds.has(m.user_id) && m.profiles?.email);
+  const toRemind = (members as unknown as MemberRow[]).filter(m => !excludedIds.has(m.user_id) && !submittedIds.has(m.user_id) && m.profiles?.email);
 
   // Nothing to send (everyone's submitted) — don't start the cooldown for
   // no reason, so a legitimate click right after the last holdout submits
   // isn't blocked.
   if (toRemind.length === 0) return { sent: 0, total: 0, skipped: false };
 
+  if (!RESEND_API_KEY && (!GMAIL_USER || !GMAIL_APP_PASSWORD)) throw new Error('Reminder email is not configured.');
+  const smtp = !RESEND_API_KEY ? new SMTPClient({ connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: GMAIL_USER!, password: GMAIL_APP_PASSWORD! } } }) : null;
   let sent = 0;
+  try {
   for (const m of toRemind) {
     const email = m.profiles!.email;
     const roleWord = m.role === 'big' ? 'Little' : 'Big';
     const greeting = m.profiles?.name ? `Hi ${m.profiles.name},` : 'Hi,';
-    const dueLine = group.ranking_deadline
-      ? ` — due ${new Date(group.ranking_deadline + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`
-      : '';
+    const cutoff = group.ranking_deadline_at || (group.ranking_deadline
+      ? new Date(Date.parse(group.ranking_deadline + 'T00:00:00Z') + 86_400_000).toISOString() : null);
+    const zone = group.ranking_deadline_timezone || 'UTC';
+    const dueLine = cutoff ? ` — due ${new Intl.DateTimeFormat('en-US', {
+      timeZone: zone, month: 'short', day: 'numeric', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+    }).format(new Date(cutoff))} (${zone})` : '';
 
-    if (!RESEND_API_KEY) continue; // dry-run mode if no key is configured yet
+    if (smtp) {
+      await smtp.send({ from: REMINDER_FROM, to: email,
+        subject: `Reminder: submit your ${roleWord} rankings for ${group.name}${dueLine}`,
+        content: `${greeting}\n\nYou haven't submitted your ${roleWord} rankings for ${group.name} yet${dueLine}.\n\n${APP_URL}/group/submit-ranking`,
+      });
+      sent++; continue;
+    }
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -108,8 +132,10 @@ async function remindGroup(admin: ReturnType<typeof createClient>, group: Remind
 <p style="color:#888;font-size:12px;">Sent by Sorora on behalf of ${group.name}.</p>`,
       }),
     });
-    if (res.ok) sent++;
+    if (!res.ok) throw new Error('Reminder email delivery failed.');
+    sent++;
   }
+  } finally { if (smtp) await smtp.close(); }
 
   await admin.from('groups').update({ reminders_last_sent_at: new Date().toISOString() }).eq('id', group.id);
 
@@ -127,10 +153,11 @@ serve(async req => {
     // with a deadline set, so admins don't have to remember to click the
     // button themselves.
     if (body.all === true) {
+      if (req.headers.get('Authorization') !== `Bearer ${SERVICE_ROLE_KEY}`) return json({ error: 'Service role required' }, 403);
       const { data: groups } = await admin
         .from('groups')
-        .select('id, name, ranking_deadline, reminders_last_sent_at')
-        .not('ranking_deadline', 'is', null);
+        .select('id, name, ranking_deadline, ranking_deadline_at, ranking_deadline_timezone, reminders_last_sent_at, active_cycle_id')
+        .or('ranking_deadline.not.is.null,ranking_deadline_at.not.is.null');
 
       const results = await Promise.all((groups ?? []).map(g => remindGroup(admin, g)));
       const sent = results.reduce((sum, r) => sum + r.sent, 0);
@@ -164,7 +191,7 @@ serve(async req => {
 
     const { data: group, error: groupError } = await admin
       .from('groups')
-      .select('id, name, ranking_deadline, reminders_last_sent_at')
+      .select('id, name, ranking_deadline, ranking_deadline_at, ranking_deadline_timezone, reminders_last_sent_at, active_cycle_id')
       .eq('id', groupId)
       .single();
     if (groupError || !group) return json({ error: 'Group not found' }, 404);

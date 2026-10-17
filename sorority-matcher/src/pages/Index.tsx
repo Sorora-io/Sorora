@@ -60,10 +60,10 @@ const OpeningWordmark = () => (
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { memberships } = useGroup();
+  const { memberships, initialized, error: membershipError } = useGroup();
   const [step, setStep] = useState(0);
 
-  const { data: profile } = useMyProfile();
+  const { data: profile, isPending: profilePending } = useMyProfile();
 
   const signedIn = !!user;
 
@@ -81,13 +81,22 @@ const Index = () => {
           </Button>
         }
       >
-        <Heading
-          text={`Welcome back${
-            profile?.name ? `,\n${profile.name.split(' ')[0]}.` : '.'
-          }`}
-        />
-        <p className="mt-6 max-w-lg text-[color:var(--ss-ink-5)] text-lg">
-          {memberships.length > 0
+        <h1 className="font-display text-[38px] md:text-[56px] leading-[1.05] font-medium text-[color:var(--ss-ink-1)] min-h-[2.1em]" aria-busy={profilePending}>
+          {profilePending ? (
+            <>
+              Welcome back
+              <span role="status" aria-label="Loading your profile" className="block mx-auto mt-2 h-[0.85em] w-40 rounded-lg bg-[color:var(--ss-pill-bg)] motion-safe:animate-pulse" />
+            </>
+          ) : (
+            <>Welcome back{profile?.name?.trim() ? <>,<br />{profile.name.trim().split(/\s+/)[0]}.</> : '.'}</>
+          )}
+        </h1>
+        <p className="mt-6 max-w-lg text-[color:var(--ss-ink-5)] text-lg min-h-[3.5em]">
+          {!initialized ? (
+            <span role="status" aria-label="Loading your chapter" className="block mt-1 h-5 w-64 max-w-full rounded bg-[color:var(--ss-pill-bg)] motion-safe:animate-pulse" />
+          ) : membershipError ? (
+            'Your chapter information is temporarily unavailable.'
+          ) : memberships.length > 0
             ? 'Everything you need for your chapter is a click away.'
             : "You haven't joined a chapter yet. Let's fix that."}
         </p>

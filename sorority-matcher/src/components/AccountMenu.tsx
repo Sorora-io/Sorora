@@ -10,7 +10,7 @@ const ARM_MS = 3000;
 
 const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => {
   const { signOut, user } = useAuth();
-  const { data: profile } = useMyProfile();
+  const { data: profile, isPending: profilePending } = useMyProfile();
   const [open, setOpen] = useState(false);
   const accountTrigger = useRef<HTMLButtonElement>(null);
   const accountContainer = useRef<HTMLDivElement>(null);
@@ -72,8 +72,10 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
       <div ref={accountContainer} className="relative">
         <button ref={accountTrigger} type="button" onClick={() => setOpen(value => !value)}
           aria-label={`Account options for ${displayName || 'you'}`} aria-expanded={open}
-          className="flex min-w-0 items-center gap-2 rounded-full px-2 py-1 hover:bg-white/60 transition-colors">
-          <Avatar src={profile?.avatar_url} name={displayName} email={user?.email} size="sm" />
+          className="flex min-w-0 items-center gap-2 rounded-full px-2 py-1 hover:bg-[color:var(--ss-button-hover)] transition-colors">
+          {profilePending ? (
+            <span aria-hidden="true" className="h-8 w-8 shrink-0 rounded-full bg-[color:var(--ss-pill-bg)] motion-safe:animate-pulse" />
+          ) : <Avatar src={profile?.avatar_url} name={displayName} email={user?.email} size="sm" />}
           <span className="max-w-[9rem] truncate text-sm text-[color:var(--ss-ink-2)]">
             {displayName || 'Account'}
           </span>
@@ -84,7 +86,7 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
             {superuserMode ? (
               <a href="/dashboard" className="block rounded-xl px-3 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-stone-100">Main app</a>
             ) : <>
-            <a href="/profile" className="block rounded-xl px-3 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-stone-100">My profile</a>
+            <Button variant="ghost" size="sm" className="!w-full !justify-start !rounded-xl !px-3 !text-sm" onClick={() => { setOpen(false); window.location.assign('/profile'); }}>My profile</Button>
             <SuperuserLink />
             </>}
       <Button

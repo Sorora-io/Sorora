@@ -6,8 +6,8 @@
 //      memberships.
 //   2. On a cron sweep with the service role — pass { sweep: true } and
 //      the function finds every cycle whose reveal_scheduled_at has passed
-//      but reveal_completed_at is still null. Stamp completed_at at the
-//      end so the same schedule never fires twice. See README.md for how
+//      but reveal_completed_at is still null. Consume the schedule before
+//      sending and persist any failure warning. See README.md for how
 //      to wire the pg_cron trigger.
 //
 // Reuses the same Gmail SMTP secrets as send-contact-message
@@ -79,11 +79,32 @@ interface RevealTarget {
   pairingIds: string[];
 }
 
+interface RevealResult {
+  sent: number;
+  total: number;
+  bigs?: number;
+  unsent?: number;
+  failures?: string[];
+  error?: string;
+}
+
+const failureMessage = (result: RevealResult) =>
+  result.error || result.failures?.length || (result.unsent ?? 0) > 0
+    ? 'Some reveal emails could not be confirmed as sent. No automatic retry will be made. Please review the pairing status before deciding what to do next.'
+    : null;
+
 async function revealCycle(
   admin: ReturnType<typeof createClient>,
   groupId: string,
   cycleId: string,
-) {
+): Promise<RevealResult> {
+  // Serialize with manual pairing edits before taking the email snapshot.
+  // Fail closed if the migration has not been deployed; never email mutable matches.
+  const { error: lockError } = await admin.rpc('lock_pairings_for_reveal', {
+    p_group_id: groupId, p_cycle_id: cycleId,
+  });
+  if (lockError) return { sent: 0, total: 0, error: 'Could not lock pairings for reveal. No emails were sent.' };
+
   const { data: groupRow, error: groupError } = await admin
     .from('groups')
     .select('name, reveal_email_subject, reveal_email_body')
@@ -142,6 +163,7 @@ async function revealCycle(
   });
 
   let sent = 0;
+  let bigsSent = 0;
   const failures: string[] = [];
   try {
     for (const t of targets.values()) {
@@ -171,24 +193,26 @@ async function revealCycle(
           html: `${bodyHtml}<p style="color:#888;font-size:12px;">Sent by Sorora on behalf of ${escapeHtml(groupRow.name as string)}.</p>`,
         });
         // Stamp before moving on, so a mid-run crash still records progress.
-        await admin
+        const { error: stampError } = await admin
           .from('pairings')
           .update({ reveal_sent_at: new Date().toISOString() })
           .in('id', t.pairingIds);
+        if (stampError) throw new Error('Email was sent, but its delivery record could not be saved.');
         sent += t.pairingIds.length;
+        bigsSent += 1;
       } catch (e) {
         failures.push(`${t.bigEmail}: ${e instanceof Error ? e.message : 'send failed'}`);
       }
     }
   } finally {
-    await client.close();
+    try { await client.close(); } catch { failures.push('The mail connection did not close cleanly.'); }
   }
 
   return {
     sent,
     total: pairings.length,
-    unsent: unsent.length,
-    bigs: targets.size,
+    unsent: Math.max(0, unsent.length - sent),
+    bigs: bigsSent,
     failures: failures.length ? failures : undefined,
   };
 }
@@ -213,7 +237,7 @@ serve(async req => {
       }
       const { data: due, error: dueError } = await admin
         .from('cycles')
-        .select('id, group_id')
+        .select('id, group_id, reveal_scheduled_at')
         .lte('reveal_scheduled_at', new Date().toISOString())
         .is('reveal_completed_at', null)
         .not('reveal_scheduled_at', 'is', null);
@@ -221,14 +245,36 @@ serve(async req => {
 
       const results = [] as { group_id: string; cycle_id: string; sent: number; total: number }[];
       for (const c of due ?? []) {
-        const result = await revealCycle(admin, c.group_id as string, c.id as string);
-        results.push({ group_id: c.group_id as string, cycle_id: c.id as string, sent: result.sent, total: result.total });
-        // Mark complete even on empty result — the schedule fired, and we
-        // don't want the cron to keep retrying an already-satisfied cycle.
-        await admin
+        // Consume this exact schedule before sending. Concurrent sweeps,
+        // cancellations and crashes must not trigger another automatic send.
+        const { data: claimed, error: claimError } = await admin
           .from('cycles')
-          .update({ reveal_completed_at: new Date().toISOString() })
-          .eq('id', c.id);
+          .update({
+            reveal_completed_at: new Date().toISOString(),
+            reveal_failure_message: 'The reveal attempt has started, but successful delivery has not been confirmed. No automatic retry will be made.',
+          })
+          .eq('id', c.id)
+          .eq('reveal_scheduled_at', c.reveal_scheduled_at)
+          .is('reveal_completed_at', null)
+          .select('id')
+          .maybeSingle();
+        if (claimError) return json({ error: 'Could not record the reveal attempt. No emails were sent for this cycle.' }, 500);
+        if (!claimed) continue;
+
+        let result: RevealResult;
+        try {
+          result = await revealCycle(admin, c.group_id as string, c.id as string);
+        } catch {
+          result = { sent: 0, total: 0, error: 'The reveal attempt could not finish.' };
+        }
+        const warning = failureMessage(result);
+        const { error: statusError } = await admin
+          .from('cycles')
+          .update({ reveal_failure_message: warning })
+          .eq('id', c.id)
+          .eq('reveal_scheduled_at', c.reveal_scheduled_at);
+        if (statusError) return json({ error: 'Could not save the reveal outcome. Check the pairing status before sending anything else.' }, 500);
+        results.push({ group_id: c.group_id as string, cycle_id: c.id as string, sent: result.sent, total: result.total });
       }
       return json({ cycles: results.length, results });
     }
@@ -260,6 +306,10 @@ serve(async req => {
     if (!isAdmin) return json({ error: 'Not an admin of this group' }, 403);
 
     const result = await revealCycle(admin, groupId, cycleId);
+    const { error: statusError } = await admin.from('cycles')
+      .update({ reveal_failure_message: failureMessage(result) })
+      .eq('id', cycleId).eq('group_id', groupId);
+    if (statusError) return json({ error: 'Could not save the reveal outcome. Check the pairing status before sending anything else.' }, 500);
     if (result.error) return json({ error: result.error }, 500);
     return json(result);
   } catch (e) {
