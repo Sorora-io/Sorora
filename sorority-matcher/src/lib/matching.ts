@@ -12,8 +12,8 @@ export interface DeferredAcceptanceResult {
 }
 
 // Complete each person's preference list: explicit rankings first, in order,
-// followed by everyone unranked (so a partial ranking doesn't leave that
-// person with no one to propose to / accept).
+// followed only by eligible partners who explicitly ranked this person.
+// A pair with no ranking in either direction must remain unmatched.
 const completeList = (ranked: string[], universe: string[]): string[] => {
   const rankedValid = ranked.filter(id => universe.includes(id));
   const rankedSet = new Set(rankedValid);
@@ -41,13 +41,13 @@ export function runDeferredAcceptance(
 ): DeferredAcceptanceResult[] {
   const littlePrefs: PreferenceMap = {};
   for (const little of littles) {
-    littlePrefs[little] = completeList(littleRankings[little] ?? [], bigs);
+    littlePrefs[little] = completeList(littleRankings[little] ?? [], bigs.filter(big => (littleRankings[little] ?? []).includes(big) || (bigRankings[big] ?? []).includes(little)));
   }
 
   const bigPrefs: PreferenceMap = {};
   const bigRankOf: { [big: string]: { [little: string]: number } } = {};
   for (const big of bigs) {
-    bigPrefs[big] = completeList(bigRankings[big] ?? [], littles);
+    bigPrefs[big] = completeList(bigRankings[big] ?? [], littles.filter(little => (bigRankings[big] ?? []).includes(little) || (littleRankings[little] ?? []).includes(big)));
     bigRankOf[big] = {};
     bigPrefs[big].forEach((little, idx) => {
       bigRankOf[big][little] = idx;

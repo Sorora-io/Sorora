@@ -1,0 +1,73 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
+const db = new PGlite();
+await db.exec(`
+create table rankings(group_id uuid,cycle_id uuid,ranker_id uuid,ranked_ids uuid[]);
+create role authenticated; create role anon; create role service_role;
+create schema auth;
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+grant usage on schema auth to authenticated,anon;
+create table profiles(id uuid primary key, name text, email text, avatar_url text);
+create table groups(id uuid primary key, active_cycle_id uuid);
+create table cycles(id uuid primary key,group_id uuid,label text,created_by uuid,ended_at timestamptz,reveal_completed_at timestamptz);
+create table memberships(group_id uuid,user_id uuid,role text,status text,is_admin boolean default false,created_at timestamptz default now(),wanted_little_count integer,willing_to_take_twins boolean default false);
+create table pairings(id uuid primary key default gen_random_uuid(),group_id uuid,cycle_id uuid,big_id uuid,little_id uuid,reveal_sent_at timestamptz,computed_at timestamptz default now(),unique(cycle_id,little_id));
+create function public.is_group_admin(g uuid) returns boolean language sql stable security definer set search_path = public as $$ select exists(select 1 from memberships where group_id=g and user_id=auth.uid() and is_admin and status='approved') $$;
+create function public.run_blind_matching(uuid,uuid) returns integer language sql as $$ select 42 $$;
+grant select,insert,update,delete on pairings to authenticated;
+`);
+await db.exec(await readFile(new URL('../migrations/0044_restore_matching_preferences.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0028_pairing_changes.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0034_max_littles_per_big.sql',import.meta.url),'utf8'));
+
+await db.exec(`grant insert on rankings to authenticated;
+alter table groups add column ranking_deadline date, add column blind_rankings boolean default false;
+alter table memberships add column id uuid default gen_random_uuid();
+alter table rankings add column updated_at timestamptz default now();`);
+await db.exec(await readFile(new URL('../migrations/0038_cycle_participation.sql',import.meta.url),'utf8'));
+const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const g=id(1),c=id(2),admin=id(3),big=id(4),little=id(5),other=id(6),old=id(7);
+assert.deepEqual((await db.query('select complete_matching_preferences($1::uuid[],$2::uuid[]) as prefs',[[id(3),id(1),id(99)],[id(1),id(2),id(3),id(4)]])).rows[0].prefs,[id(3),id(1),id(2),id(4)]);
+assert.deepEqual((await db.query('select complete_matching_preferences(null,$1::uuid[]) as prefs',[[id(2),id(1)]])).rows[0].prefs,[id(2),id(1)]);
+assert.deepEqual((await db.query("select complete_matching_preferences(null,'{}'::uuid[]) as prefs")).rows[0].prefs,[]);
+
+await db.query('insert into groups(id,active_cycle_id) values($1,$2)',[g,c]);
+await db.query('insert into cycles(id,group_id) values($1,$3),($2,$3)',[c,old,g]);
+for(const [person,role] of [[admin,'admin'],[big,'big'],[little,'little'],[other,'little']]) {
+ await db.query('insert into profiles(id,name,email) values($1,$2,$3)',[person,role,role+'@example.com']);
+ await db.query("insert into memberships(group_id,user_id,role,status,is_admin) values($1,$2,$3,'approved',$4)",[g,person,role,person===admin]);
+}
+const login=async person=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[person]);await db.exec('set role authenticated');};
+const participation=async()=>(await db.query('select get_cycle_participation($1,$2) as d',[g,c])).rows[0].d;
+const set=async(who,excluded,confirm=false,cycle=c)=>db.query('select set_cycle_participation($1,$2,$3,$4,$5,$6)',[g,cycle,who,excluded,confirm,confirm ? (await participation()).version : null]);
+
+await db.exec('reset role');
+await db.exec('alter table cycles add column reveal_scheduled_at timestamptz');
+await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0046_clear_cycle_pairings.sql',import.meta.url),'utf8'));
+const third=id(11);await db.query("insert into profiles values($1,'Third','third@example.com',null)",[third]);await db.query("insert into memberships(group_id,user_id,role,status) values($1,$2,'little','approved')",[g,third]);
+await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,little,[big]]);
+for(const person of [little,other,third])await db.query('insert into pairings(group_id,cycle_id,big_id,little_id) values($1,$2,$3,$4)',[g,c,big,person]);
+await db.query('insert into pairings(group_id,cycle_id,big_id,little_id) values($1,$2,$3,$4)',[g,old,big,little]);
+await db.exec("update cycles set reveal_scheduled_at=now()+interval '1 day'");
+const version=async()=>{await login(admin);return (await db.query('select get_pairing_editor($1,$2) as d',[g,c])).rows[0].d.version};
+const initial=await version();
+const clear=(v=initial,confirmation='clear',cycle=c)=>db.query('select clear_cycle_pairings($1,$2,$3,$4) as n',[g,cycle,v,confirmation]);
+await login(little);await assert.rejects(()=>clear(),/Only chapter admins/);
+await login(admin);await assert.rejects(()=>clear(initial,'CLEAR'),/Type clear/);await assert.rejects(()=>clear('stale'),/Pairings changed/);await assert.rejects(()=>clear(initial,'clear',old),/active open/);
+await assert.rejects(()=>db.query('select set_max_littles_per_big($1,2)',[g]),/Adjust active pairings/);
+const cleared=await clear();assert.equal(cleared.rows[0].n,3);
+await db.exec('reset role');assert.equal((await db.query('select count(*)::int as n from rankings')).rows[0].n,1);
+assert.equal((await db.query('select count(*)::int as n from pairings where cycle_id=$1',[old])).rows[0].n,1);
+assert.equal((await db.query('select reveal_scheduled_at from cycles where id=$1',[c])).rows[0].reveal_scheduled_at,null);
+assert.equal((await db.query('select changes from pairing_change_history')).rows[0].changes.length,3);
+await login(admin);await db.query('select set_max_littles_per_big($1,2)',[g]);
+assert.equal((await db.query('select run_blind_matching($1,$2) as n',[g,c])).rows[0].n,1,'only the explicit connection is matched');
+let review=(await db.query('select get_matching_review($1,$2) as d',[g,c])).rows[0].d;assert.deepEqual(review.unmatched.map(m=>m.userId).sort(),[other,third].sort());
+await db.exec('reset role');await db.query('insert into pairings(group_id,cycle_id,big_id,little_id) values($1,$2,$3,$4)',[g,c,big,other]);await login(admin);
+review=(await db.query('select get_matching_review($1,$2) as d',[g,c])).rows[0].d;assert.equal(review.unsupportedPairings.length,1);
+let v=await version();await db.exec('reset role');await db.query('update cycles set pairing_edits_locked_at=now() where id=$1',[c]);await login(admin);await assert.rejects(()=>clear(v),/Reveal sending/);
+await db.exec('reset role');await db.query('update cycles set pairing_edits_locked_at=null,ended_at=now() where id=$1',[c]);await login(admin);await assert.rejects(()=>clear(v),/active open/);
+await db.exec('reset role;set role anon');await assert.rejects(()=>clear(v),/permission denied/);
+await db.close();console.log('Ranking connections, admin review, clearing, saved rankings, cycle isolation, capacity reset, audit, confirmation and reveal locks passed.');

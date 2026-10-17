@@ -7,11 +7,11 @@ test.each([1, 2, 3] as const)('respects a Big’s %i-Little limit', count => {
 });
 
 test('wanting three takes precedence over willingness to take twins', () => {
-  expect(runDeferredAcceptance(['big'], ['a', 'b', 'c'], {}, {}, new Set(['big']), { big: 3 })[0].littles).toHaveLength(3);
+  expect(runDeferredAcceptance(['big'], ['a', 'b', 'c'], {big:['a','b','c']}, {}, new Set(['big']), { big: 3 })[0].littles).toHaveLength(3);
 });
 
 test('willingness alone still allows two and never duplicates Littles', () => {
-  const result = runDeferredAcceptance(['one', 'two'], ['a', 'b', 'c', 'd'], {}, {}, new Set(['one']));
+  const result = runDeferredAcceptance(['one', 'two'], ['a', 'b', 'c', 'd'], {one:['a','b','c','d'],two:['a','b','c','d']}, {}, new Set(['one']));
   expect(result.find(r => r.big === 'one')?.littles).toHaveLength(2);
   const matched = result.flatMap(r => r.littles);
   expect(matched).toHaveLength(3);
@@ -19,7 +19,16 @@ test('willingness alone still allows two and never duplicates Littles', () => {
 });
 
 test.each([1,2,3] as const)('organization maximum %i caps twins and triplet requests', maximum => {
- const result=runDeferredAcceptance(['a','b'], ['l1','l2','l3','l4','l5','l6'], {}, {}, new Set(['a']), {b:3}, maximum);
+ const result=runDeferredAcceptance(['a','b'], ['l1','l2','l3','l4','l5','l6'], {a:['l1','l2','l3','l4','l5','l6'],b:['l1','l2','l3','l4','l5','l6']}, {}, new Set(['a']), {b:3}, maximum);
  expect(result.find(r=>r.big==='a')?.littles).toHaveLength(Math.min(2,maximum));
  expect(result.find(r=>r.big==='b')?.littles).toHaveLength(maximum);
+});
+
+test('never invents a pair when neither person ranked the other',()=>{
+ expect(runDeferredAcceptance(['b'],['l'],{},{},new Set())).toEqual([]);
+ expect(runDeferredAcceptance(['b'],['l'],{b:['outside']},{l:['outside']},new Set())).toEqual([]);
+});
+test('one-sided explicit interest is eligible; disconnected leftover members stay unmatched',()=>{
+ expect(runDeferredAcceptance(['b','unrankedBig'],['l','unrankedLittle'],{b:['l']},{},new Set())).toEqual([{big:'b',littles:['l']}]);
+ expect(runDeferredAcceptance(['b'],['l'],{},{l:['b']},new Set())).toEqual([{big:'b',littles:['l']}]);
 });

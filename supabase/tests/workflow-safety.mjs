@@ -35,6 +35,12 @@ await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', im
 // Verify reapplying the migration is safe.
 await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', import.meta.url), 'utf8'));
 await db.exec(await readFile(new URL('../migrations/0021_little_preferences.sql', import.meta.url), 'utf8'));
+await db.exec(`alter table groups add column max_littles_per_big integer default 3;
+create function public.cycle_memberships(p_group_id uuid,p_cycle_id uuid) returns setof public.memberships language sql stable security definer set search_path='' as $$ select * from public.memberships where group_id=p_group_id $$;`);
+await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(`create or replace function public.run_blind_matching(p_group_id uuid,p_cycle_id uuid) returns integer language sql security definer set search_path='' as $$ select public.run_blind_matching_unreviewed(p_group_id,p_cycle_id) $$;`);
+
+
 const id = n => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
 const group = id(1), cycle = id(2), admin = id(10), big2 = id(11), little1 = id(20), little2 = id(21), outsider = id(90);
 await db.query('insert into groups(id, owner_id, active_cycle_id) values ($1,$2,$3)', [group, admin, cycle]);

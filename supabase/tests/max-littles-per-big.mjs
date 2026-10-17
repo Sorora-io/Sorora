@@ -20,6 +20,8 @@ grant select,insert,update,delete on pairings to authenticated;
 await db.exec("create or replace function public.complete_matching_preferences(p_ranked uuid[], p_universe uuid[])\nreturns uuid[] language sql immutable set search_path = public\nas $$\n  select coalesce(array_agg(u.id order by\n    coalesce(array_position(p_ranked, u.id), cardinality(coalesce(p_ranked, '{}'::uuid[])) + u.position)), '{}'::uuid[])\n  from unnest(p_universe) with ordinality as u(id, position);\n$$;\n\n");
 await db.exec(await readFile(new URL('../migrations/0028_pairing_changes.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/0034_max_littles_per_big.sql',import.meta.url),'utf8'));
+await db.exec(`create function public.cycle_memberships(p_group_id uuid,p_cycle_id uuid) returns setof public.memberships language sql stable security definer set search_path='' as $$ select * from public.memberships where group_id=p_group_id $$;`);
+await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
 const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
 const g=id(1), c=id(2), admin=id(3), b1=id(4), b2=id(5), littles=[6,7,8,9,10,11].map(id);
 await db.query('insert into groups(id,active_cycle_id) values($1,$2)',[g,c]);
@@ -28,6 +30,7 @@ for(const [person,role,capacity] of [[admin,'admin',null],[b1,'big',3],[b2,'big'
  await db.query('insert into profiles values($1,$2)',[person,role]);
  await db.query("insert into memberships(group_id,user_id,role,status,is_admin,wanted_little_count,willing_to_take_twins) values($1,$2,$3,'approved',$4,$5,$6)",[g,person,role,person===admin,capacity,person===b2]);
 }
+for(const big of [b1,b2])await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,big,littles]);
 const login=async person=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[person]);await db.exec('set role authenticated');};
 const maximum=n=>db.query('select set_max_littles_per_big($1,$2)',[g,n]);
 const match=()=>db.query('select run_blind_matching($1,$2) as n',[g,c]);

@@ -35,6 +35,11 @@ await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', im
 // Verify reapplying the migration is safe.
 await db.exec(await readFile(new URL('../migrations/0017_blind_rankings.sql', import.meta.url), 'utf8'));
 await db.exec(await readFile(new URL('../migrations/0021_little_preferences.sql', import.meta.url), 'utf8'));
+await db.exec(`alter table groups add column max_littles_per_big integer default 3;
+create function public.cycle_memberships(p_group_id uuid,p_cycle_id uuid) returns setof public.memberships language sql stable security definer set search_path='' as $$ select * from public.memberships where group_id=p_group_id $$;`);
+await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(`create or replace function public.run_blind_matching(p_group_id uuid,p_cycle_id uuid) returns integer language sql security definer set search_path='' as $$ select public.run_blind_matching_unreviewed(p_group_id,p_cycle_id) $$;`);
+
 const id = n => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
 const group = id(1), cycle = id(2), admin = id(10), big2 = id(11), little1 = id(20), little2 = id(21), outsider = id(90);
 await db.query('insert into groups(id, owner_id, active_cycle_id) values ($1,$2,$3)', [group, admin, cycle]);
@@ -63,6 +68,24 @@ await asUser(admin);
 await db.query('update groups set blind_rankings = true where id = $1',[group]);
 assert.equal((await db.query('select * from rankings')).rows.length,1,'re-enabling immediately blocks admin reads');
 await assert.rejects(db.query('select run_blind_matching($1,$2)',[group,id(999)]),/active cycle/);
+
+// Regression: two empty lists are never turned into a pairing, and admins see outcomes.
+await db.exec('reset role');await db.exec("update rankings set ranked_ids='{}'");await asUser(admin);
+assert.equal((await db.query('select run_blind_matching($1,$2) as n',[group,cycle])).rows[0].n,0);
+let review=(await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r;
+assert.equal(review.unmatched.length,4);assert.equal(review.unsupportedPairings.length,0);
+assert.equal(JSON.stringify(review).includes('ranked_ids'),false);
+await db.exec('reset role');await db.query('update rankings set ranked_ids=$1 where ranker_id=$2',[[little1],admin]);await asUser(admin);
+assert.equal((await db.query('select run_blind_matching($1,$2) as n',[group,cycle])).rows[0].n,1);
+assert.equal((await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r.unmatched.length,2);
+await db.exec('reset role');await db.query('insert into pairings values($1,$2,$3,$4)',[group,cycle,big2,little2]);await asUser(admin);
+review=(await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r;
+assert.deepEqual(review.unsupportedPairings.map(p=>[p.bigId,p.littleId]),[[big2,little2]]);
+assert.equal((await db.query('select count(*)::int as n from pairings')).rows[0].n,2,'review never mutates current pairs');
+await assert.rejects(()=>db.query('select get_matching_review($1,$2)',[group,id(999)]),/does not belong/);
+await asUser(big2);await assert.rejects(()=>db.query('select get_matching_review($1,$2)',[group,cycle]),/Only chapter admins/);
+await db.exec('reset role;set role anon');await assert.rejects(()=>db.query('select get_matching_review($1,$2)',[group,cycle]),/permission denied/);
+await db.exec('reset role');
 // Deterministic random fixtures: compare SQL to the existing TypeScript algorithm.
 await db.exec('reset role');
 let seed = 12345;
@@ -72,6 +95,7 @@ for (let test=0;test<40;test++) {
  await db.exec('delete from rankings; delete from memberships; delete from pairings');
  const bigs = Array.from({length:1+test%4},(_,i)=>id(100+i));
  const littles = Array.from({length:1+test%7},(_,i)=>id(200+i));
+ const maximum=1+test%3; await db.query('update groups set max_littles_per_big=$1 where id=$2',[maximum,group]);
  const twins=new Set(bigs.filter(()=>random()<0.5)); const bp={},lp={},wanted={};
  for (const big of bigs) if (test >= 10 && random() < 0.6) wanted[big] = random() < 0.5 ? 2 : 3;
  await db.query("insert into memberships(group_id,user_id,role,status,is_admin) values ($1,$2,'admin','approved',true)",[group,admin]);
@@ -86,7 +110,7 @@ for (let test=0;test<40;test++) {
  await asUser(admin);
  await db.query('select run_blind_matching($1,$2)',[group,cycle]);
  const actual=(await db.query('select big_id,little_id from pairings')).rows.map(r=>`${r.big_id}:${r.little_id}`).sort();
- const expected=runDeferredAcceptance(bigs,littles,bp,lp,twins,wanted).flatMap(r=>r.littles.map(l=>`${r.big}:${l}`)).sort();
+ const expected=runDeferredAcceptance(bigs,littles,bp,lp,twins,wanted,maximum).flatMap(r=>r.littles.map(l=>`${r.big}:${l}`)).sort();
  assert.deepEqual(actual,expected,`matching parity fixture ${test}`);
  await db.exec('reset role');
 }

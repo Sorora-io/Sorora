@@ -26,6 +26,7 @@ alter table groups add column ranking_deadline date, add column blind_rankings b
 alter table memberships add column id uuid default gen_random_uuid();
 alter table rankings add column updated_at timestamptz default now();`);
 await db.exec(await readFile(new URL('../migrations/0038_cycle_participation.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
 const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
 const g=id(1),c=id(2),admin=id(3),big=id(4),little=id(5),other=id(6),old=id(7);
 assert.deepEqual((await db.query('select complete_matching_preferences($1::uuid[],$2::uuid[]) as prefs',[[id(3),id(1),id(99)],[id(1),id(2),id(3),id(4)]])).rows[0].prefs,[id(3),id(1),id(2),id(4)]);
@@ -44,6 +45,7 @@ const set=async(who,excluded,confirm=false,cycle=c)=>db.query('select set_cycle_
 await login(little);await assert.rejects(()=>set(other,true),/Only chapter admins/);
 await login(admin);await assert.rejects(()=>set(little,true,false,old),/active open cycle/);
 await db.exec('reset role');await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,little,[big]]);await login(admin);
+await db.exec('reset role');await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,other,[big]]);await login(admin);
 await set(little,true);assert.deepEqual((await participation()).excludedIds,[little]);
 assert.equal((await db.query('select * from get_cycle_roster($1,$2)',[g,'little'])).rows.length,1);
 assert.equal((await db.query('select * from get_blind_submission_status($1,$2)',[g,c])).rows.length,2);
