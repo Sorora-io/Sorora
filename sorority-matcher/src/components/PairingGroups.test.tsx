@@ -14,14 +14,14 @@ const data={members:[
 const mount=(blind=false)=>render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><PairingGroups groupId="g" cycleId="c" blind={blind} pairings={pairings}/></QueryClientProvider>);
 beforeEach(()=>{jest.clearAllMocks();(getRankingExport as jest.Mock).mockResolvedValue(data);});
 test('mutual first choices have a separate collapsed section above other pairings with a text key',async()=>{
- mount();await screen.findByRole('heading',{name:'Mutual first choices (1)'});
+ mount();await screen.findByRole('heading',{name:'Confirmed (1)'});
  expect(screen.queryByText('First Big → First Little')).not.toBeInTheDocument();
  expect(screen.getByText('Other Big → Other Little')).toBeInTheDocument();
  expect(screen.getByText('Big’s rank of Little: #2')).toBeInTheDocument();
  expect(screen.getByText('Little’s rank of Big: Not ranked')).toBeInTheDocument();
  expect(screen.getByText('One-sided ranking')).toBeInTheDocument();
- expect(screen.getByText(/#1 = first choice/)).toBeInTheDocument();
- const button=screen.getByRole('button',{name:'Show mutual first choices'});expect(button).toHaveAttribute('aria-expanded','false');
+ expect(screen.getByText(/Confirmed = both ranked each other #1/)).toBeInTheDocument();
+ const button=screen.getByRole('button',{name:'Show confirmed pairs'});expect(button).toHaveAttribute('aria-expanded','false');
  fireEvent.click(button);expect(screen.getByText('First Big → First Little')).toBeInTheDocument();
  expect(screen.getByText('Mutual first choice')).toBeInTheDocument();
 });
@@ -36,5 +36,5 @@ test('failed ranking reads keep all pairs visible rather than assigning unverifi
  mount();await screen.findByRole('button',{name:'Retry rank grouping'});
  expect(screen.getByText('First Big')).toBeInTheDocument();
  expect(screen.getByText('Other Big')).toBeInTheDocument();
- expect(screen.queryByRole('heading',{name:'Mutual first choices (1)'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('heading',{name:'Confirmed (1)'})).not.toBeInTheDocument();
 });

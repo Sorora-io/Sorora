@@ -32,15 +32,15 @@ export default function PairingGroups({groupId,cycleId,blind,pairings}:{groupId:
     <p className="ss-caption">Little’s rank of Big: {typeof pair.littleRank==='number' ? `#${pair.littleRank}` : pair.littleRank}</p>
   </li>)}</ul>;
   return <div className="space-y-4">
-    <p className="ss-caption"><strong>Rank key:</strong> #1 = first choice. Not ranked = omitted from that person’s list. Not submitted = no ranking submitted for this cycle.</p>
-    <section className="ss-surface" aria-label="Mutual first choices">
-      <h2 className="font-medium">Mutual first choices ({first.length})</h2>
-      <p className="ss-caption mt-2">Both ranked each other #1. Kept together so you can focus on the remaining pairs. Grouping does not lock or change a pairing.</p>
-      {first.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showFirst} aria-controls="mutual-first-pairs" onClick={()=>setShowFirst(!showFirst)}>{showFirst?'Hide mutual first choices':'Show mutual first choices'}</Button>{showFirst && <div id="mutual-first-pairs">{rows(first)}</div>}</> : <p className="ss-caption mt-3">No mutual first-choice pairs.</p>}
+    <p className="ss-caption"><strong>Review key:</strong> Confirmed = both ranked each other #1. Needs review = all other pairs. #1 = first choice. Not ranked = omitted from that person’s list. Not submitted = no ranking submitted for this cycle.</p>
+    <section className="ss-surface" aria-label="Confirmed pairings">
+      <h2 className="font-medium">Confirmed ({first.length})</h2>
+      <p className="ss-caption mt-2">Confirmed automatically because both ranked each other #1. This status does not lock or change a pairing.</p>
+      {first.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showFirst} aria-controls="mutual-first-pairs" onClick={()=>setShowFirst(!showFirst)}>{showFirst?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showFirst && <div id="mutual-first-pairs">{rows(first)}</div>}</> : <p className="ss-caption mt-3">No pairs are confirmed automatically.</p>}
     </section>
-    <section className="ss-surface" aria-label="Other pairings to review">
-      <h2 className="font-medium">Other pairings to review ({rest.length})</h2>
-      {rest.length ? rows(rest) : <p className="ss-caption mt-3">All saved pairs are mutual first choices.</p>}
+    <section className="ss-surface" aria-label="Pairings needing review">
+      <h2 className="font-medium">Needs review ({rest.length})</h2>
+      {rest.length ? rows(rest) : <p className="ss-caption mt-3">All saved pairs are confirmed mutual first choices.</p>}
     </section>
   </div>;
 }

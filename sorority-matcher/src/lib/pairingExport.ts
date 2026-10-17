@@ -13,8 +13,8 @@ export function pairingExportCsv(cycle: string, pairings: PairingRow[], rankings
   const reviewed = rankings ? reviewPairings(pairings, rankings).sort((a,b) => Number(b.mutualFirst) - Number(a.mutualFirst)) : null;
   const rankLabel = (rank: number | string) => typeof rank === 'number' ? `#${rank}` : rank;
   const rows = reviewed ? [
-    ['Cycle', 'Big', 'Little', 'Match type', 'Big’s rank of Little (#1 = first choice)', 'Little’s rank of Big (#1 = first choice)'],
-    ...reviewed.map(pair => [cycle, pair.bigName || 'Unknown Big', pair.littleName || 'Unknown Little', pair.matchType, rankLabel(pair.bigRank), rankLabel(pair.littleRank)]),
+    ['Cycle', 'Big', 'Little', 'Review status', 'Match type', 'Big’s rank of Little (#1 = first choice)', 'Little’s rank of Big (#1 = first choice)'],
+    ...reviewed.map(pair => [cycle, pair.bigName || 'Unknown Big', pair.littleName || 'Unknown Little', pair.mutualFirst ? 'Confirmed' : 'Needs review', pair.matchType, rankLabel(pair.bigRank), rankLabel(pair.littleRank)]),
   ] : [
     ['Cycle', 'Big', 'Little'],
     ...pairings.map(pair => [cycle, pair.bigName || 'Unknown Big', pair.littleName || 'Unknown Little']),

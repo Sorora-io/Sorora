@@ -32,8 +32,8 @@ test('rank-aware export groups mutual first choices first and clearly labels one
   const csv=pairingExportCsv('Fall',pairs,data);
   expect(csv).not.toContain('Chapter');
   expect(csv).toContain('Big’s rank of Little (#1 = first choice)');
-  expect(csv).toContain('"Mutual first choice","#1","#1"');
-  expect(csv).toContain('"One-sided ranking","#2","Not ranked"');
+  expect(csv).toContain('"Confirmed","Mutual first choice","#1","#1"');
+  expect(csv).toContain('"Needs review","One-sided ranking","#2","Not ranked"');
   expect(csv.indexOf('"Mutual first choice","#1"')).toBeLessThan(csv.indexOf('"One-sided ranking","#2"'));
 });
 test('rank-aware download requests authorized rankings for the selected cycle, while basic export never requests rankings',async()=>{
