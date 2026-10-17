@@ -17,7 +17,7 @@ create function public.is_group_admin(g uuid) returns boolean language sql stabl
 create function public.run_blind_matching(uuid,uuid) returns integer language sql as $$ select 42 $$;
 grant select,insert,update,delete on pairings to authenticated;
 `);
-await db.exec("create or replace function public.complete_matching_preferences(p_ranked uuid[], p_universe uuid[])\nreturns uuid[] language sql immutable set search_path = public\nas $$\n  select coalesce(array_agg(u.id order by\n    coalesce(array_position(p_ranked, u.id), cardinality(coalesce(p_ranked, '{}'::uuid[])) + u.position)), '{}'::uuid[])\n  from unnest(p_universe) with ordinality as u(id, position);\n$$;\n\n");
+await db.exec(await readFile(new URL('../migrations/0044_restore_matching_preferences.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/0028_pairing_changes.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/0034_max_littles_per_big.sql',import.meta.url),'utf8'));
 
@@ -28,6 +28,10 @@ alter table rankings add column updated_at timestamptz default now();`);
 await db.exec(await readFile(new URL('../migrations/0038_cycle_participation.sql',import.meta.url),'utf8'));
 const id=n=>`00000000-0000-0000-0000-${String(n).padStart(12,'0')}`;
 const g=id(1),c=id(2),admin=id(3),big=id(4),little=id(5),other=id(6),old=id(7);
+assert.deepEqual((await db.query('select complete_matching_preferences($1::uuid[],$2::uuid[]) as prefs',[[id(3),id(1),id(99)],[id(1),id(2),id(3),id(4)]])).rows[0].prefs,[id(3),id(1),id(2),id(4)]);
+assert.deepEqual((await db.query('select complete_matching_preferences(null,$1::uuid[]) as prefs',[[id(2),id(1)]])).rows[0].prefs,[id(2),id(1)]);
+assert.deepEqual((await db.query("select complete_matching_preferences(null,'{}'::uuid[]) as prefs")).rows[0].prefs,[]);
+
 await db.query('insert into groups(id,active_cycle_id) values($1,$2)',[g,c]);
 await db.query('insert into cycles(id,group_id) values($1,$3),($2,$3)',[c,old,g]);
 for(const [person,role] of [[admin,'admin'],[big,'big'],[little,'little'],[other,'little']]) {
