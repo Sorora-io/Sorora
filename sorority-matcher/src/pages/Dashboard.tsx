@@ -72,11 +72,9 @@ const SectionHeading = ({ children }: { children: React.ReactNode }) => (
 export const DashboardTab = ({
   membership,
   onNavigate,
-  onReplayTour,
 }: {
   membership: MembershipWithGroup;
   onNavigate: (path: string) => void;
-  onReplayTour: () => void;
 }) => {
   const { user } = useAuth();
   const isRanker = membership.role === 'big' || membership.role === 'little';
@@ -316,11 +314,6 @@ export const DashboardTab = ({
 
       </div>
 
-      <div className="mt-8 flex flex-col items-start gap-3">
-        <Button variant="outline" size="sm" onClick={onReplayTour}>
-          Replay the tour
-        </Button>
-      </div>
     </div>
   );
 };
@@ -802,8 +795,6 @@ const Dashboard = () => {
     navigate(path);
   };
 
-  const onReplayTour = () => setTourActive(true);
-
   // Hover/focus on a tab pill prefetches that tab's data so the switch is
   // instant. Cheap when the user doesn't click (React Query dedupes and
   // respects the query's staleTime), noticeable when they do. We only
@@ -883,7 +874,6 @@ const Dashboard = () => {
           <DashboardTab
             membership={membership}
             onNavigate={onNavigate}
-            onReplayTour={onReplayTour}
           />
         );
     }

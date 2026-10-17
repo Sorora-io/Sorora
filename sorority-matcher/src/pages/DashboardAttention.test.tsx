@@ -36,7 +36,7 @@ const setup = ({ pending = 0, status = [] as any[], statusError = null as string
   (getPairingRevealStatus as jest.Mock).mockResolvedValue({ status: reveal, error: null });
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <DashboardTab membership={m} onNavigate={navigate} onReplayTour={jest.fn()} />
+      <DashboardTab membership={m} onNavigate={navigate} />
     </QueryClientProvider>,
   );
 };
