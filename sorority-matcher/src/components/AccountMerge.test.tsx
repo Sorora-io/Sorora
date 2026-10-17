@@ -8,17 +8,17 @@ const source: any = { id: 'source', email: 'duplicate@example.com' };
 const preview: any = { requestId: 'request', nonce: 'nonce', sourceEmail: source.email, targetEmail: 'kept@example.com', sourceApproved: false, targetApproved: false, blockers: [], counts: { memberships: 1, rankings: 1, rankingReferences: 2, notes: 3, pairings: 0, ownedChapters: 0 }, memberships: [{ groupId: 'chapter', name: 'Chapter', sourceRole: 'big', targetRole: 'big', sourceStatus: 'approved', targetStatus: 'approved' }], rankings: [{ cycleId: 'cycle', name: 'Chapter · Fall', sourceUpdated: '2026-10-01', targetUpdated: '2026-10-02' }] };
 const onComplete = jest.fn(), onClose = jest.fn();
 const setup = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><AccountMerge source={source} onClose={onClose} onComplete={onComplete} /></QueryClientProvider>);
-const start = async () => { fireEvent.change(screen.getByLabelText('Email of the account to keep'), { target: { value: 'kept@example.com' } }); fireEvent.click(screen.getByRole('button', { name: 'Prepare merge preview' })); await screen.findByText('2. Review the transfer'); };
+const start = async () => { fireEvent.change(screen.getByLabelText('Email of the account to keep'), { target: { value: 'kept@example.com' } }); fireEvent.click(screen.getByRole('button', { name: 'Prepare merge preview' })); await screen.findByText('1. Review the transfer'); };
 beforeEach(() => { sessionStorage.clear(); jest.clearAllMocks(); (createAccountMerge as jest.Mock).mockResolvedValue('request'); (previewAccountMerge as jest.Mock).mockResolvedValue(preview); (completeAccountMerge as jest.Mock).mockResolvedValue({ targetEmail: preview.targetEmail }); (cancelAccountMerge as jest.Mock).mockResolvedValue(undefined); });
-test('shows metadata only and blocks merging until both accounts approve', async () => {
+test('shows metadata without owner approvals and requires conflict choices', async () => {
   setup(); await start();
   expect(createAccountMerge).toHaveBeenCalledWith('source', 'kept@example.com');
-  expect(screen.getByLabelText('Merge approval link')).toHaveValue('http://localhost/account-merge/request');
+  expect(screen.queryByLabelText('Merge approval link')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Merge into kept account' })).toBeDisabled();
   expect(completeAccountMerge).not.toHaveBeenCalled();
 });
 test('requires explicit conflict choices and exact duplicate email confirmation', async () => {
-  (previewAccountMerge as jest.Mock).mockResolvedValue({ ...preview, sourceApproved: true, targetApproved: true }); setup(); await start();
+  setup(); await start();
   fireEvent.change(screen.getByLabelText(/Profile to keep/), { target: { value: 'target' } });
   fireEvent.change(screen.getByLabelText(/Chapter: membership/), { target: { value: 'source' } });
   fireEvent.change(screen.getByLabelText(/Chapter · Fall: two/), { target: { value: 'target' } });
@@ -36,7 +36,7 @@ test('failed preview shows an error and allows retry', async () => {
   (previewAccountMerge as jest.Mock).mockRejectedValue(new Error('Could not load preview')); setup();
   fireEvent.change(screen.getByLabelText('Email of the account to keep'), { target: { value: 'kept@example.com' } }); fireEvent.click(screen.getByRole('button', { name: 'Prepare merge preview' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not load preview');
-  expect(screen.getByRole('button', { name: 'Refresh approvals & preview' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Refresh preview' })).toBeEnabled();
 });
 test('cancel marks a pending request cancelled before closing', async () => {
   setup(); await start(); fireEvent.click(screen.getByRole('button', { name: 'Cancel merge' })); await waitFor(() => expect(cancelAccountMerge).toHaveBeenCalledWith('request')); await waitFor(() => expect(onClose).toHaveBeenCalled());

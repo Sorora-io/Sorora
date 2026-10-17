@@ -81,6 +81,7 @@ const Login = () => {
   const [forgotMode, setForgotMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
+  const [resetRecipient, setResetRecipient] = useState('');
   const [resetError, setResetError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
@@ -224,12 +225,14 @@ const Login = () => {
   if (mode === 'signin' && forgotMode) {
     const handleSendReset = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (resetLoading) return;
+      const recipient = resetEmail.trim();
       setResetLoading(true);
       setResetError('');
       try {
-        const { error } = await sendPasswordReset(resetEmail.trim());
+        const { error } = await sendPasswordReset(recipient);
         if (error) setResetError(error.message);
-        else setResetSent(true);
+        else { setResetRecipient(recipient); setResetSent(true); }
       } catch {
         setResetError('Could not send your reset link. Check your connection and try again.');
       } finally {
@@ -258,7 +261,7 @@ const Login = () => {
 
         {resetSent ? (
           <p className="mt-8 ss-surface w-full max-w-md text-[color:var(--ss-ink-2)]">
-            Check {resetEmail} for a link to set a new password.
+            Check {resetRecipient} for a link to set a new password.
           </p>
         ) : (
           <form
@@ -269,6 +272,7 @@ const Login = () => {
               <label className="ss-label" htmlFor="reset-email">Email</label>
               <input
                 id="reset-email"
+                disabled={resetLoading}
                 type="email"
                 className="ss-input"
                 value={resetEmail}

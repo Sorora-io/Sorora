@@ -139,3 +139,15 @@ test('password reset network failure releases the form without a false sent mess
   expect(await screen.findByText(/Could not send your reset link/)).toBeInTheDocument();
   expect(screen.getByRole('button',{name:'Send reset link'})).toBeEnabled();
 });
+
+test('reset confirmation uses the exact submitted recipient while input is locked', async () => {
+  mockParams = new URLSearchParams();
+  let finish!: (value: any) => void;
+  mockSendPasswordReset.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  render(<Login />); fireEvent.click(screen.getByRole('button', { name: 'Forgot password?' }));
+  fill('Email', 'member9189@example.com'); fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+  expect(screen.getByLabelText('Email')).toBeDisabled();
+  expect(mockSendPasswordReset).toHaveBeenCalledWith('member9189@example.com');
+  finish({ error: null });
+  expect(await screen.findByText('Check member9189@example.com for a link to set a new password.')).toBeInTheDocument();
+});
