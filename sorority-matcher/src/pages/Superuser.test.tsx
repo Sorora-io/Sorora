@@ -5,7 +5,8 @@ import { getSuperuserAccounts, grantSuperuser, deleteSuperuserAccount, getSuperu
 let mockAccess: any = { data: true };
 let mockUser: any = { id: 'seed' };
 const mockNavigate = jest.fn();
-jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
+const mockSendPasswordReset = jest.fn();
+jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser, loading: false, sendPasswordReset: mockSendPasswordReset }) }));
 jest.mock('../hooks/useSuperuser', () => ({ useSuperuser: () => mockAccess }));
 jest.mock('../components/PageHeader', () => ({ __esModule: true, default: ({ children }: any) => <header>{children}</header> }));
 jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate, useSearchParams: () => [new URLSearchParams()], Link: ({ to, children }: any) => <a href={to}>{children}</a>, Navigate: ({ to }: any) => <div>Redirect {to}</div> }), { virtual: true });
@@ -117,4 +118,16 @@ test('organizations use real totals and recover if the requested page disappears
  show();fireEvent.click(screen.getByRole('button',{name:'Organizations'}));await screen.findByText('Showing 1–50 of 51 organizations');fireEvent.click(screen.getByRole('button',{name:'Page 2'}));await screen.findByText('Showing 51 of 51 organizations');
  all=all.slice(0,50);fireEvent.click(screen.getByRole('button',{name:'Refresh'}));
  expect(await screen.findByText('Showing 1–50 of 50 organizations')).toBeInTheDocument();expect(getSuperuserOrganizations).toHaveBeenLastCalledWith('',0);
+});
+
+test('password reset confirms the exact login email and surfaces failures', async () => {
+  mockSendPasswordReset.mockResolvedValueOnce({ error: new Error('Email rate limit exceeded') }).mockResolvedValueOnce({ error: null });
+  show(); fireEvent.click(await screen.findByRole('button', { name: 'Send password reset' }));
+  expect(mockSendPasswordReset).not.toHaveBeenCalled();
+  expect(screen.getByRole('dialog', { name: 'Send password reset' })).toHaveTextContent('member@example.com');
+  fireEvent.click(screen.getByRole('button', { name: 'Send reset email' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Email rate limit exceeded');
+  fireEvent.click(screen.getByRole('button', { name: 'Send reset email' }));
+  await waitFor(() => expect(mockSendPasswordReset).toHaveBeenLastCalledWith('member@example.com'));
+  expect(await screen.findByText(/Password reset requested for member@example.com/)).toHaveAttribute('role', 'status');
 });

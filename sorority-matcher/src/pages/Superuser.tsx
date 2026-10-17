@@ -1,3 +1,4 @@
+import AccountMerge from '../components/AccountMerge';
 import DirectoryPagination from '../components/DirectoryPagination';
 import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -13,7 +14,7 @@ import SuperuserOrganizations from '../components/SuperuserOrganizations';
 
 export default function Superuser() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, sendPasswordReset } = useAuth();
   const access = useSuperuser();
   const client = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -22,6 +23,8 @@ export default function Superuser() {
   const [draft, setDraft] = useState('');
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<SuperuserAccount | null>(null);
+  const [merging, setMerging] = useState<SuperuserAccount | null>(null);
+  const [resetting, setResetting] = useState<SuperuserAccount | null>(null);
   const [deleting, setDeleting] = useState<SuperuserAccount | null>(null);
   const [confirmation, setConfirmation] = useState('');
   const [notice, setNotice] = useState('');
@@ -54,6 +57,15 @@ export default function Superuser() {
     },
   });
 
+  const resetPassword = useMutation({
+    mutationFn: async (email: string) => {
+      const { error } = await sendPasswordReset(email);
+      if (error) throw error;
+      return email;
+    },
+    onSuccess: email => { setNotice(`Password reset requested for ${email}. Ask the account owner to check their inbox and spam folder.`); setResetting(null); },
+  });
+
   const removeAccount = useMutation({
     mutationFn: deleteSuperuserAccount,
     onSuccess: async () => {
@@ -78,7 +90,7 @@ export default function Superuser() {
       <p className="mt-2 text-sm">Superusers can view this directory, promote verified accounts, edit organization settings, and delete accounts or organizations. Chapter roles are shown separately.</p>
       <nav aria-label="Superuser directories" className="mt-6 flex gap-2">
         <Button variant={view === 'accounts' ? 'primary' : 'outline'} aria-pressed={view === 'accounts'} onClick={() => setView('accounts')}>Accounts</Button>
-        <Button variant={view === 'organizations' ? 'primary' : 'outline'} aria-pressed={view === 'organizations'} onClick={() => { setSelected(null); setDeleting(null); setConfirmation(''); setView('organizations'); }}>Organizations</Button>
+        <Button variant={view === 'organizations' ? 'primary' : 'outline'} aria-pressed={view === 'organizations'} onClick={() => { setSelected(null); setDeleting(null); setMerging(null); setConfirmation(''); setView('organizations'); }}>Organizations</Button>
       </nav>
       {view === 'organizations' ? <SuperuserOrganizations /> : <>
       <form className="my-6 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); setSearch(draft.trim()); setOffset(0); }}>
@@ -87,6 +99,13 @@ export default function Superuser() {
         <Button type="button" variant="outline" onClick={() => void accounts.refetch()}>Refresh</Button>
       </form>
       {notice && <p role="status" className="mb-4">{notice}</p>}
+      {merging && <AccountMerge key={`${user.id}:${merging.id}`} source={merging} onClose={() => setMerging(null)} onComplete={email => { setMerging(null); setNotice(`Accounts merged into ${email}.`); }} />}
+      {resetting && <section role="dialog" aria-label="Send password reset" className="mb-6 rounded-xl border bg-white p-5">
+        <h2 className="font-semibold">Send a password reset to {resetting.email}?</h2>
+        <p className="my-2 text-sm">This uses the account’s login email shown above. Only the person who receives the link can choose a new password.</p>
+        <div className="flex gap-3"><Button disabled={resetPassword.isPending} onClick={() => resetting.email && resetPassword.mutate(resetting.email)}>{resetPassword.isPending ? 'Sending…' : 'Send reset email'}</Button><Button variant="outline" disabled={resetPassword.isPending} onClick={() => setResetting(null)}>Cancel</Button></div>
+        {resetPassword.error && <p role="alert" className="mt-2 text-brick">{resetPassword.error.message}</p>}
+      </section>}
       {selected && <section ref={promotionPanel} tabIndex={-1} role="dialog" aria-label="Confirm promotion" className="mb-6 rounded-xl border bg-white/70 p-5">
         <h2 className="font-semibold">Make {selected.email} a superuser?</h2>
         <p className="my-2 text-sm">They will be able to view every account, delete accounts or organizations, and grant superuser access to others.</p>
@@ -119,10 +138,12 @@ export default function Superuser() {
               <td className="p-4 align-top"><p className="font-medium">{account.name || 'Unnamed account'}</p><p>{account.email || 'No email'}</p><p className="mt-1 text-xs">{account.verified ? 'Verified' : 'Email unverified'} · Joined {new Date(account.created_at).toLocaleDateString()}</p></td>
               <td className="p-4 align-top">{account.is_superuser ? 'Superuser' : 'Standard'}</td>
               <td className="p-4 align-top">{account.memberships.length === 0 ? 'No chapter' : <ul className="space-y-3">{account.memberships.map(m => <li key={m.group_id}><p className="font-medium">{m.group_name}{m.school ? ` · ${m.school}` : ''}</p><p className="capitalize">{m.role}{m.is_admin && m.role !== 'admin' ? ' + Admin' : ''}{m.is_owner ? ' · Owner' : ''} · {m.status}</p>{m.requested_role && <p className="text-xs">Requested role: {m.requested_role}</p>}</li>)}</ul>}</td>
-              <td className="p-4 align-top w-48"><div className="flex w-40 flex-col items-stretch gap-2">{!account.is_superuser && <Button size="sm" variant="outline" fullWidth disabled={!account.verified || promote.isPending} onClick={() => { setDeleting(null); setConfirmation(''); setSelected(account); promote.reset(); setNotice(''); }}>Make superuser</Button>}
+              <td className="p-4 align-top w-48"><div className="flex w-40 flex-col items-stretch gap-2">{!account.is_superuser && <Button size="sm" variant="outline" fullWidth disabled={!account.verified || promote.isPending} onClick={() => { setMerging(null); setDeleting(null); setConfirmation(''); setSelected(account); promote.reset(); setNotice(''); }}>Make superuser</Button>}
                 {!account.is_superuser && !account.verified && <p className="text-xs text-[color:var(--ss-ink-5)]">Verify email before promoting.</p>}
+                <Button size="sm" variant="quiet" fullWidth disabled={!account.email || resetPassword.isPending} onClick={() => { setResetting(account); resetPassword.reset(); setNotice(''); }}>Send password reset</Button>
+                <Button size="sm" variant="quiet" fullWidth disabled={!account.verified || account.is_superuser || account.id === user.id || removeAccount.isPending || promote.isPending} onClick={() => { setSelected(null); setDeleting(null); setMerging(account); setNotice(''); }}>Merge account</Button>
                 <Button size="sm" variant="danger-outline" fullWidth disabled={account.id === user.id || removeAccount.isPending || promote.isPending}
-                  onClick={() => { setDeleting(account); setSelected(null); setConfirmation(''); removeAccount.reset(); setNotice(''); }}>Delete account</Button>
+                  onClick={() => { setMerging(null); setDeleting(account); setSelected(null); setConfirmation(''); removeAccount.reset(); setNotice(''); }}>Delete account</Button>
                 </div>
               </td>
             </tr>)}</tbody>

@@ -42,6 +42,9 @@ const Login = () => {
   const { user, signIn, signUp, sendPasswordReset } = useAuth();
   const { refresh, setActiveGroupId } = useGroup();
 
+  const mergeId = searchParams.get('merge');
+  const mergeDestination = mergeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(mergeId) ? `/account-merge/${mergeId}` : '/dashboard';
+
   const joinCodeFromLink = searchParams.get('join')?.toUpperCase() ?? '';
   const modeFromLink = searchParams.get('mode');
   const pathFromLink = searchParams.get('path') as SignupPath | null;
@@ -89,8 +92,8 @@ const Login = () => {
   }, [joinCodeFromLink]);
 
   useEffect(() => {
-    if (user && mode === 'signin' && !loading && !forgotMode) navigate('/dashboard', { replace: true });
-  }, [user, mode, loading, forgotMode, navigate]);
+    if (user && mode === 'signin' && !loading && !forgotMode) navigate(mergeDestination, { replace: true });
+  }, [user, mode, loading, forgotMode, navigate, mergeDestination]);
 
   const finishingChapter = useRef(false);
   const finishChapter = async () => {
@@ -297,7 +300,7 @@ const Login = () => {
       try {
         const { error: signInError } = await signIn(email, password);
         if (signInError) setError(signInError.message);
-        else navigate('/dashboard');
+        else navigate(mergeDestination);
       } catch {
         setError('Could not sign in. Check your connection and try again.');
       } finally {

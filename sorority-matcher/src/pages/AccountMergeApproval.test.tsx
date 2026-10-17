@@ -1,0 +1,14 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AccountMergeApproval from './AccountMergeApproval';
+import { approveAccountMerge, getMergeApproval } from '../lib/accountMerges';
+let mockUser: any = { id: 'source', email: 'duplicate@example.com' };
+const mockNavigate = jest.fn();
+jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser, loading: false, signOut: jest.fn().mockResolvedValue(undefined) }) }));
+jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate, useParams: () => ({ requestId: 'request' }) }), { virtual: true });
+jest.mock('../lib/accountMerges', () => ({ approveAccountMerge: jest.fn(), getMergeApproval: jest.fn() }));
+const setup = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><AccountMergeApproval /></QueryClientProvider>);
+beforeEach(() => { jest.clearAllMocks(); mockUser = { id: 'source', email: 'duplicate@example.com' }; (getMergeApproval as jest.Mock).mockResolvedValue({ sourceEmail: mockUser.email, targetEmail: 'kept@example.com', status: 'pending', expired: false, approved: false }); (approveAccountMerge as jest.Mock).mockResolvedValue(undefined); });
+test('signed-out users must sign in without fetching another account’s request', () => { mockUser = null; setup(); fireEvent.click(screen.getByRole('button', { name: 'Sign in to review' })); expect(mockNavigate).toHaveBeenCalledWith('/login?merge=request'); expect(getMergeApproval).not.toHaveBeenCalled(); });
+test('approval is explicit and scoped to the signed-in account', async () => { setup(); fireEvent.click(await screen.findByRole('button', { name: 'Approve for this account' })); await waitFor(() => expect(approveAccountMerge).toHaveBeenCalledWith('request', true)); });
+test('expired requests have no approve action', async () => { (getMergeApproval as jest.Mock).mockResolvedValue({ sourceEmail: mockUser.email, targetEmail: 'kept@example.com', status: 'pending', expired: true }); setup(); expect(await screen.findByText('This request is expired.')).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Approve for this account' })).not.toBeInTheDocument(); });

@@ -26,6 +26,7 @@ import Login from "./pages/Login";
 const SuperuserOrganizationSettings = lazy(() => import("./pages/SuperuserOrganizationSettings"));
 const Superuser = lazy(() => import("./pages/Superuser"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AccountMergeApproval = lazy(() => import("./pages/AccountMergeApproval"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const About = lazy(() => import("./pages/About"));
@@ -88,6 +89,7 @@ const AppShell = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/superuser" element={<Superuser />} />
           <Route path="/superuser/organizations/:groupId/settings" element={<SuperuserOrganizationSettings />} />
+          <Route path="/account-merge/:requestId" element={<AccountMergeApproval />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/dashboard" element={<RequireRealAccount><Dashboard /></RequireRealAccount>} />
           <Route path="/about" element={<About />} />
