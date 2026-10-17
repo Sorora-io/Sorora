@@ -70,7 +70,23 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     </Button>
   </li>)}</ul>;
   return <div className="space-y-4">
-    <p className="ss-caption"><strong>Review key:</strong> Confirmed = mutual first choice by default, or confirmed by an admin. Needs review = not yet confirmed. Big/Little show each person’s rank of their partner. #1 = first choice; — = not ranked.</p>
+    <aside aria-label="Review key" className="rounded-xl border border-[color:var(--ss-surface-border)] px-4 py-3">
+      <dl className="grid gap-3 sm:grid-cols-2 text-sm">
+        <div>
+          <dt className="font-semibold text-[color:var(--ss-ink-1)]">Confirmed</dt>
+          <dd className="ss-caption mt-1">{blind ? 'Confirmed by an admin' : 'Mutual #1 or confirmed by an admin'}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[color:var(--ss-ink-1)]">Needs review</dt>
+          <dd className="ss-caption mt-1">Awaiting admin confirmation</dd>
+        </div>
+      </dl>
+      {!blind && <div className="ss-caption mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-[color:var(--ss-surface-border)] pt-3">
+        <span>Big / Little = rank of partner</span>
+        <span><strong>#1</strong> First choice</span>
+        <span><strong>—</strong> Not ranked</span>
+      </div>}
+    </aside>
     {blind ? <p className="ss-caption">Blind rankings are on. Rank positions and automatic mutual first-choice confirmation are hidden. Admin confirmations are still saved.</p>
       : rankings.error ? <div role="alert"><p className="ss-caption">Could not load ranking details. Saved admin confirmations remain visible; automatic first-choice confirmation is unavailable.</p><Button variant="quiet" size="sm" className="mt-2" onClick={()=>void rankings.refetch()}>Retry rank grouping</Button></div>
       : rankings.isPending && <p role="status" className="ss-caption">Checking mutual first choices…</p>}
@@ -78,7 +94,6 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     {confirmations.data.lockReason && <p className="ss-caption">{confirmations.data.lockReason}</p>}
     <section className="ss-surface" aria-label="Confirmed pairings">
       <h2 className="flex items-center gap-2 font-medium">Confirmed <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{confirmed.length}</span></h2>
-      <p className="ss-caption mt-2">Mutual first choices start here automatically when rankings are visible. Admins can confirm other reviewed pairs.</p>
       {confirmed.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showConfirmed} aria-controls="confirmed-pairs" onClick={()=>setShowConfirmed(!showConfirmed)}>{showConfirmed?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showConfirmed && <div id="confirmed-pairs">{rows(confirmed)}</div>}</> : <p className="ss-caption mt-3">No confirmed pairs yet.</p>}
     </section>
     <section className="ss-surface" aria-label="Pairings needing review">

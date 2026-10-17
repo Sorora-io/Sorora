@@ -30,7 +30,7 @@ test('mutual first choices have a separate collapsed section above other pairing
  expect(screen.getByText('Other Big → Other Little')).toBeInTheDocument();
  expect(screen.getByText(/Big #2 · Little —/)).toBeInTheDocument();
  expect(screen.getByText(/One-sided ranking/)).toBeInTheDocument();
- expect(screen.getByText(/Confirmed = mutual first choice by default/)).toBeInTheDocument();
+ expect(screen.getByText(/Mutual #1 or confirmed by an admin/)).toBeInTheDocument();
  const button=screen.getByRole('button',{name:'Show confirmed pairs'});expect(button).toHaveAttribute('aria-expanded','false');
  fireEvent.click(button);expect(screen.getByText('First Big → First Little')).toBeInTheDocument();
  expect(screen.getByText('Big #1 · Little #1')).toBeInTheDocument();
