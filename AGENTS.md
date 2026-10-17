@@ -15,5 +15,5 @@
 
 ## Analytics
 
-- Mixpanel is optional and consent-gated. Read [analytics tracking plan and handoff](docs/releases/2026-10-16-mixpanel.md) before changing tracking.
+- Mixpanel is optional and on by default when `REACT_APP_MIXPANEL_TOKEN` is set; visitors opt out from the Analytics preferences control below the footer. Read the [initial tracking plan and handoff](docs/releases/2026-10-16-mixpanel.md) and the [no-prompt follow-up](docs/releases/2026-10-16-mixpanel-no-prompt.md) before changing tracking.
 - Use src/lib/analytics.ts wrappers; never call SDK tracking directly from components or add identify/profile/autocapture calls. Preserve the outgoing-property allowlist and anonymous session resets. Never send member details, IDs, rankings, or arbitrary URLs.

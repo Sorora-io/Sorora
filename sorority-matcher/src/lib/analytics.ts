@@ -16,15 +16,17 @@ export function getConsent(): Consent {
     return value === 'accepted' || value === 'declined' ? value : null;
   } catch { return null; }
 }
+// Analytics default to on; an explicit decline or a storage failure disables them.
+export function isAnalyticsEnabled(): boolean { return !storageFailed && getConsent() !== 'declined'; }
 
 // Allowlist SDK defaults too: no URLs, referrers, account IDs or profile data.
 const allowedProperties = new Set(['token', 'distinct_id', '$device_id', '$insert_id', 'time', 'mp_lib', '$lib_version', 'platform', 'page']);
 export function sanitizeEvent(payload: { event: string; properties: Record<string, unknown> }) {
-  if (getConsent() !== 'accepted' || !(events as readonly string[]).includes(payload.event)) return null;
+  if (!isAnalyticsEnabled() || !(events as readonly string[]).includes(payload.event)) return null;
   return { ...payload, properties: Object.fromEntries(Object.entries(payload.properties).filter(([key]) => allowedProperties.has(key))) };
 }
 export function initializeAnalytics() {
-  if (getConsent() !== 'accepted') return false;
+  if (!isAnalyticsEnabled()) return false;
   const token = process.env.REACT_APP_MIXPANEL_TOKEN;
   if (!token) return false;
   try {
@@ -49,7 +51,7 @@ export function initializeAnalytics() {
   } catch { return false; }
 }
 export function resetAnalyticsSession() {
-  if (!initialized || getConsent() !== 'accepted') return;
+  if (!initialized || !isAnalyticsEnabled()) return;
   try { mixpanel.reset(); } catch { /* Analytics must not interrupt auth. */ }
   lastPage = null;
 }
@@ -67,14 +69,14 @@ export function setConsent(choice: Exclude<Consent, null>): boolean {
   return true;
 }
 export function syncConsent() {
-  if (getConsent() === 'accepted' || !initialized) return;
+  if (isAnalyticsEnabled() || !initialized) return;
   // clear_persistence defaults to true in the SDK. No profile deletion request.
   try { mixpanel.opt_out_tracking({ delete_user: false }); }
   catch { /* Every track also checks consent. */ }
   lastPage = null;
 }
 export function trackEvent(event: AnalyticsEvent) {
-  if (!initialized || getConsent() !== 'accepted') return;
+  if (!initialized || !isAnalyticsEnabled()) return;
   try { mixpanel.track(event, { platform: 'web' }); } catch { /* Best effort only. */ }
 }
 const pages = new Set(['/', '/login', '/reset-password', '/superuser', '/profile', '/dashboard', '/about', '/faq', '/contact', '/group/onboarding', '/group/pending', '/group/approvals', '/group/settings', '/group/status', '/group/pairings', '/group/submit-ranking', '/group/roster']);
@@ -86,7 +88,7 @@ export function safePage(pathname: string) {
   return 'not_found';
 }
 export function trackPage(pathname: string) {
-  if (!initialized || getConsent() !== 'accepted') return;
+  if (!initialized || !isAnalyticsEnabled()) return;
   const page = safePage(pathname);
   if (lastPage === page) return;
   try { mixpanel.track('page_viewed', { platform: 'web', page }); lastPage = page; } catch { /* Best effort only. */ }

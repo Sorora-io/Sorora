@@ -79,7 +79,6 @@ const AppShell = () => {
           </Button>
         </div>
       )}
-      <AnalyticsConsent />
       <main className="flex-1 flex flex-col">
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
@@ -108,6 +107,7 @@ const AppShell = () => {
       </Suspense>
       </main>
       <Footer />
+      <AnalyticsConsent />
     </div>
   );
 };
