@@ -38,6 +38,7 @@ await db.exec(await readFile(new URL('../migrations/0021_little_preferences.sql'
 await db.exec(`alter table groups add column max_littles_per_big integer default 3;
 create function public.cycle_memberships(p_group_id uuid,p_cycle_id uuid) returns setof public.memberships language sql stable security definer set search_path='' as $$ select * from public.memberships where group_id=p_group_id $$;`);
 await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0047_one_sided_pairing_flags.sql',import.meta.url),'utf8'));
 await db.exec(`create or replace function public.run_blind_matching(p_group_id uuid,p_cycle_id uuid) returns integer language sql security definer set search_path='' as $$ select public.run_blind_matching_unreviewed(p_group_id,p_cycle_id) $$;`);
 
 const id = n => `00000000-0000-0000-0000-${String(n).padStart(12, '0')}`;
@@ -73,11 +74,11 @@ await assert.rejects(db.query('select run_blind_matching($1,$2)',[group,id(999)]
 await db.exec('reset role');await db.exec("update rankings set ranked_ids='{}'");await asUser(admin);
 assert.equal((await db.query('select run_blind_matching($1,$2) as n',[group,cycle])).rows[0].n,0);
 let review=(await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r;
-assert.equal(review.unmatched.length,4);assert.equal(review.unsupportedPairings.length,0);
+assert.equal(review.oneSidedPairings.length,0);assert.equal(review.unmatched.length,4);assert.equal(review.unsupportedPairings.length,0);
 assert.equal(JSON.stringify(review).includes('ranked_ids'),false);
 await db.exec('reset role');await db.query('update rankings set ranked_ids=$1 where ranker_id=$2',[[little1],admin]);await asUser(admin);
 assert.equal((await db.query('select run_blind_matching($1,$2) as n',[group,cycle])).rows[0].n,1);
-assert.equal((await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r.unmatched.length,2);
+review=(await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r;assert.equal(review.unmatched.length,2);assert.equal(review.oneSidedPairings.length,1);assert.deepEqual(review.oneSidedPairings.map(p=>[p.bigId,p.littleId]),[[admin,little1]]);
 await db.exec('reset role');await db.query('insert into pairings values($1,$2,$3,$4)',[group,cycle,big2,little2]);await asUser(admin);
 review=(await db.query('select get_matching_review($1,$2) as r',[group,cycle])).rows[0].r;
 assert.deepEqual(review.unsupportedPairings.map(p=>[p.bigId,p.littleId]),[[big2,little2]]);

@@ -45,6 +45,7 @@ const set=async(who,excluded,confirm=false,cycle=c)=>db.query('select set_cycle_
 await db.exec('reset role');
 await db.exec('alter table cycles add column reveal_scheduled_at timestamptz');
 await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0047_one_sided_pairing_flags.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/0046_clear_cycle_pairings.sql',import.meta.url),'utf8'));
 const third=id(11);await db.query("insert into profiles values($1,'Third','third@example.com',null)",[third]);await db.query("insert into memberships(group_id,user_id,role,status) values($1,$2,'little','approved')",[g,third]);
 await db.query('insert into rankings(group_id,cycle_id,ranker_id,ranked_ids) values($1,$2,$3,$4)',[g,c,little,[big]]);

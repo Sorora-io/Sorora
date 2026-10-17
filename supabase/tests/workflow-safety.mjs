@@ -38,6 +38,7 @@ await db.exec(await readFile(new URL('../migrations/0021_little_preferences.sql'
 await db.exec(`alter table groups add column max_littles_per_big integer default 3;
 create function public.cycle_memberships(p_group_id uuid,p_cycle_id uuid) returns setof public.memberships language sql stable security definer set search_path='' as $$ select * from public.memberships where group_id=p_group_id $$;`);
 await db.exec(await readFile(new URL('../migrations/0045_matching_requires_ranking_connection.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/0047_one_sided_pairing_flags.sql',import.meta.url),'utf8'));
 await db.exec(`create or replace function public.run_blind_matching(p_group_id uuid,p_cycle_id uuid) returns integer language sql security definer set search_path='' as $$ select public.run_blind_matching_unreviewed(p_group_id,p_cycle_id) $$;`);
 
 
