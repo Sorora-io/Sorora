@@ -15,5 +15,5 @@
 
 ## Analytics
 
-- Mixpanel is optional and on by default when `REACT_APP_MIXPANEL_TOKEN` is set; visitors opt out from the Analytics preferences control below the footer. Read the [initial tracking plan and handoff](docs/releases/2026-10-16-mixpanel.md) and the [no-prompt follow-up](docs/releases/2026-10-16-mixpanel-no-prompt.md) before changing tracking.
-- Use src/lib/analytics.ts wrappers; never call SDK tracking directly from components or add identify/profile/autocapture calls. Preserve the outgoing-property allowlist and anonymous session resets. Never send member details, IDs, rankings, or arbitrary URLs.
+- Mixpanel is optional and on by default when `REACT_APP_MIXPANEL_TOKEN` is set; visitors opt out from the Analytics preferences control. Read the [initial tracking plan and handoff](docs/releases/2026-10-16-mixpanel.md), the [no-prompt follow-up](docs/releases/2026-10-16-mixpanel-no-prompt.md), and the [identified-users follow-up](docs/releases/2026-10-17-mixpanel-identify.md) before changing tracking.
+- Use src/lib/analytics.ts wrappers only. The identity surface is `identifyUser`, `setUserProperties`, and `resetAnalyticsSession` wired through `components/AnalyticsIdentity.tsx`. People profiles may carry only the allowlisted fields: `$name`, `$email`, `role`, `is_admin`, `chapter`. Never send rankings, matching results, pairing members, ranking preferences, free text, or arbitrary URLs. Autocapture, page-URL capture, and marketing attribution remain off.

@@ -13,6 +13,7 @@ import RequireGroupRole from "./components/RequireGroupRole";
 import LoadingScreen from "./components/LoadingScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Footer from "./components/Footer";
+import AnalyticsIdentity from "./components/AnalyticsIdentity";
 // Index and Login stay eager — they're the two pages a fresh visitor is
 // actually likely to land on first, so loading them shouldn't cost an
 // extra chunk-fetch round trip. Everything else (chapter-scoped pages a
@@ -70,6 +71,7 @@ const AppShell = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AnalyticsIdentity />
       {user && groupError && (
         <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
           <p>We couldn’t finish loading your chapter: {groupError}</p>

@@ -1,11 +1,12 @@
 const mockMixpanel = {
-  init: jest.fn(), track: jest.fn(), reset: jest.fn(),
+  init: jest.fn(), track: jest.fn(), reset: jest.fn(), identify: jest.fn(),
+  people: { set: jest.fn() },
   has_opted_out_tracking: jest.fn(() => false), opt_in_tracking: jest.fn(), opt_out_tracking: jest.fn(),
 };
 jest.mock('mixpanel-browser', () => ({ __esModule: true, default: mockMixpanel }));
 let analytics: typeof import('./analytics');
 beforeEach(() => {
-  jest.resetModules(); jest.clearAllMocks(); localStorage.clear();
+  jest.resetModules(); jest.clearAllMocks(); mockMixpanel.people.set.mockClear(); localStorage.clear();
   process.env.REACT_APP_MIXPANEL_TOKEN = 'test-token';
   analytics = require('./analytics');
 });
@@ -55,6 +56,37 @@ test('SDK errors never interrupt user actions and session reset passes no accoun
 test('development without an explicit test token stays silent', () => {
   delete process.env.REACT_APP_MIXPANEL_TOKEN;
   expect(analytics.initializeAnalytics()).toBe(false); expect(mockMixpanel.init).not.toHaveBeenCalled();
+});
+test('identify runs once per user and sends only allowed People properties', () => {
+  analytics.initializeAnalytics();
+  analytics.identifyUser('user-abc'); analytics.identifyUser('user-abc'); // dedupes
+  expect(mockMixpanel.identify.mock.calls).toEqual([['user-abc']]);
+  analytics.setUserProperties({name:' Alex Rivera ',email:'alex@example.com',role:'big',is_admin:true,chapter:'Alpha Phi'});
+  analytics.setUserProperties({name:'Alex Rivera',email:'alex@example.com',role:'big',is_admin:true,chapter:'Alpha Phi'}); // dedupes trimmed
+  expect(mockMixpanel.people.set.mock.calls).toEqual([[{$name:'Alex Rivera',$email:'alex@example.com',role:'big',chapter:'Alpha Phi',is_admin:true}]]);
+});
+test('setUserProperties drops unknown and empty fields and refuses to run without an identified user', () => {
+  analytics.initializeAnalytics();
+  analytics.setUserProperties({name:'nope'} as any); // no identified user yet
+  analytics.identifyUser('user-abc');
+  analytics.setUserProperties({name:'Alex',email:'',role:undefined,chapter:'  ',ssn:'private'} as any);
+  expect(mockMixpanel.people.set).toHaveBeenCalledTimes(1);
+  expect(mockMixpanel.people.set.mock.calls[0][0]).toEqual({$name:'Alex'});
+});
+test('sign-out and account-switch reset distinct_id and require fresh identify next time', () => {
+  analytics.initializeAnalytics(); analytics.identifyUser('user-a');
+  analytics.resetAnalyticsSession();
+  expect(mockMixpanel.reset).toHaveBeenCalled();
+  analytics.identifyUser('user-a'); analytics.identifyUser('user-b');
+  expect(mockMixpanel.identify.mock.calls).toEqual([['user-a'],['user-a'],['user-b']]);
+});
+test('withdrawn consent blocks identify, people.set, and clears stored identity so a later opt-in re-identifies', () => {
+  analytics.initializeAnalytics(); analytics.identifyUser('user-a'); analytics.setConsent('declined');
+  analytics.identifyUser('user-b'); analytics.setUserProperties({name:'Alex'});
+  expect(mockMixpanel.identify).toHaveBeenCalledTimes(1); // only pre-decline
+  expect(mockMixpanel.people.set).not.toHaveBeenCalled();
+  analytics.setConsent('accepted'); analytics.initializeAnalytics(); analytics.identifyUser('user-a');
+  expect(mockMixpanel.identify.mock.calls).toEqual([['user-a'],['user-a']]);
 });
 
 export {};

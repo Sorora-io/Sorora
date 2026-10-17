@@ -8,6 +8,11 @@ type AnalyticsEvent = typeof events[number];
 let initialized = false;
 let storageFailed = false;
 let lastPage: string | null = null;
+let identifiedUserId: string | null = null;
+let lastPropertiesKey = '';
+// Only these People profile properties ever leave the browser; everything else is dropped.
+const allowedUserProperties = ['$name', '$email', 'role', 'is_admin', 'chapter'] as const;
+export type UserProperties = { name?: string | null; email?: string | null; role?: string | null; is_admin?: boolean | null; chapter?: string | null };
 
 export function getConsent(): Consent {
   if (storageFailed) return null;
@@ -51,9 +56,33 @@ export function initializeAnalytics() {
   } catch { return false; }
 }
 export function resetAnalyticsSession() {
+  identifiedUserId = null; lastPropertiesKey = '';
   if (!initialized || !isAnalyticsEnabled()) return;
   try { mixpanel.reset(); } catch { /* Analytics must not interrupt auth. */ }
   lastPage = null;
+}
+export function identifyUser(userId: string) {
+  if (!initialized || !isAnalyticsEnabled() || identifiedUserId === userId) return;
+  try { mixpanel.identify(userId); identifiedUserId = userId; lastPropertiesKey = ''; }
+  catch { /* Analytics must not interrupt auth. */ }
+}
+export function setUserProperties(props: UserProperties) {
+  if (!initialized || !isAnalyticsEnabled() || !identifiedUserId) return;
+  const payload: Record<string, string | boolean> = {};
+  const trim = (value: string | null | undefined) => (value ?? '').trim();
+  const name = trim(props.name); if (name) payload['$name'] = name;
+  const email = trim(props.email); if (email) payload['$email'] = email;
+  const role = trim(props.role); if (role) payload['role'] = role;
+  const chapter = trim(props.chapter); if (chapter) payload['chapter'] = chapter;
+  if (typeof props.is_admin === 'boolean') payload['is_admin'] = props.is_admin;
+  // People.set bypasses the sanitize hook; the allowlist above is the only filter.
+  for (const key of Object.keys(payload)) {
+    if (!(allowedUserProperties as readonly string[]).includes(key)) delete payload[key];
+  }
+  const key = JSON.stringify(payload);
+  if (key === lastPropertiesKey || key === '{}') return;
+  lastPropertiesKey = key;
+  try { mixpanel.people.set(payload); } catch { /* Analytics must not interrupt auth. */ }
 }
 export function setConsent(choice: Exclude<Consent, null>): boolean {
   try { window.localStorage.setItem(CONSENT_KEY, choice); }
@@ -70,6 +99,7 @@ export function setConsent(choice: Exclude<Consent, null>): boolean {
 }
 export function syncConsent() {
   if (isAnalyticsEnabled() || !initialized) return;
+  identifiedUserId = null; lastPropertiesKey = '';
   // clear_persistence defaults to true in the SDK. No profile deletion request.
   try { mixpanel.opt_out_tracking({ delete_user: false }); }
   catch { /* Every track also checks consent. */ }
