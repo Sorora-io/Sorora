@@ -90,3 +90,28 @@ test('pre-matching status displays a saved triplets choice capped at twins', asy
   expect(screen.getByText(/Chapter maximum: 2 Littles per Big/)).toBeInTheDocument();
   mockMaximum = 3;
 });
+
+test('submission filter applies to both roles without changing cohort totals or matching readiness',async()=>{
+  (getSubmissionStatus as jest.Mock).mockResolvedValue({rows:[
+    {userId:'bs',role:'big',name:'Submitted Big',submitted:true},
+    {userId:'bw',role:'big',name:'Waiting Big',submitted:false},
+    {userId:'ls',role:'little',name:'Submitted Little',submitted:true},
+    {userId:'lw',role:'little',name:'Waiting Little',submitted:false},
+  ],error:null});
+  mount(); await screen.findByText('Submitted Big');
+  fireEvent.change(screen.getByRole('combobox',{name:'Submission filter'}),{target:{value:'waiting'}});
+  expect(screen.queryByText('Submitted Big')).not.toBeInTheDocument();
+  expect(screen.queryByText('Submitted Little')).not.toBeInTheDocument();
+  expect(screen.getByText('Waiting Big')).toBeInTheDocument();
+  expect(screen.getByText('Waiting Little')).toBeInTheDocument();
+  expect(screen.getByText('Bigs (1/2 submitted)')).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox',{name:'Submission filter'}),{target:{value:'submitted'}});
+  expect(screen.getByText('Submitted Big')).toBeInTheDocument();
+  expect(screen.getByText('Submitted Little')).toBeInTheDocument();
+  expect(screen.queryByText('Waiting Big')).not.toBeInTheDocument();
+  expect(screen.queryByText('Waiting Little')).not.toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Run matching'})).toBeEnabled();
+  expect(screen.getByText(/Not everyone has submitted their ranking yet/)).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('combobox',{name:'Submission filter'}),{target:{value:'all'}});
+  expect(screen.getByText('Waiting Big')).toBeInTheDocument();
+});

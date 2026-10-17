@@ -29,6 +29,7 @@ const Status = () => {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const [exportMessage, setExportMessage] = useState('');
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'submitted' | 'waiting'>('all');
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState('');
   const [reminding, setReminding] = useState(false);
@@ -106,6 +107,8 @@ const Status = () => {
 
   if (!group) return null;
 
+  const visibleMembers = (list: SubmissionStatusRow[]) => list.filter(member => submissionFilter === 'all' || member.submitted === (submissionFilter === 'submitted'));
+
   const renderList = (label: string, list: SubmissionStatusRow[]) => (
     <div className="ss-surface">
       <div className="ss-kicker" style={{ marginBottom: 8 }}>
@@ -113,9 +116,11 @@ const Status = () => {
       </div>
       {list.length === 0 ? (
         <p className="ss-caption">No one approved yet.</p>
+      ) : visibleMembers(list).length === 0 ? (
+        <p className="ss-caption">No members match this filter.</p>
       ) : (
         <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-          {list.map(r => (
+          {visibleMembers(list).map(r => (
             <div key={r.userId} className="flex items-start justify-between gap-3 py-2.5">
               <div className="min-w-0">
                 <span className="block text-[color:var(--ss-ink-2)] truncate">{r.name || r.email}</span>
@@ -160,6 +165,15 @@ const Status = () => {
         </p>
 
         <p className="mt-4 text-sm font-medium">Chapter maximum: {group.max_littles_per_big ?? 3} Littles per Big. Saved choices above this limit are automatically capped for matching; members do not need to resubmit.</p>
+
+        {cycleId && <div className="mt-5 max-w-sm">
+          <label htmlFor="submission-filter" className="ss-label block mb-2">Submission filter</label>
+          <select id="submission-filter" className="ss-input w-full" value={submissionFilter} onChange={event => setSubmissionFilter(event.target.value as 'all' | 'submitted' | 'waiting')}>
+            <option value="all">All members</option>
+            <option value="submitted">Submitted</option>
+            <option value="waiting">Not submitted</option>
+          </select>
+        </div>}
 
         {!cycleId ? (
           <p className="mt-8 ss-caption">
