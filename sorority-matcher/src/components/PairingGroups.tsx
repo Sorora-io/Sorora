@@ -45,7 +45,7 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     }
   };
   if(!confirmations.data || confirmations.error)return <section className="ss-surface" aria-label="Saved pairings">
-    <h2 className="font-medium">Saved pairings ({pairings.length})</h2>
+    <h2 className="flex items-center gap-2 font-medium">Saved pairings <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{pairings.length}</span></h2>
     <p className="ss-caption mt-2">{confirmations.error ? 'Could not load saved confirmations. Refresh before reviewing these pairs.' : 'Loading saved confirmations…'}</p>
     {confirmations.error && <Button variant="quiet" size="sm" className="mt-2" onClick={()=>void confirmations.refetch()}>Retry confirmations</Button>}
     <ul className="mt-3 space-y-3">{pairings.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="text-sm break-words">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</li>)}</ul>
@@ -77,12 +77,12 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     {saveError && <p role="alert" className="text-sm text-brick">{saveError}</p>}
     {confirmations.data.lockReason && <p className="ss-caption">{confirmations.data.lockReason}</p>}
     <section className="ss-surface" aria-label="Confirmed pairings">
-      <h2 className="font-medium">Confirmed ({confirmed.length})</h2>
+      <h2 className="flex items-center gap-2 font-medium">Confirmed <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{confirmed.length}</span></h2>
       <p className="ss-caption mt-2">Mutual first choices start here automatically when rankings are visible. Admins can confirm other reviewed pairs.</p>
       {confirmed.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showConfirmed} aria-controls="confirmed-pairs" onClick={()=>setShowConfirmed(!showConfirmed)}>{showConfirmed?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showConfirmed && <div id="confirmed-pairs">{rows(confirmed)}</div>}</> : <p className="ss-caption mt-3">No confirmed pairs yet.</p>}
     </section>
     <section className="ss-surface" aria-label="Pairings needing review">
-      <h2 className="font-medium">Needs review ({needsReview.length})</h2>
+      <h2 className="flex items-center gap-2 font-medium">Needs review <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{needsReview.length}</span></h2>
       {needsReview.length ? rows(needsReview) : <p className="ss-caption mt-3">All saved pairs are confirmed.</p>}
     </section>
   </div>;

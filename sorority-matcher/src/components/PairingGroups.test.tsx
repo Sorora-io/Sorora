@@ -25,7 +25,7 @@ beforeEach(()=>{
  });
 });
 test('mutual first choices have a separate collapsed section above other pairings with a text key',async()=>{
- mount();await screen.findByRole('heading',{name:'Confirmed (1)'});
+ mount();await screen.findByRole('heading',{name:'Confirmed 1'});
  expect(screen.queryByText('First Big → First Little')).not.toBeInTheDocument();
  expect(screen.getByText('Other Big → Other Little')).toBeInTheDocument();
  expect(screen.getByText(/Big #2 · Little —/)).toBeInTheDocument();
@@ -36,7 +36,7 @@ test('mutual first choices have a separate collapsed section above other pairing
  expect(screen.getByText('Big #1 · Little #1')).toBeInTheDocument();
 });
 test('blind chapters keep pairs visible without fetching or exposing ranked choices',async()=>{
- mount(true);await screen.findByRole('heading',{name:'Needs review (2)'});expect(getRankingExport).not.toHaveBeenCalled();
+ mount(true);await screen.findByRole('heading',{name:'Needs review 2'});expect(getRankingExport).not.toHaveBeenCalled();
  expect(screen.getByText(/Rank positions and automatic mutual first-choice confirmation are hidden/)).toBeInTheDocument();
  expect(screen.getByText('First Big → First Little')).toBeInTheDocument();
  expect(screen.queryByText('Big #1 · Little #1')).not.toBeInTheDocument();
@@ -46,37 +46,37 @@ test('failed ranking reads keep all pairs visible rather than assigning unverifi
  mount();await screen.findByRole('button',{name:'Retry rank grouping'});
  expect(screen.getByText('First Big → First Little')).toBeInTheDocument();
  expect(screen.getByText('Other Big → Other Little')).toBeInTheDocument();
- expect(screen.queryByRole('heading',{name:'Confirmed (1)'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('heading',{name:'Confirmed 1'})).not.toBeInTheDocument();
 });
 
 test('confirm and undo persist through refetches and a remount',async()=>{
- const view=mount();await screen.findByRole('heading',{name:'Needs review (1)'});
+ const view=mount();await screen.findByRole('heading',{name:'Needs review 1'});
  fireEvent.click(screen.getByRole('button',{name:'Confirm pairing: Other Big and Other Little'}));
- await screen.findByRole('heading',{name:'Confirmed (2)'});
+ await screen.findByRole('heading',{name:'Confirmed 2'});
  expect(setPairingConfirmation).toHaveBeenCalledWith('g','c','b2','l2','v1',true);
- view.unmount();mount();await screen.findByRole('heading',{name:'Confirmed (2)'});
+ view.unmount();mount();await screen.findByRole('heading',{name:'Confirmed 2'});
  fireEvent.click(screen.getByRole('button',{name:'Show confirmed pairs'}));
  expect(screen.getByText(/Confirmed by Sample admin/)).toBeInTheDocument();
  fireEvent.click(screen.getByRole('button',{name:'Move pairing to needs review: Other Big and Other Little'}));
- await screen.findByRole('heading',{name:'Needs review (1)'});
+ await screen.findByRole('heading',{name:'Needs review 1'});
  expect(setPairingConfirmation).toHaveBeenLastCalledWith('g','c','b2','l2','v2',false);
 });
 test('an admin can override automatic first-choice confirmation back to review',async()=>{
- mount();await screen.findByRole('heading',{name:'Confirmed (1)'});
+ mount();await screen.findByRole('heading',{name:'Confirmed 1'});
  fireEvent.click(screen.getByRole('button',{name:'Show confirmed pairs'}));
  fireEvent.click(screen.getByRole('button',{name:'Move pairing to needs review: First Big and First Little'}));
- await screen.findByRole('heading',{name:'Confirmed (0)'});
- expect(screen.getByRole('heading',{name:'Needs review (2)'})).toBeInTheDocument();
+ await screen.findByRole('heading',{name:'Confirmed 0'});
+ expect(screen.getByRole('heading',{name:'Needs review 2'})).toBeInTheDocument();
 });
 test('failed confirmation never moves the pair or loses the error',async()=>{
  (setPairingConfirmation as jest.Mock).mockRejectedValue(new Error('Pairings changed. Refresh and review before confirming.'));
- mount();await screen.findByRole('heading',{name:'Needs review (1)'});
+ mount();await screen.findByRole('heading',{name:'Needs review 1'});
  fireEvent.click(screen.getByRole('button',{name:'Confirm pairing: Other Big and Other Little'}));
  expect(await screen.findByRole('alert')).toHaveTextContent('Pairings changed');
- expect(screen.getByRole('heading',{name:'Needs review (1)'})).toBeInTheDocument();
+ expect(screen.getByRole('heading',{name:'Needs review 1'})).toBeInTheDocument();
 });
 test('read-only cycles disable review actions',async()=>{
  (getPairingConfirmations as jest.Mock).mockResolvedValue({version:'v1',lockReason:'Reveal sending has started.',decisions:[]});
- mount();await screen.findByRole('heading',{name:'Needs review (1)'});
+ mount();await screen.findByRole('heading',{name:'Needs review 1'});
  expect(screen.getByRole('button',{name:'Confirm pairing: Other Big and Other Little'})).toBeDisabled();
 });

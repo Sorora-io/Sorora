@@ -355,8 +355,8 @@ const Settings = ({ superuserContext, embedded = false }: { superuserContext?: S
         </PageHeader>}
 
         {superuserMode && <p role="status" className="ss-caption mb-4">Superuser editor · {group.name}{group.school ? ` · ${group.school}` : ''}. Changes apply only to this organization.</p>}
-        <span className="ss-kicker">Chapter</span>
-        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] mb-8">
+        {!embedded && <span className="ss-kicker">Chapter</span>}
+        <h1 className={embedded ? "font-sans text-[30px] leading-[1.2] font-semibold tracking-[-0.9px] text-[color:var(--ss-ink-1)] mb-8" : "font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)] mb-8"}>
           Organization settings
         </h1>
 
