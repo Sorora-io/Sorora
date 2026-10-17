@@ -1,3 +1,5 @@
+let mockEmailTools=true;
+jest.mock('../../lib/features',()=>({get SHOW_MATCHING_EMAIL_TOOLS(){return mockEmailTools;}}));
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Settings from './Settings';
 import { updateBlindRankings, updateGroupProfile, updateMaxLittlesPerBig, updateGroupDeadline, updateGroupSettings, updateGroupDescription, updateRevealEmailTemplate } from '../../lib/groups';
@@ -23,7 +25,7 @@ jest.mock('../../lib/groups', () => ({
   getApprovedRoleCounts: async()=>({bigs:2,littles:2}),
 }));
 beforeEach(()=>{
-  jest.clearAllMocks();
+  jest.clearAllMocks();mockEmailTools=true;
   mockGroup={id:'chapter',name:'Test',school:'University',blind_rankings:true,min_big_rankings:1,min_little_rankings:1};
   (updateGroupDeadline as jest.Mock).mockResolvedValue({error:null});
   (updateGroupSettings as jest.Mock).mockResolvedValue({error:null});
@@ -208,4 +210,11 @@ test('superuser privacy, maximum and zoned deadline use the explicit target', as
   fireEvent.click(screen.getByRole('button',{name:'Save changes'}));
   await waitFor(()=>expect(updateGroupDeadline).toHaveBeenCalledWith('target','2026-12-02T01:00:00Z','America/New_York'));
   expect(updateGroupSettings).toHaveBeenCalledWith('target',1,1);
+});
+
+test('hidden email tools remove the template editor from organization settings',()=>{
+  mockEmailTools=false;render(<Settings/>);
+  expect(screen.queryByRole('heading',{name:'Pairing reveal email'})).not.toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Edit email template'})).not.toBeInTheDocument();
+  expect(screen.getByRole('heading',{name:'Matching rules'})).toBeInTheDocument();
 });

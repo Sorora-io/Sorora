@@ -1,3 +1,5 @@
+import { SHOW_MATCHING_EMAIL_TOOLS } from '../lib/features';
+import DuplicateNameWarnings from '../components/DuplicateNameWarnings';
 import Settings from './group/Settings';
 import { formatRankingDeadline } from '../lib/rankingDeadline';
 import { useCycleParticipation } from '../lib/cycleParticipation';
@@ -160,7 +162,7 @@ export const DashboardTab = ({
   if (deliveryWarning) {
     attention.unshift({ tone: 'urgent', title: 'Reveal delivery needs attention', detail: deliveryWarning, action: 'Review delivery', to: '/group/pairings' });
   }
-  if (!deliveryWarning && pairingsRun && unrevealed > 0) {
+  if (SHOW_MATCHING_EMAIL_TOOLS && !deliveryWarning && pairingsRun && unrevealed > 0) {
     attention.push({
       tone: 'ready',
       title: `${unrevealed} ${recipientUnit}${unrevealed === 1 ? '' : 's'} not notified yet`,
@@ -498,6 +500,9 @@ export const RosterTab = ({
     <div>
       <Heading text="Your chapter roster" />
       <Sub text={groupLabel(membership.group)} />
+      <DuplicateNameWarnings groupId={membership.group_id} isAdmin={isEffectiveAdmin(membership)} accounts={(roster ?? []).map(member=>({
+        userId:member.userId,groupId:membership.group_id,name:member.name,email:member.email,status:'approved',
+      }))} />
 
       <div className="mt-8 ss-surface">
         {isLoading ? (
@@ -711,7 +716,7 @@ export const OrganizationTab = ({ membership, onNavigate }: {
       {[
         { title: 'Submissions', description: 'Track who has ranked and get your chapter ready to match.', action: 'View submissions', path: '/group/status' },
         { title: 'Member rankings', description: (membership.group.blind_rankings ?? true) ? 'Blind rankings are on. Open this page to review privacy settings and submission status.' : 'Review each Big or Little’s submitted preferences in order.', action: 'View member rankings', path: '/group/status?view=rankings' },
-        { title: 'Pairings', description: 'Review matches, make adjustments, and manage your reveal.', action: 'View pairings', path: '/group/pairings' },
+        { title: 'Pairings', description: 'Review matches and make adjustments.', action: 'View pairings', path: '/group/pairings' },
       ].map(item => <section key={item.path} className="rounded-2xl border border-[color:var(--ss-surface-border)] bg-white/40 p-5 flex flex-col gap-3">
         <SectionHeading>{item.title}</SectionHeading>
         <p className="text-sm text-[color:var(--ss-ink-3)] flex-1">{item.description}</p>

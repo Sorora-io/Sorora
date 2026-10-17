@@ -1,3 +1,4 @@
+import { SHOW_MATCHING_EMAIL_TOOLS } from '../../lib/features';
 import PairingGroups from '../../components/PairingGroups';
 import { downloadPairingExport } from '../../lib/pairingExport';
 import ClearPairings from '../../components/ClearPairings';
@@ -231,7 +232,7 @@ const Pairings = () => {
           <Button variant="outline" size="sm" disabled={exporting || loading || !selectedCycleId || !hasPairings} onClick={handleExport}>
             {exporting ? 'Exporting…' : 'Export pairings CSV'}
           </Button>
-          <p className="ss-caption mt-2">Downloads the selected cycle’s saved pairings, one Big–Little pair per row. When rankings are visible, mutual first choices come first with both rank positions.</p>
+          <p className="ss-caption mt-2">Downloads this cycle’s saved pairs with Confirmed first, then Needs review. Rank positions are included when visible.</p>
           {exportError && <p role="alert" className="mt-2 text-sm text-brick">{exportError}</p>}
         </div>
 
@@ -271,7 +272,7 @@ const Pairings = () => {
         )}
         {revealError && <p role="alert" className="mt-4 text-brick">{revealError}</p>}
 
-        {hasPairings && reveal && isViewingActiveCycle && (
+        {SHOW_MATCHING_EMAIL_TOOLS && hasPairings && reveal && isViewingActiveCycle && (
           <div className="mt-6 ss-surface" aria-labelledby="reveal-heading">
             <div className="flex items-start justify-between gap-4">
               <div>

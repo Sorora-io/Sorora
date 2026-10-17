@@ -1,3 +1,4 @@
+import DuplicateNameWarnings from '../../components/DuplicateNameWarnings';
 import CycleParticipationControls from '../../components/CycleParticipationControls';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
@@ -192,6 +193,10 @@ const Roster = () => {
           Your chapter roster
         </h1>
         <p className="mt-2 ss-caption">{groupLabel(group)}</p>
+
+        <DuplicateNameWarnings groupId={group.id} isAdmin={!!membership && isEffectiveAdmin(membership)} accounts={roster.map(member=>({
+          userId:member.userId,groupId:group.id,name:member.name,email:member.email,status:'approved',
+        }))} />
 
         {membership && isEffectiveAdmin(membership) && group.active_cycle_id && <CycleParticipationControls userId={user?.id ?? ''} groupId={group.id} cycleId={group.active_cycle_id} roster={roster} />}
         <div className="mt-6 flex items-center justify-end gap-2 flex-wrap">

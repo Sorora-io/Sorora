@@ -1,3 +1,4 @@
+jest.mock('./lib/features',()=>({SHOW_MATCHING_EMAIL_TOOLS:true}));
 jest.mock('./components/PairingGroups',()=>()=>null);
 jest.mock('./components/MatchingReview',()=>()=>null);
 jest.mock('./components/ClearPairings',()=>()=>null);

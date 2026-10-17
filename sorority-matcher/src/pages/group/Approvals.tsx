@@ -1,3 +1,4 @@
+import DuplicateNameWarnings from '../../components/DuplicateNameWarnings';
 import Button from '../../components/Button';
 import PageHeader from '../../components/PageHeader';
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import LoadingLogo from '../../components/LoadingLogo';
 import {
+  isEffectiveAdmin,
   getPendingMemberships,
   updateMembershipStatus,
   getPendingRoleChanges,
@@ -168,6 +170,10 @@ const Approvals = () => {
             </div>
           </div>
         </div>
+
+        <DuplicateNameWarnings groupId={group.id} isAdmin={!!membership && isEffectiveAdmin(membership)} accounts={[...pending,...members].map(member=>({
+          userId:member.user_id,groupId:member.group_id,name:member.profile?.name,email:member.profile?.email,status:member.status,
+        }))} />
 
         {/* Pending requests */}
         <div className="mt-6 ss-surface">

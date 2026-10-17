@@ -1,3 +1,4 @@
+import { SHOW_MATCHING_EMAIL_TOOLS } from '../../lib/features';
 import MatchingReview from '../../components/MatchingReview';
 import { trackEvent } from '../../lib/analytics';
 import { littlePreferenceLabel } from '../../lib/littlePreference';
@@ -10,7 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getSubmissionStatus, runMatching, SubmissionStatusRow } from '../../lib/rankings';
 import { sendRankingReminders } from '../../lib/reminders';
@@ -168,11 +169,14 @@ const Status = () => {
 
         {cycleId && <div className="mt-5 max-w-sm">
           <label htmlFor="submission-filter" className="ss-label block mb-2">Submission filter</label>
-          <select id="submission-filter" className="ss-input w-full" value={submissionFilter} onChange={event => setSubmissionFilter(event.target.value as 'all' | 'submitted' | 'waiting')}>
+          <div className="relative">
+          <select id="submission-filter" className="ss-input w-full appearance-none !pr-12" value={submissionFilter} onChange={event => setSubmissionFilter(event.target.value as 'all' | 'submitted' | 'waiting')}>
             <option value="all">All members</option>
             <option value="submitted">Submitted</option>
             <option value="waiting">Not submitted</option>
           </select>
+          <ChevronDown size={18} aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--ss-ink-3)]" />
+          </div>
         </div>}
 
         {!cycleId ? (
@@ -227,13 +231,13 @@ const Status = () => {
               Not everyone has submitted their ranking yet — you can still run matching, but unsubmitted
               members will be treated as having no preferences.
             </p>
-            <Button variant="outline" size="sm" onClick={handleRemind} disabled={reminding}>
+            {SHOW_MATCHING_EMAIL_TOOLS && <Button variant="outline" size="sm" onClick={handleRemind} disabled={reminding}>
               {reminding ? 'Sending…' : 'Send reminder emails'}
-            </Button>
-            {reminderMessage && (
+            </Button>}
+            {SHOW_MATCHING_EMAIL_TOOLS && reminderMessage && (
               <p className="text-[color:var(--ss-jade)] text-sm mt-2">{reminderMessage}</p>
             )}
-            {reminderError && (
+            {SHOW_MATCHING_EMAIL_TOOLS && reminderError && (
               <p className="text-[color:var(--ss-error)] text-sm mt-2">{reminderError}</p>
             )}
           </div>
@@ -241,8 +245,9 @@ const Status = () => {
 
         {cycleId && (
           <div className="mt-8">
-            <Button size="lg" fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0}>
-              {running ? 'Running…' : 'Run matching'}
+            <Button size="lg" fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0} aria-busy={running} aria-label={running ? 'Finding matches…' : 'Run matching'} className={running ? 'motion-safe:animate-pulse' : ''}>
+              {running && <LoadingLogo size={20} />}
+              {running ? 'Finding matches…' : 'Run matching'}
             </Button>
           </div>
         )}

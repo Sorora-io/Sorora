@@ -115,3 +115,24 @@ test('submission filter applies to both roles without changing cohort totals or 
   fireEvent.change(screen.getByRole('combobox',{name:'Submission filter'}),{target:{value:'all'}});
   expect(screen.getByText('Waiting Big')).toBeInTheDocument();
 });
+
+test('reminder-email tools are hidden while outstanding submissions remain visible',async()=>{
+  (getSubmissionStatus as jest.Mock).mockResolvedValue({rows:[{userId:'waiting',role:'big',name:'Waiting member',submitted:false}],error:null});
+  mount();await screen.findByText('Waiting member');
+  expect(screen.getByText(/Not everyone has submitted their ranking yet/)).toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Send reminder emails'})).not.toBeInTheDocument();
+});
+
+test('matching has an animated busy state and prevents a second run while pending',async()=>{
+  let finish!:(result:{error:string|null})=>void;
+  (getSubmissionStatus as jest.Mock).mockResolvedValue({rows:[{userId:'a',role:'big',name:'Sample member',submitted:true}],error:null});
+  (runMatching as jest.Mock).mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  mount();await screen.findByText('Sample member');
+  fireEvent.click(screen.getByRole('button',{name:'Run matching'}));
+  const busy=screen.getByRole('button',{name:'Finding matches…'});
+  expect(busy).toBeDisabled();expect(busy).toHaveAttribute('aria-busy','true');expect(busy).toHaveClass('motion-safe:animate-pulse');
+  fireEvent.click(busy);expect(runMatching).toHaveBeenCalledTimes(1);
+  finish({error:'Please review eligibility.'});
+  expect(await screen.findByRole('alert')).toHaveTextContent('Please review eligibility.');
+  expect(screen.getByRole('button',{name:'Run matching'})).toBeEnabled();
+});

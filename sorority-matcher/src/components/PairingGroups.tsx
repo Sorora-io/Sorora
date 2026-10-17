@@ -1,3 +1,4 @@
+import { Check, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
@@ -53,17 +54,19 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
   const reviewed=reviewPairings(pairings,visibleRankings ?? {members:[]},confirmations.data.decisions);
   const confirmed=reviewed.filter(pair=>pair.confirmed);
   const needsReview=reviewed.filter(pair=>!pair.confirmed);
-  const rows=(pairs:typeof reviewed)=><ul className="mt-3 divide-y divide-[color:var(--ss-surface-border)]">{pairs.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="py-3 text-sm break-words">
+  const rows=(pairs:typeof reviewed)=><ul className="mt-3 divide-y divide-[color:var(--ss-surface-border)]">{pairs.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="flex items-start justify-between gap-3 py-3 text-sm">
+    <div className="min-w-0 break-words">
     <p className="font-medium">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</p>
     {visibleRankings && <p className="ss-caption mt-1">
       Big {typeof pair.bigRank==='number' ? `#${pair.bigRank}` : pair.bigRank==='Not ranked' ? '—' : pair.bigRank} · Little {typeof pair.littleRank==='number' ? `#${pair.littleRank}` : pair.littleRank==='Not ranked' ? '—' : pair.littleRank}
       {!pair.mutualFirst && <span> · {pair.matchType}</span>}
     </p>}
     {pair.decision && <p className="ss-caption mt-2">{pair.decision.confirmed?'Confirmed':'Marked for review'} by {pair.decision.reviewedBy || 'Chapter admin'} · {new Date(pair.decision.reviewedAt).toLocaleString()}</p>}
-    <Button variant="quiet" size="sm" className="mt-3" disabled={!!saving || confirmations.isFetching || !!confirmations.data?.lockReason}
+    </div>
+    <Button variant="ghost" size="sm" className="shrink-0 !px-3 !py-1.5 !min-h-[32px]" disabled={!!saving || confirmations.isFetching || !!confirmations.data?.lockReason}
       aria-label={`${pair.confirmed?'Move pairing to needs review':'Confirm pairing'}: ${pair.bigName || 'Unknown Big'} and ${pair.littleName || 'Unknown Little'}`}
       onClick={()=>void changeConfirmation(pair,!pair.confirmed)}>
-      {saving===`${pair.bigId}:${pair.littleId}` ? 'Saving…' : pair.confirmed ? 'Move to needs review' : 'Confirm pairing'}
+      {saving===`${pair.bigId}:${pair.littleId}` ? 'Saving…' : <>{pair.confirmed ? <Undo2 size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}{pair.confirmed ? 'Review' : 'Confirm'}</>}
     </Button>
   </li>)}</ul>;
   return <div className="space-y-4">
@@ -75,7 +78,7 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     {confirmations.data.lockReason && <p className="ss-caption">{confirmations.data.lockReason}</p>}
     <section className="ss-surface" aria-label="Confirmed pairings">
       <h2 className="font-medium">Confirmed ({confirmed.length})</h2>
-      <p className="ss-caption mt-2">Mutual first choices start here automatically when rankings are visible. Admins can confirm other pairs or move a pair back to review. Confirming does not lock or change the pairing.</p>
+      <p className="ss-caption mt-2">Mutual first choices start here automatically when rankings are visible. Admins can confirm other reviewed pairs.</p>
       {confirmed.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showConfirmed} aria-controls="confirmed-pairs" onClick={()=>setShowConfirmed(!showConfirmed)}>{showConfirmed?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showConfirmed && <div id="confirmed-pairs">{rows(confirmed)}</div>}</> : <p className="ss-caption mt-3">No confirmed pairs yet.</p>}
     </section>
     <section className="ss-surface" aria-label="Pairings needing review">

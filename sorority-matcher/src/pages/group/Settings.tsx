@@ -1,3 +1,4 @@
+import { SHOW_MATCHING_EMAIL_TOOLS } from '../../lib/features';
 import { deadlineInput, deadlineTimeZones, formatRankingDeadline, groupRankingDeadline, parseDeadlineInput } from '../../lib/rankingDeadline';
 import { toast } from 'sonner';
 import PageHeader from '../../components/PageHeader';
@@ -441,13 +442,14 @@ const Settings = ({ superuserContext, embedded = false }: { superuserContext?: S
               ? 'On — only members can view their own preferences. Admins see submission status and final pairings, even when they participate in matching.'
               : 'Off — chapter admins can access members’ ranked preferences. Other members can still only see their own rankings.'}
           </p>
-          <p className="ss-caption mt-2">Your organization decides whether admins need access to preferences to manage matching. Matching works with either setting. Turning this on cannot erase preferences an admin has already seen.</p>
+          <p className="ss-caption mt-2">Your organization decides whether admins need access to preferences to manage matching. Matching works with either setting.</p>
           {privacyError && <p role="alert" className="mt-2 text-sm text-brick">{privacyError}</p>}
           {privacyDirty && <SettingsActions saving={privacySaving} onSave={saveBlindRankings} onCancel={() => { setPrivacyDraft(group.blind_rankings ?? true); setPrivacyError(''); }}>
             <span role="status" className="ss-caption">Unsaved changes</span>
           </SettingsActions>}
         </section>
 
+        {SHOW_MATCHING_EMAIL_TOOLS && (
         <section className={sectionClass} aria-labelledby="reveal-template-title">
           <h2 id="reveal-template-title" className={headingClass}>Pairing reveal email</h2>
           {editing === 'reveal' ? <>
@@ -500,6 +502,7 @@ const Settings = ({ superuserContext, embedded = false }: { superuserContext?: S
             <Button className="mt-4" variant="outline" size="sm" disabled={editing !== null || privacyDirty || privacySaving} onClick={() => beginEdit('reveal')}>Edit email template</Button>
           </>}
         </section>
+        )}
 
         <section className={sectionClass} aria-labelledby="matching-rules-title">
           <h2 id="matching-rules-title" className={`${headingClass} mb-4`}>Matching rules</h2>

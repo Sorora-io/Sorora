@@ -1,3 +1,5 @@
+let mockEmailTools=true;
+jest.mock('../lib/features',()=>({get SHOW_MATCHING_EMAIL_TOOLS(){return mockEmailTools;}}));
 jest.mock('../lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -41,7 +43,7 @@ const setup = ({ pending = 0, status = [] as any[], statusError = null as string
   );
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {jest.clearAllMocks();mockEmailTools=true;});
 
 test('pending join requests surface first, as the blocking item', async () => {
   setup({ pending: 2, status: [row('big', true, 1), row('little', true, 1)] });
@@ -169,4 +171,12 @@ test('dashboard roster names open the member profile with a roster return path',
   render(<QueryClientProvider client={new QueryClient()}><RosterTab membership={membership} onNavigate={navigate} /></QueryClientProvider>);
   fireEvent.click(await screen.findByRole('button', { name: 'Alex Member' }));
   expect(navigate).toHaveBeenCalledWith('/group/roster/member?from=dashboard');
+});
+
+test('hidden email tools do not prompt admins to send reveal emails',async()=>{
+  mockEmailTools=false;
+  setup({status:[row('big',true,1),row('little',true,1)],reveal:{total:2,sent:0,lastSentAt:null,scheduledAt:null,completedAt:null}});
+  await screen.findByText('Chapter progress');
+  expect(screen.queryByRole('button',{name:'Reveal'})).not.toBeInTheDocument();
+  expect(screen.queryByText(/not notified yet/)).not.toBeInTheDocument();
 });
