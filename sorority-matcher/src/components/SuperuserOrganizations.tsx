@@ -1,7 +1,8 @@
+import DirectoryPagination from './DirectoryPagination';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { getSuperuserOrganizations, deleteSuperuserOrganization, transferSuperuserOrganization, SuperuserOrganization } from '../lib/superusers';
 import Button from './Button';
@@ -20,13 +21,18 @@ export default function SuperuserOrganizations() {
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
   const organizations = useQuery({
     queryKey: ['superuser-organizations', user?.id, search, offset],
-    queryFn: () => getSuperuserOrganizations(search, offset), retry: false, staleTime: 0,
+    queryFn: () => getSuperuserOrganizations(search, offset), retry: false, staleTime: 0, placeholderData: keepPreviousData,
   });
+  useEffect(() => {
+    if (!organizations.data || organizations.isPlaceholderData || organizations.isFetching) return;
+    const lastOffset = Math.max(0, (Math.ceil(organizations.data.total / 50) - 1) * 50);
+    if (offset > lastOffset) setOffset(lastOffset);
+  }, [organizations.data, organizations.isPlaceholderData, organizations.isFetching, offset]);
   const remove = useMutation({
     mutationFn: deleteSuperuserOrganization,
     onSuccess: async () => {
       setNotice(`${target?.name || 'Organization'} was deleted.`);
-      setTarget(null); setConfirmation(''); setOffset(0);
+      setTarget(null); setConfirmation('');
       await Promise.all([
         client.invalidateQueries({ queryKey: ['superuser-organizations'] }),
         client.invalidateQueries({ queryKey: ['superuser-accounts'] }),
@@ -86,9 +92,9 @@ export default function SuperuserOrganizations() {
     </section>}
     {organizations.isFetching && <p role="status">Loading organizations…</p>}
     {organizations.error ? <p role="alert">Could not load organizations: {organizations.error.message}</p> : organizations.data && <>
-      <p className="mb-3 text-sm">{organizations.data.total} {search ? 'matching ' : ''}organizations</p>
+      {!organizations.isPlaceholderData && <p className="mb-3 text-sm">{organizations.data.total} {search ? 'matching ' : ''}organizations</p>}
       {organizations.data.organizations.length === 0 ? <p>No organizations found.</p> : <div className="overflow-x-auto rounded-xl border bg-white/50">
-        <table className="w-full text-left text-sm">
+        <table aria-busy={organizations.isFetching} className="w-full text-left text-sm">
           <thead><tr className="border-b"><th className="p-4">Organization</th><th className="p-4">School</th><th className="p-4">Owner</th><th className="p-4">Join code</th><th className="p-4">Members</th><th className="p-4">Actions</th></tr></thead>
           <tbody>{organizations.data.organizations.map(org => <tr key={org.id} className="border-b last:border-0">
             <td className="p-4 font-medium">{org.name}</td><td className="p-4">{org.school || '—'}</td><td className="p-4">{org.owner_email || '—'}</td><td className="p-4"><div className="flex items-center gap-2"><code className="select-all whitespace-nowrap font-mono tracking-wider">{org.join_code || '—'}</code><Button size="sm" variant="ghost" disabled={!org.join_code} aria-label={`Copy join code for ${org.name}`} onClick={() => void copyCode(org.join_code)}>Copy</Button></div></td><td className="p-4">{org.member_count}</td>
@@ -100,7 +106,8 @@ export default function SuperuserOrganizations() {
           </tr>)}</tbody>
         </table>
       </div>}
-      <div className="mt-5 flex items-center gap-4"><Button variant="outline" disabled={offset === 0 || organizations.isFetching} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</Button><span className="text-sm">Page {offset / 50 + 1}</span><Button variant="outline" disabled={offset + 50 >= organizations.data.total || organizations.isFetching} onClick={() => setOffset(offset + 50)}>Next</Button></div>
+      <DirectoryPagination noun="organizations" offset={offset} total={organizations.data.total} itemCount={organizations.data.organizations.length}
+        loading={organizations.isFetching || organizations.isPlaceholderData} onPageChange={page => setOffset((page - 1) * 50)} />
     </>}
   </section>;
 }

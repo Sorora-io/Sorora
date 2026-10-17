@@ -34,7 +34,7 @@ test('shows combined chapter roles and confirms promotion before granting', asyn
   expect(grantSuperuser).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Confirm promotion' }));
   await waitFor(() => expect(grantSuperuser).toHaveBeenCalledWith('member', expect.anything()));
-  expect(await screen.findByRole('status')).toHaveTextContent('member@example.com is now a superuser.');
+  expect(await screen.findByText('member@example.com is now a superuser.')).toHaveAttribute('role','status');
 });
 test('shows server errors when promotion is denied', async () => {
   (grantSuperuser as jest.Mock).mockRejectedValue(new Error('Only a superuser can promote accounts.'));
@@ -92,4 +92,29 @@ test('organization settings navigation targets the selected organization', async
   show();fireEvent.click(screen.getByRole('button',{name:'Organizations'}));
   fireEvent.click(await screen.findByRole('button',{name:'Edit settings'}));
   expect(mockNavigate).toHaveBeenCalledWith('/superuser/organizations/org/settings');
+});
+
+const pagedAccount=(i:number)=>({id:`person-${i}`,name:`Person ${i}`,email:`person${i}@example.com`,verified:true,is_superuser:false,created_at:'2026-01-01',memberships:[]});
+test('accounts jump directly to numbered pages and reset to page one for search',async()=>{
+ const all=Array.from({length:176},(_,i)=>pagedAccount(i));
+ (getSuperuserAccounts as jest.Mock).mockImplementation(async(search,offset)=>{const filtered=all.filter(a=>a.name.toLowerCase().includes(search.toLowerCase()));return {total:filtered.length,accounts:filtered.slice(offset,offset+50)};});
+ show();await screen.findByText('Showing 1–50 of 176 accounts');fireEvent.click(screen.getByRole('button',{name:'Page 4'}));
+ expect(await screen.findByText('Showing 151–176 of 176 accounts')).toBeInTheDocument();expect(screen.getByRole('button',{name:'Page 4'})).toHaveAttribute('aria-current','page');
+ fireEvent.change(screen.getByLabelText('Search name or email'),{target:{value:'person 150'}});fireEvent.click(screen.getByRole('button',{name:'Search'}));
+ expect(await screen.findByText('Showing 1 of 1 account')).toBeInTheDocument();expect(getSuperuserAccounts).toHaveBeenLastCalledWith('person 150',0);
+});
+test('deleting the only account on the last page returns to the last remaining page',async()=>{
+ let all=Array.from({length:51},(_,i)=>pagedAccount(i));
+ (getSuperuserAccounts as jest.Mock).mockImplementation(async(_search,offset)=>({total:all.length,accounts:all.slice(offset,offset+50)}));
+ (deleteSuperuserAccount as jest.Mock).mockImplementation(async({userId})=>{all=all.filter(a=>a.id!==userId);});
+ show();await screen.findByText('Showing 1–50 of 51 accounts');fireEvent.click(screen.getByRole('button',{name:'Page 2'}));await screen.findByText('Showing 51 of 51 accounts');
+ fireEvent.click(screen.getByRole('button',{name:'Delete account'}));fireEvent.change(screen.getByLabelText('Type delete to confirm'),{target:{value:'delete'}});fireEvent.click(screen.getByRole('button',{name:'Permanently delete account'}));
+ expect(await screen.findByText('Showing 1–50 of 50 accounts')).toBeInTheDocument();expect(getSuperuserAccounts).toHaveBeenLastCalledWith('',0);
+});
+test('organizations use real totals and recover if the requested page disappears',async()=>{
+ let all=Array.from({length:51},(_,i)=>({id:`org-${i}`,name:`Chapter ${i}`,school:'School',owner_email:'owner@example.com',join_code:'CODE',member_count:2}));
+ (getSuperuserOrganizations as jest.Mock).mockImplementation(async(_search,offset)=>({total:all.length,organizations:all.slice(offset,offset+50)}));
+ show();fireEvent.click(screen.getByRole('button',{name:'Organizations'}));await screen.findByText('Showing 1–50 of 51 organizations');fireEvent.click(screen.getByRole('button',{name:'Page 2'}));await screen.findByText('Showing 51 of 51 organizations');
+ all=all.slice(0,50);fireEvent.click(screen.getByRole('button',{name:'Refresh'}));
+ expect(await screen.findByText('Showing 1–50 of 50 organizations')).toBeInTheDocument();expect(getSuperuserOrganizations).toHaveBeenLastCalledWith('',0);
 });

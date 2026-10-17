@@ -1,6 +1,7 @@
+import DirectoryPagination from '../components/DirectoryPagination';
 import { ArrowLeft } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSuperuser } from '../hooks/useSuperuser';
@@ -37,7 +38,13 @@ export default function Superuser() {
     enabled: !!user && access.data === true && view === 'accounts',
     staleTime: 0,
     retry: false,
+    placeholderData: keepPreviousData,
   });
+  useEffect(() => {
+    if (!accounts.data || accounts.isPlaceholderData || accounts.isFetching) return;
+    const lastOffset = Math.max(0, (Math.ceil(accounts.data.total / 50) - 1) * 50);
+    if (offset > lastOffset) setOffset(lastOffset);
+  }, [accounts.data, accounts.isPlaceholderData, accounts.isFetching, offset]);
   const promote = useMutation({
     mutationFn: grantSuperuser,
     onSuccess: async () => {
@@ -53,7 +60,6 @@ export default function Superuser() {
       setNotice(`${deleting?.email || 'Account'} was deleted.`);
       setDeleting(null);
       setConfirmation('');
-      setOffset(0);
       await client.invalidateQueries({ queryKey: ['superuser-accounts'] });
     },
   });
@@ -105,9 +111,9 @@ export default function Superuser() {
       </section>}
       {accounts.isFetching && <p role="status">Loading accounts…</p>}
       {accounts.error ? <p role="alert">Could not load accounts: {accounts.error.message}</p> : accounts.data && <>
-        <p className="mb-3 text-sm">{accounts.data.total} {search ? 'matching ' : ''}accounts</p>
+        {!accounts.isPlaceholderData && <p className="mb-3 text-sm">{accounts.data.total} {search ? 'matching ' : ''}accounts</p>}
         {accounts.data.accounts.length === 0 ? <p>No accounts found.</p> : <div className="overflow-x-auto rounded-xl border bg-white/50">
-          <table className="w-full text-left text-sm">
+          <table aria-busy={accounts.isFetching} className="w-full text-left text-sm">
             <thead><tr className="border-b"><th className="p-4">Account</th><th className="p-4">Platform role</th><th className="p-4">Chapters & account types</th><th className="p-4 w-48">Actions</th></tr></thead>
             <tbody>{accounts.data.accounts.map(account => <tr key={account.id} className="border-b last:border-0">
               <td className="p-4 align-top"><p className="font-medium">{account.name || 'Unnamed account'}</p><p>{account.email || 'No email'}</p><p className="mt-1 text-xs">{account.verified ? 'Verified' : 'Email unverified'} · Joined {new Date(account.created_at).toLocaleDateString()}</p></td>
@@ -122,7 +128,8 @@ export default function Superuser() {
             </tr>)}</tbody>
           </table>
         </div>}
-        <div className="mt-5 flex items-center gap-4"><Button variant="outline" disabled={offset === 0 || accounts.isFetching} onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</Button><span className="text-sm">Page {offset / 50 + 1}</span><Button variant="outline" disabled={offset + 50 >= accounts.data.total || accounts.isFetching} onClick={() => setOffset(offset + 50)}>Next</Button></div>
+        <DirectoryPagination noun="accounts" offset={offset} total={accounts.data.total} itemCount={accounts.data.accounts.length}
+          loading={accounts.isFetching || accounts.isPlaceholderData} onPageChange={page => setOffset((page - 1) * 50)} />
       </>}
       </>}
     </div>
