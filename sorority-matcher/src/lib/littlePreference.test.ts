@@ -13,3 +13,9 @@ test('capacity does not apply to Littles and absent server fields are not interp
   expect(littlePreferenceLabel({role:'little',submitted:true,wantedLittleCount:3,willingToTakeTwins:true})).toBe('Not applicable');
   expect(littlePreferenceLabel({role:'big',submitted:true})).toBe('Unavailable');
 });
+
+test('chapter cap overrides saved triplets and legacy twins without increasing smaller choices', () => {
+  expect(littlePreferenceLabel({role:'big',submitted:true,wantedLittleCount:3}, 2)).toBe('Up to 2 Littles (twins) — saved choice: 3; capped by chapter rules');
+  expect(littlePreferenceLabel({role:'big',submitted:true,willingToTakeTwins:true}, 1)).toBe('1 Little — saved choice: 2; capped by chapter rules');
+  expect(littlePreferenceLabel({role:'big',submitted:true,wantedLittleCount:2}, 3)).toBe('Up to 2 Littles (twins)');
+});

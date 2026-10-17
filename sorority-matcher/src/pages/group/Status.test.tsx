@@ -6,8 +6,9 @@ import { MemoryRouter } from 'react-router-dom';
 import Status from './Status';
 import { downloadRankingExport, getRankingExport } from '../../lib/rankingExport';
 let mockBlind = true;
+let mockMaximum = 3;
 jest.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin' } }) }));
-jest.mock('../../contexts/GroupContext', () => ({ useGroup: () => ({ membership: { group: { id: 'g', active_cycle_id: 'c', blind_rankings: mockBlind } } }) }));
+jest.mock('../../contexts/GroupContext', () => ({ useGroup: () => ({ membership: { group: { id: 'g', active_cycle_id: 'c', blind_rankings: mockBlind, max_littles_per_big: mockMaximum } } }) }));
 jest.mock('../../components/PageHeader', () => ({ __esModule: true, default: ({ children }: any) => <header>{children}</header> }));
 jest.mock('../../lib/rankings', () => ({ getSubmissionStatus: jest.fn(async () => ({ rows: [], error: null })), runMatching: jest.fn() }));
 jest.mock('../../lib/reminders', () => ({ sendRankingReminders: jest.fn() }));
@@ -71,10 +72,21 @@ test('blind submission status shows saved twins capacity without loading ranked 
     {userId:'e',role:'little',name:'Emma',email:'e@example.com',submitted:true},
   ],error:null});
   mount();
-  expect(await screen.findByText('Twins / triplets: Up to 2 Littles (twins)')).toBeInTheDocument();
-  expect(screen.getByText('Twins / triplets: Up to 3 Littles (triplets)')).toBeInTheDocument();
-  expect(screen.getByText('Twins / triplets: 1 Little (saved/default)')).toBeInTheDocument();
-  expect(screen.getByText('Twins / triplets: Not submitted — defaults to 1 Little')).toBeInTheDocument();
+  expect(await screen.findByText('Matching capacity: Up to 2 Littles (twins)')).toBeInTheDocument();
+  expect(screen.getByText('Matching capacity: Up to 3 Littles (triplets)')).toBeInTheDocument();
+  expect(screen.getByText('Matching capacity: 1 Little (saved/default)')).toBeInTheDocument();
+  expect(screen.getByText('Matching capacity: Not submitted — defaults to 1 Little')).toBeInTheDocument();
   expect(getRankingExport).not.toHaveBeenCalled();
   expect(screen.getByRole('button',{name:'Download ranked choices'})).toBeDisabled();
+});
+
+test('pre-matching status displays a saved triplets choice capped at twins', async () => {
+  mockMaximum = 2;
+  (getSubmissionStatus as jest.Mock).mockResolvedValue({rows:[
+    {userId:'b',role:'big',name:'Sample Big',submitted:true,wantedLittleCount:3,willingToTakeTwins:false},
+  ],error:null});
+  mount();
+  expect(await screen.findByText('Matching capacity: Up to 2 Littles (twins) — saved choice: 3; capped by chapter rules')).toBeInTheDocument();
+  expect(screen.getByText(/Chapter maximum: 2 Littles per Big/)).toBeInTheDocument();
+  mockMaximum = 3;
 });

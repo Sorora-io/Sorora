@@ -119,7 +119,7 @@ const Status = () => {
             <div key={r.userId} className="flex items-start justify-between gap-3 py-2.5">
               <div className="min-w-0">
                 <span className="block text-[color:var(--ss-ink-2)] truncate">{r.name || r.email}</span>
-                {r.role === 'big' && <p className="ss-caption mt-1">Twins / triplets: {littlePreferenceLabel(r)}</p>}
+                {r.role === 'big' && <p className="ss-caption mt-1">Matching capacity: {littlePreferenceLabel(r, group.max_littles_per_big ?? 3)}</p>}
               </div>
               <span
                 className={
@@ -159,6 +159,8 @@ const Status = () => {
             : 'Blind rankings are off. Chapter admins can access members’ preferences.'} Matching runs on the server.
         </p>
 
+        <p className="mt-4 text-sm font-medium">Chapter maximum: {group.max_littles_per_big ?? 3} Littles per Big. Saved choices above this limit are automatically capped for matching; members do not need to resubmit.</p>
+
         {!cycleId ? (
           <p className="mt-8 ss-caption">
             No active cycle yet — start one from Group Settings before collecting rankings.
@@ -182,7 +184,7 @@ const Status = () => {
 
         {cycleId && !(group.blind_rankings ?? true) && <MemberRankings key={`${user?.id}:${group.id}:${cycleId}:${showRankings}`} groupId={group.id} cycleId={cycleId} initiallyOpen={showRankings} />}
 
-        {cycleId && <p className="mt-3 ss-caption">Twins/triplets labels show saved capacity preferences, including up to 3 Littles. A saved/default value of 1 cannot distinguish an explicit choice from the original default. Preferences may carry over between cycles; the submission label refers to this cycle. Twins do not apply to Littles.</p>}
+        {cycleId && <p className="mt-3 ss-caption">Matching capacity shows the chapter limit applied to each Big’s saved preference. A saved/default value of 1 cannot distinguish an explicit choice from the original default. Preferences may carry over between cycles; the submission label refers to this cycle. Twins do not apply to Littles.</p>}
 
         {cycleId && <MatchingReview groupId={group.id} cycleId={cycleId} />}
         {cycleId && <UnrankedMemberReview groupId={group.id} cycleId={cycleId} deadline={groupRankingDeadline(group)} blind={group.blind_rankings ?? true} />}

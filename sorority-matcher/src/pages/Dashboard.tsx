@@ -1,3 +1,4 @@
+import Settings from './group/Settings';
 import { formatRankingDeadline } from '../lib/rankingDeadline';
 import { useCycleParticipation } from '../lib/cycleParticipation';
 import { revealDeliveryWarning } from '../lib/revealStatus';
@@ -727,10 +728,7 @@ export const OrganizationTab = ({ membership, onNavigate }: {
       </div>
       <Button variant="quiet" size="sm" onClick={() => onNavigate('/group/approvals')}>Review approvals</Button>
     </section>
-    <section className="mt-6 pt-5 border-t border-[color:var(--ss-surface-border)] flex flex-wrap items-center justify-between gap-4">
-      <div><SectionHeading>Organization settings</SectionHeading><p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">Chapter details, matching preferences, and deadlines.</p></div>
-      <Button variant="ghost" size="sm" onClick={() => onNavigate('/group/settings')}>Manage settings</Button>
-    </section>
+
   </div>;
 };
 
@@ -866,6 +864,8 @@ const Dashboard = () => {
         return isEffectiveAdmin(membership)
           ? <OrganizationTab membership={membership} onNavigate={onNavigate} />
           : <Navigate to="/dashboard" replace />;
+      case 'settings':
+        return isEffectiveAdmin(membership) ? <Settings embedded /> : <Navigate to="/dashboard" replace />;
       case 'faq':
         return <FaqTab />;
       case 'dashboard':

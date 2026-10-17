@@ -50,7 +50,7 @@ const SettingsActions = ({ saving, onSave, onCancel, children }: {
 </div>;
 
 export interface SuperuserSettingsContext { group: Group; bigs: number; littles: number; refresh: () => Promise<void>; }
-const Settings = ({ superuserContext }: { superuserContext?: SuperuserSettingsContext }) => {
+const Settings = ({ superuserContext, embedded = false }: { superuserContext?: SuperuserSettingsContext; embedded?: boolean }) => {
   const context = useGroup();
   const membership = context.membership;
   const refresh = superuserContext?.refresh ?? context.refresh;
@@ -342,16 +342,16 @@ const Settings = ({ superuserContext }: { superuserContext?: SuperuserSettingsCo
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <PageHeader superuserMode={superuserMode} className="flex items-center justify-between mb-8">
+    <div className={embedded ? 'w-full' : "min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8"}>
+      <section className={embedded ? 'w-full flex flex-col' : "ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col"}>
+        {!embedded && <PageHeader superuserMode={superuserMode} className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
           <Button variant="quiet" size="sm" onClick={() => navigate(superuserMode ? '/superuser?view=organizations' : '/dashboard')}>
             <ArrowLeft size={14} aria-hidden="true" /> {superuserMode ? 'Back to organizations' : 'Back to dashboard'}
           </Button>
-        </PageHeader>
+        </PageHeader>}
 
         {superuserMode && <p role="status" className="ss-caption mb-4">Superuser editor · {group.name}{group.school ? ` · ${group.school}` : ''}. Changes apply only to this organization.</p>}
         <span className="ss-kicker">Chapter</span>
