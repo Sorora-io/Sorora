@@ -180,14 +180,8 @@ export const DashboardTab = ({
 
   return (
     <div>
-      <Heading text="Your chapter, at your pace." />
-      <Sub
-        text={
-          isRanker
-            ? "Come back when you're ready to rank. Everything you need is right here."
-            : "Here's what needs you. Approvals first, then follow preference collection."
-        }
-      />
+      <Heading text="Your chapter dashboard" />
+      {!isRanker && <Sub text="Here's what needs you. Approvals first, then follow preference collection." />}
 
       {membership.role === 'admin' && <ChooseMatchingRole />}
       <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
