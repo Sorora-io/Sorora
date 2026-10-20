@@ -7,8 +7,8 @@ import { Instagram } from 'lucide-react';
 // natural bottom. Instagram links out; the rest are in-app routes.
 const Footer = () => {
   return (
-    <footer className="w-full border-t border-[color:var(--ss-surface-border)] mt-16 px-5 md:px-8 py-6">
-      <div className="mx-auto max-w-4xl text-sm text-[color:var(--ss-ink-5)]">
+    <footer className="w-full border-t border-[color:var(--ss-surface-border)] mt-16 py-6">
+      <div className="mx-auto w-full max-w-6xl px-5 md:px-8 text-sm text-[color:var(--ss-ink-5)]">
         <div className="grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-4 sm:flex sm:justify-between">
           <Link to="/" className="font-display italic text-lg text-[color:var(--ss-ink-3)] hover:text-[color:var(--ss-ink-1)] transition-colors">
             sorora

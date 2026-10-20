@@ -45,3 +45,12 @@ Use the shared tokens in `sorority-matcher/src/index.css` and their Tailwind uti
 | Small status badges, counts, rank markers | `rounded-badge` | 4px |
 
 The shared `Button` defaults to the control radius. Avoid per-page pixel overrides and pill-shaped rectangular actions. Existing standard Tailwind radius utilities map to this scale for compatibility; prefer the semantic names for new UI. Unframed sections and underline navigation stay square. Avatars, dots, radio indicators, decorative circles, and switch tracks/thumbs retain their circular shapes. Preserve badge color semantics, especially the deadline badge's pale green background and dark green text.
+
+
+### Workspace hierarchy and colour
+
+- Tasks before decoration: show status and the next action first.
+- Warm identity, practical workspace: use neutral backgrounds and neutral body text. Do not turn the workspace background green.
+- Structure through alignment: distinguish task, chapter-progress, and personal-ranking sections with consistent headings, spacing, neutral rules, and clear grouping. Avoid decorative shadows or coloured framing.
+- Colour with a purpose: dark green marks primary actions. Softer greens support selections and status; preserve the deadline badge's approved colours. Secondary actions at the same priority use the same outlined style.
+- Specific copy: describe the actual task or count instead of generic welcome or motivational copy.

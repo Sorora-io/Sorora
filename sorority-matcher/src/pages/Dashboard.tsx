@@ -172,7 +172,7 @@ export const DashboardTab = ({
       <Heading text="Overview" />
       <div className="ss-overview-sections">
         {isAdmin && (
-          <section className="ss-admin-attention flex flex-col gap-3" aria-label="Chapter tasks">
+          <section className="ss-dashboard-panel ss-admin-attention flex flex-col gap-3" aria-label="Chapter tasks">
             <div className="flex items-center gap-2">
               <SectionHeading>Needs attention</SectionHeading>
               {attention.length > 0 && (
@@ -211,17 +211,17 @@ export const DashboardTab = ({
             ) : (
               <ul className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
                 {attention.map((item, index) => (
-                  // Stacked, not title-beside-button: this card sits in a
-                  // half-width dashboard column (~390px), where a side-by-side
-                  // action squeezes the copy to one word per line.
+                  // Tasks use the full row on desktop and stack on small screens.
                   <li key={item.title} className="flex items-start gap-2.5 py-3 first:pt-1">
                     <span
                       aria-hidden="true"
                       className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${toneDot[item.tone]}`}
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[color:var(--ss-ink-2)]">{item.title}</p>
-                      <p className="ss-caption mt-0.5">{item.detail}</p>
+                    <div className="ss-attention-item-content min-w-0 flex-1">
+                      <div>
+                        <p className="text-sm font-medium text-[color:var(--ss-ink-2)]">{item.title}</p>
+                        <p className="ss-caption mt-0.5">{item.detail}</p>
+                      </div>
                       <Button
                         size="sm"
                         variant={index === 0 ? 'primary' : 'outline'}
@@ -235,10 +235,12 @@ export const DashboardTab = ({
                 ))}
               </ul>
             )}
-
+          </section>
+        )}
+        {isAdmin && <section className="ss-dashboard-panel ss-chapter-progress" aria-label="Chapter progress and tools">
+          <SectionHeading>{rosterSize > 0 ? 'Chapter progress' : 'Chapter tools'}</SectionHeading>
             {rosterSize > 0 && (
-              <div className="mt-1 pt-3 border-t border-[color:var(--ss-surface-border)] flex flex-col gap-2">
-                <div className="ss-kicker" style={{ marginBottom: 0 }}>Chapter progress</div>
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-sm text-[color:var(--ss-ink-3)]">
                   <span>Bigs</span>
                   <span className="tabular-nums">
@@ -260,7 +262,7 @@ export const DashboardTab = ({
               </div>
             )}
 
-            <div className="mt-1 pt-3 border-t border-[color:var(--ss-surface-border)] flex flex-wrap gap-2">
+            <div className="ss-progress-actions">
               <Button size="sm" variant="outline" onClick={() => onNavigate('/group/status?view=rankings')}>
                 View member rankings
               </Button>
@@ -268,10 +270,9 @@ export const DashboardTab = ({
                 Manage organization
               </Button>
             </div>
-          </section>
-        )}
+        </section>}
         {isRanker && (
-          <section className={`ss-ranking-overview ${isAdmin ? 'ss-ranking-overview-secondary' : ''}`} aria-label="Your ranking status">
+          <section className={`ss-dashboard-panel ss-ranking-overview ${isAdmin ? 'ss-ranking-overview-secondary' : ''}`} aria-label="Your ranking status">
             <div>
               <SectionHeading>{excluded ? 'Not participating this cycle' : !cycleId ? 'Rankings not open yet' : rankingError ? 'Ranking status unavailable' : rankingPending ? 'Loading your ranking…' : deadlineClosed ? 'Rankings closed' : submitted ? 'Rankings submitted' : 'Rankings open'}</SectionHeading>
               <p className="ss-caption mt-2">
