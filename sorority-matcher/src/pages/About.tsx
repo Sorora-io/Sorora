@@ -51,7 +51,7 @@ const promises = [
 const About = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost relative w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-14 md:pt-10 md:pb-16 flex flex-col overflow-hidden">
+      <section className="ss-frost relative w-full max-w-3xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-14 md:pt-10 md:pb-16 flex flex-col overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[color:var(--ss-jade)] opacity-[0.07] blur-3xl"
@@ -67,7 +67,7 @@ const About = () => {
           </Link>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm min-h-[36px] rounded-pill border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] font-medium hover:bg-[color:var(--ss-button-hover)] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm min-h-[36px] rounded-control border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] font-medium hover:bg-[color:var(--ss-button-hover)] transition-colors whitespace-nowrap"
           >
             <ArrowLeft size={14} /> Back to home
           </Link>
@@ -84,7 +84,7 @@ const About = () => {
 
         <div className="relative flex flex-col gap-6">
           {/* Our mission */}
-          <section className="relative rounded-[20px] bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
+          <section className="relative rounded-panel bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--ss-jade-soft)]" />
               <div className="ss-kicker">Our mission</div>
@@ -115,7 +115,7 @@ const About = () => {
           </section>
 
           {/* How it works — timeline */}
-          <section className="relative rounded-[20px] bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
+          <section className="relative rounded-panel bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--ss-jade-soft)]" />
               <div className="ss-kicker">How it works</div>
@@ -152,7 +152,7 @@ const About = () => {
           </section>
 
           {/* Why it works — checkmark rows */}
-          <section className="relative rounded-[20px] bg-[color:var(--ss-jade-deep)] text-white p-6 md:p-8 shadow-[0_20px_50px_-30px_rgba(15,45,32,0.7)] overflow-hidden">
+          <section className="relative rounded-panel bg-[color:var(--ss-jade-deep)] text-white p-6 md:p-8 shadow-[0_20px_50px_-30px_rgba(15,45,32,0.7)] overflow-hidden">
             <div
               aria-hidden
               className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/5 blur-2xl"

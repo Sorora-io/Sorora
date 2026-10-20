@@ -48,12 +48,12 @@ test('a user with no profile row yet falls back to Supabase auth metadata name a
   expect(mockMixpanel.identify).toHaveBeenCalledWith('uuid-456');
   expect(mockMixpanel.peopleSet).toHaveBeenCalledWith({$name:'Sam Patel',$email:'sam@example.com'});
 });
-test('a declined visitor is never identified and no People properties are sent', () => {
+test('legacy preference values do not prevent configured identity tracking', () => {
   localStorage.setItem('sorora.analytics-consent.v1', 'declined');
   mockAuthState.current = { user: { id: 'uuid-789', email: 'jo@example.com', user_metadata: {} }, loading: false };
   mockGroupState.current = { membership: { role: 'admin', is_admin: true, group: { name: 'Beta Chi' } } };
   mockProfileState.current = { data: { name: 'Jo' } };
   render(<AnalyticsIdentity />);
-  expect(mockMixpanel.identify).not.toHaveBeenCalled();
-  expect(mockMixpanel.peopleSet).not.toHaveBeenCalled();
+  expect(mockMixpanel.identify).toHaveBeenCalledWith('uuid-789');
+  expect(mockMixpanel.peopleSet).toHaveBeenCalledWith({$name:'Jo',$email:'jo@example.com',role:'admin',chapter:'Beta Chi',is_admin:true});
 });

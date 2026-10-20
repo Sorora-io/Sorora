@@ -1,247 +1,77 @@
-import { formatRankingDeadline } from '../lib/rankingDeadline';
-import { useState, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
+import { isEffectiveAdmin } from '../lib/groups';
+import { hasTourSeen, markTourSeen } from '../lib/tour';
 import Button from './Button';
-import { SceneDots } from './SceneShell';
-import { MembershipWithGroup, isEffectiveAdmin } from '../lib/groups';
 
-// Post-signup welcome + 4-step guided tour from the sorora-story canvas.
-// Rendered by the Dashboard when a first-time-approved member lands there
-// and hasn't seen the tour yet. Each step is its own scene sharing the
-// frosted panel, so the visitor's mental model of "one screen at a time"
-// carries all the way through.
+export const WELCOME_TOUR_KEY = 'workspace-walkthrough-v2';
+type Step = { path: string; title: string; body: string; target?: string };
 
-interface WelcomeTourProps {
-  membership: MembershipWithGroup;
-  firstName: string;
-  onFinish: () => void;
-  onReplay?: () => void;
-}
+export default function WelcomeTour() {
+  const { user } = useAuth();
+  const { membership } = useGroup();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [index, setIndex] = useState<number | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const identity = user && membership ? `${WELCOME_TOUR_KEY}:${user.id}:${membership.id}` : null;
+  const admin = !!membership && isEffectiveAdmin(membership);
+  const steps = useMemo<Step[]>(() => [
+    { path: '/dashboard', title: 'Your chapter at a glance', body: 'Your overview shows ranking status, deadlines, and the next action to take.', target: 'dashboard' },
+    { path: '/dashboard?tab=rankings', title: 'Your rankings', body: 'Start or edit your list here. In the editor, reorder members and choose Submit rankings to send your preferences. You can resubmit while rankings are open.', target: 'rankings' },
+    { path: '/group/submit-ranking', title: 'Put your preferences in order', body: 'Add members, reorder your choices, and use Submit rankings when you are ready. Unsaved changes are clearly marked; this tour does not submit anything.', target: 'ranking-submit' },
+    { path: '/dashboard?tab=roster', title: 'Meet your chapter', body: 'Search the full roster, filter by role, and open a member’s profile to learn more.', target: 'roster' },
+    ...(admin ? [
+      { path: '/dashboard?tab=organization', title: 'Manage the matching cycle', body: 'Review membership requests and submission progress. Run matching when your chapter is ready; results remain available for admin review.', target: 'organization' },
+      { path: '/group/status', title: 'Check submissions before matching', body: 'See who has submitted and who is still waiting. Run matching starts the algorithm; simply viewing this page does not run it.', target: 'run-matching' },
+      { path: '/group/pairings', title: 'Review your chapter’s pairings', body: 'Review unmatched members and pairings grouped by family size. Confirm each pairing or make a thoughtful adjustment before planning your reveal.', target: 'pairing-results' },
+      { path: '/dashboard?tab=settings', title: 'Set your chapter’s rules', body: 'Manage cycle dates, ranking privacy, and matching settings here. This tour does not change them.', target: 'settings' },
+    ] : []),
+    { path: '/profile', title: 'Your profile and account', body: 'Add your photo and profile details here. Account settings include your password and sign-out controls.' },
+    { path: '/faq', title: 'Help when you need it', body: 'Find answers here. The footer also links to About, Contact us, and Replay the tour.' },
+  ], [admin]);
 
-type Step = 'welcome' | 0 | 1 | 2 | 3 | 'end';
+  useEffect(() => { setIndex(null); }, [identity, admin]);
+  useEffect(() => {
+    if (!identity || membership?.status !== 'approved' || location.pathname !== '/dashboard') return;
+    const replay = new URLSearchParams(location.search).get('tour') === '1';
+    if (index === null && (replay || !hasTourSeen(identity))) {
+      setIndex(0);
+      navigate('/dashboard', { replace: true });
+    }
+  }, [identity, membership?.status, location.pathname, location.search, index, navigate]);
 
-interface TourStep {
-  kicker: string;
-  heading: string;
-  body: string;
-  preview: ReactNode;
-}
+  useEffect(() => {
+    if (index === null || !steps[index]) return;
+    heading.current?.focus();
+    let target: Element | null = null;
+    document.body.classList.add('ss-touring');
+    const highlight = () => {
+      target = document.querySelector(`[data-tour="${steps[index].target || ''}"]`);
+      if (!target) return false;
+      target.classList.add('ss-tour-highlight');
+      target.scrollIntoView?.({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      return true;
+    };
+    // Lazy routes may still be loading when the tour step changes.
+    const observer = new MutationObserver(() => { if (highlight()) observer.disconnect(); });
+    if (!highlight() && steps[index].target) observer.observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
+    return () => { observer.disconnect(); target?.classList.remove('ss-tour-highlight'); document.body.classList.remove('ss-touring'); };
+  }, [index, steps, location.pathname, location.search]);
 
-const oppositePlural = (role: string) => (role === 'big' ? 'littles' : 'Bigs');
-
-const PreviewSurface = ({ children }: { children: ReactNode }) => (
-  <div className="ss-surface w-full max-w-md mt-8 text-left">{children}</div>
-);
-
-const WelcomeTour = ({ membership, firstName, onFinish }: WelcomeTourProps) => {
-  const [step, setStep] = useState<Step>('welcome');
-
-  const roleLabel =
-    membership.role === 'big'
-      ? 'Big'
-      : membership.role === 'little'
-      ? 'Little'
-      : isEffectiveAdmin(membership)
-      ? 'Admin'
-      : 'Member';
-  const targetPlural = oppositePlural(membership.role);
-  const deadlineLabel = formatRankingDeadline(membership.group);
-
-  const tourSteps: TourStep[] = [
-    {
-      kicker: 'YOUR TOUR · 1 / 4 · PROFILE',
-      heading: 'Make it yours.',
-      body: 'Add a little more to your profile so people in your chapter can find you and put a face to your name.',
-      preview: (
-        <>
-          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-            {firstName || 'Your'} {firstName ? '' : 'name'}
-          </h3>
-          <span className="ss-pill mt-2">{roleLabel}</span>
-          <p className="ss-caption mt-3">
-            Photo, major, year, a short bio. Add these whenever you're ready.
-          </p>
-        </>
-      ),
-    },
-    {
-      kicker: 'YOUR TOUR · 2 / 4 · RANKINGS',
-      heading:
-        membership.role === 'admin'
-          ? 'Your chapter’s preferences, in one place.'
-          : `Your ${targetPlural}, in your order.`,
-      body:
-        membership.role === 'admin'
-          ? "Members submit their own rankings and you see what's ready to match on."
-          : `Start ranking the ${targetPlural.toLowerCase()} you’ve met. Move people up or down, then review your preferences before submitting.`,
-      preview: (
-        <>
-          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-            My {targetPlural.toLowerCase()} rankings
-          </h3>
-          <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-            {['Maya', 'Elena', 'Sophie'].map((n, i) => (
-              <div key={n} className="flex items-center gap-3 py-2 text-[color:var(--ss-ink-2)]">
-                <span className="w-5 text-right text-[color:var(--ss-ink-5)] tabular-nums">
-                  {i + 1}
-                </span>
-                {n}
-              </div>
-            ))}
-          </div>
-          <p className="ss-caption mt-3">Example list · Ranking deadline: {deadlineLabel}</p>
-        </>
-      ),
-    },
-    {
-      kicker: 'YOUR TOUR · 3 / 4 · ROSTER',
-      heading: 'Your whole chapter, here.',
-      body:
-        'The roster is where you can see everyone in your organization. Open a profile to learn who’s who.',
-      preview: (
-        <>
-          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-            Chapter roster
-          </h3>
-          <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-            {[
-              { n: 'Maya', r: 'Big' },
-              { n: 'Elena', r: 'Big' },
-              { n: 'Sophie', r: 'Little' },
-            ].map(({ n, r }) => (
-              <div key={n} className="flex items-center gap-3 py-2 text-[color:var(--ss-ink-2)]">
-                <span className="w-8 h-8 rounded-full bg-[color:var(--ss-pill-bg)] text-[color:var(--ss-jade)] flex items-center justify-center text-sm font-medium">
-                  {n[0]}
-                </span>
-                {n} · {r}
-              </div>
-            ))}
-          </div>
-        </>
-      ),
-    },
-    {
-      kicker: 'YOUR TOUR · 4 / 4 · FAQ',
-      heading: 'Questions have a home, too.',
-      body: 'Visit the FAQ whenever you need help with rankings, submissions, or what happens next.',
-      preview: (
-        <>
-          <h3 className="font-display text-[22px] font-medium text-[color:var(--ss-ink-1)]">
-            Frequently asked questions
-          </h3>
-          <div className="mt-3 flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-            {[
-              'Can I update my rankings?',
-              'Who can see my preferences?',
-              'When will matches be announced?',
-            ].map(q => (
-              <p key={q} className="py-2 text-[color:var(--ss-ink-2)]">
-                {q}
-              </p>
-            ))}
-          </div>
-        </>
-      ),
-    },
-  ];
-
-  // -----------------------------------------------------------------------
-  // Welcome scene
-  // -----------------------------------------------------------------------
-  if (step === 'welcome') {
-    return (
-      <div className="w-full flex flex-col items-center text-center">
-        <h1 className="font-display italic text-[38px] md:text-[52px] leading-[1.05] font-medium text-[color:var(--ss-ink-1)]">
-          You’re going to be {roleLabel === 'Admin' ? 'an' : 'a'} {roleLabel}!
-        </h1>
-        <p className="mt-5 max-w-lg text-[color:var(--ss-ink-5)] text-lg leading-relaxed">
-          Welcome{firstName ? `, ${firstName}` : ''}. This is such an exciting time. Let’s show
-          you around your chapter’s space, so you know where everything is when you need it.
-        </p>
-        <p className="ss-caption mt-6">Chapter timeline: {deadlineLabel}</p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" variant="outline" onClick={onFinish}>
-            Skip the tour
-          </Button>
-          <Button size="lg" onClick={() => setStep(0)}>
-            Show me around <ArrowRight size={16} />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // -----------------------------------------------------------------------
-  // End scene
-  // -----------------------------------------------------------------------
-  if (step === 'end') {
-    return (
-      <div className="w-full flex flex-col items-center text-center">
-        <h1 className="font-display text-[38px] md:text-[52px] leading-[1.05] font-medium text-[color:var(--ss-ink-1)]">
-          Come back when you’re ready to rank.
-        </h1>
-        <p className="mt-5 max-w-lg text-[color:var(--ss-ink-5)] text-lg leading-relaxed">
-          You’re all set{firstName ? `, ${firstName}` : ''}. Your profile, {targetPlural.toLowerCase()} rankings, roster, and FAQ will be right here.
-        </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" variant="outline" onClick={() => setStep(3)}>
-            <ArrowLeft size={16} /> Back
-          </Button>
-          <Button size="lg" onClick={onFinish}>
-            Go to my dashboard <ArrowRight size={16} />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // -----------------------------------------------------------------------
-  // Tour step
-  // -----------------------------------------------------------------------
-  const idx = step as number;
-  const s = tourSteps[idx];
-  const isLast = idx === tourSteps.length - 1;
-
-  return (
-    <div className="w-full flex flex-col items-center text-center">
-      <span className="ss-kicker">{s.kicker}</span>
-      <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
-        {s.heading}
-      </h1>
-      <p className="mt-4 max-w-lg text-[color:var(--ss-ink-5)] text-base leading-relaxed">
-        {s.body}
-      </p>
-      <PreviewSurface>{s.preview}</PreviewSurface>
-
-      <div className="mt-10 flex flex-col items-center gap-4">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => setStep(idx === 0 ? 'welcome' : ((idx - 1) as Step))}
-          >
-            <ArrowLeft size={16} /> Back
-          </Button>
-          <Button
-            size="lg"
-            onClick={() => setStep(isLast ? 'end' : ((idx + 1) as Step))}
-          >
-            {isLast ? 'Finish my tour' : 'Continue'} <ArrowRight size={16} />
-          </Button>
-        </div>
-        <SceneDots current={idx} total={tourSteps.length} />
-      </div>
+  if (index === null || !steps[index] || !identity || membership?.status !== 'approved') return null;
+  const finish = () => { markTourSeen(identity); setIndex(null); navigate('/dashboard'); };
+  const go = (next: number) => { setIndex(next); navigate(steps[next].path); window.scrollTo({ top: 0, behavior: 'auto' }); };
+  return <aside className="ss-guided-tour" aria-label="Site walkthrough" onKeyDown={event => { if (event.key === 'Escape') finish(); }}>
+    <div className="flex items-center justify-between gap-3"><p className="ss-caption">Site tour · {index + 1} of {steps.length}</p>
+      <Button variant="ghost" size="sm" onClick={finish}>Skip tour</Button></div>
+    <h2 ref={heading} tabIndex={-1} className="mt-2 text-xl font-semibold">{steps[index].title}</h2>
+    <p className="mt-2 text-sm leading-relaxed">{steps[index].body}</p>
+    <div className="mt-4 flex justify-between gap-3">
+      <Button variant="outline" size="sm" disabled={index === 0} onClick={() => go(index - 1)}>Back</Button>
+      <Button size="sm" onClick={() => index === steps.length - 1 ? finish() : go(index + 1)}>{index === steps.length - 1 ? 'Finish tour' : 'Next page'}</Button>
     </div>
-  );
-};
-
-export default WelcomeTour;
-
-// Small helper used by Dashboard to decide whether to render the tour.
-// Exported alongside so both files agree on the same storage key.
-export const WELCOME_TOUR_KEY = 'welcome-tour-v1';
-
-// Convenience re-export so callers don't need to import Link separately
-// when composing the tour end-screen alongside their own copy.
-export { Link };
+  </aside>;
+}

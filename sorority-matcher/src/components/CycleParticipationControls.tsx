@@ -41,7 +41,7 @@ export default function CycleParticipationControls({ userId, groupId, cycleId, r
       <p className="ss-caption mt-2">{members.length - excluded.filter(id => members.some(m => m.userId === id)).length} participating · {excluded.filter(id => members.some(m => m.userId === id)).length} excluded</p>
       {participation.data.locked ? <p role="status" className="mt-3">Participation is locked because this cycle has closed or reveal sending has started.</p> : <>
         <label className="block mt-4">Member
-          <select className="block w-full mt-2 rounded-lg border p-2" value={selectedId} disabled={saving} onChange={e => { setSelectedId(e.target.value); setAcknowledged(false); setError(''); }}>
+          <select className="block w-full mt-2 rounded-control border p-2" value={selectedId} disabled={saving} onChange={e => { setSelectedId(e.target.value); setAcknowledged(false); setError(''); }}>
             <option value="">Choose a Big or Little</option>
             {members.map(m => <option key={m.userId} value={m.userId}>{name(m.userId)} · {m.role === 'big' ? 'Big' : 'Little'}{excluded.includes(m.userId) ? ' · Excluded' : ''}</option>)}
           </select>

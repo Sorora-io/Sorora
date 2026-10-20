@@ -27,13 +27,13 @@ export default function AccountMerge({ source, onClose, onComplete }: { source: 
   const resolved = !!data && !!choices.profile && data.memberships.every(m => choices.memberships[m.groupId]) && data.rankings.every(r => choices.rankings[r.cycleId]);
   const canMerge = !!data && !data.blockers.length && resolved && confirmation === data.sourceEmail && !preview.isFetching && !preview.error;
   const busy = create.isPending || cancel.isPending || merge.isPending;
-  const selectClass = 'mt-1 block w-full rounded-lg border bg-white px-3 py-2';
+  const selectClass = 'mt-1 block w-full rounded-control border bg-white px-3 py-2';
   const error = create.error || preview.error || cancel.error || merge.error;
   return <section ref={panel} tabIndex={-1} aria-label="Merge duplicate account" className="my-6 rounded-2xl border bg-white/80 p-5 focus:outline-none">
     <h2 className="text-xl font-semibold">Merge duplicate account</h2>
     <p className="mt-2 text-sm">Duplicate: <strong>{source.email}</strong>. Choose the account to keep. Its login email and password stay unchanged.</p>
     {!requestId ? <form onSubmit={e => { e.preventDefault(); create.mutate(); }} className="mt-4 flex flex-wrap items-end gap-3">
-      <label className="flex flex-col gap-1 text-sm">Email of the account to keep<input autoFocus type="email" required value={targetEmail} onChange={e => setTargetEmail(e.target.value)} className="rounded-lg border px-3 py-2" /></label>
+      <label className="flex flex-col gap-1 text-sm">Email of the account to keep<input autoFocus type="email" required value={targetEmail} onChange={e => setTargetEmail(e.target.value)} className="rounded-control border px-3 py-2" /></label>
       <Button type="submit" disabled={busy}>{create.isPending ? 'Preparing…' : 'Prepare merge preview'}</Button>
     </form> : <>
       <Button variant="outline" size="sm" className="mt-3" disabled={busy || preview.isFetching} onClick={() => { setConfirmation(''); merge.reset(); void preview.refetch(); }}>{preview.isFetching ? 'Refreshing…' : 'Refresh preview'}</Button>
@@ -49,7 +49,7 @@ export default function AccountMerge({ source, onClose, onComplete }: { source: 
         {data.rankings.map(r => <label key={r.cycleId} className="mt-3 block">{r.name}: two submitted rankings<select className={selectClass} disabled={busy} value={choices.rankings[r.cycleId] || ''} onChange={e => setChoices({ ...choices, rankings: { ...choices.rankings, [r.cycleId]: e.target.value } })}><option value="">Choose the submission to keep</option><option value="target">{data.targetEmail} · {new Date(r.targetUpdated).toLocaleString()}</option><option value="source">{data.sourceEmail} · {new Date(r.sourceUpdated).toLocaleString()}</option></select></label>)}
         <h3 className="mt-5 font-semibold">2. Confirm the merge</h3>
         <p className="mt-2">The duplicate login will be removed and its sessions revoked. The merge cannot be undone from the app. No matching will be rerun and no reveal emails will be sent.</p>
-        <label className="mt-3 block">Type {data.sourceEmail} to confirm<input autoComplete="off" spellCheck={false} disabled={busy} value={confirmation} onChange={e => setConfirmation(e.target.value)} className="mt-1 block w-full rounded-lg border px-3 py-2" /></label>
+        <label className="mt-3 block">Type {data.sourceEmail} to confirm<input autoComplete="off" spellCheck={false} disabled={busy} value={confirmation} onChange={e => setConfirmation(e.target.value)} className="mt-1 block w-full rounded-control border px-3 py-2" /></label>
         <Button className="mt-3" disabled={!canMerge || busy} onClick={() => merge.mutate()}>{merge.isPending ? 'Merging…' : 'Merge into kept account'}</Button>
       </div>}
     </>}

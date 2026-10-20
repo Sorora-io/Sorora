@@ -1,10 +1,12 @@
 import Button from './components/Button';
+import WelcomeTour from './components/WelcomeTour';
+import AnalyticsPageviews from './components/AnalyticsPageviews';
 import { Suspense, lazy } from "react";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { GroupProvider, useGroup } from "./contexts/GroupContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -64,6 +66,8 @@ const queryClient = new QueryClient({
 // Protected routes wait for the current account’s memberships themselves.
 const AppShell = () => {
   const { loading: authLoading, user } = useAuth();
+  const { pathname } = useLocation();
+  const workspace = !!user && ['/dashboard', '/profile', '/superuser', '/group/submit-ranking', '/group/roster', '/group/status', '/group/pairings', '/group/approvals', '/group/settings'].some(path => pathname === path || pathname.startsWith(path + '/'));
   const { error: groupError, refresh, loading: groupLoading } = useGroup();
 
   if (authLoading) {
@@ -71,8 +75,9 @@ const AppShell = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`${workspace ? 'ss-workspace ' : ''}min-h-screen flex flex-col`}>
       <AnalyticsIdentity />
+      <AnalyticsPageviews />
       {user && groupError && (
         <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
           <p>We couldn’t finish loading your chapter: {groupError}</p>
@@ -109,6 +114,7 @@ const AppShell = () => {
         </Routes>
       </Suspense>
       </main>
+      <WelcomeTour />
       <Footer />
     </div>
   );

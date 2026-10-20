@@ -38,7 +38,7 @@ const ChooseMatchingRole = () => {
       <p className="ss-caption">You’re currently admin-only, so Littles cannot rank you. Become a Big to appear in their ranking lists right away, even before you submit your own rankings. You’ll keep your admin access.</p>
       <p className="ss-caption">If you’re only managing matching, keep your current role. Admins cannot be Littles.</p>
       {error && <p role="alert" className="text-sm text-brick">{error}</p>}
-      <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Become a Big'}</Button>
+      <Button variant="outline" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Become a Big'}</Button>
     </div>
   );
 };

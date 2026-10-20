@@ -58,7 +58,7 @@ export default function SuperuserOrganizations() {
   };
   return <section aria-label="Organizations">
     <form className="my-6 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); setSearch(draft.trim()); setOffset(0); }}>
-      <label className="flex flex-col gap-1 text-sm">Search organization or school<input value={draft} onChange={e => setDraft(e.target.value)} className="rounded-lg border bg-white/70 px-3 py-2" /></label>
+      <label className="flex flex-col gap-1 text-sm">Search organization or school<input value={draft} onChange={e => setDraft(e.target.value)} className="rounded-control border bg-white/70 px-3 py-2" /></label>
       <Button type="submit">Search</Button>
       <Button type="button" variant="outline" onClick={() => void organizations.refetch()}>Refresh</Button>
     </form>
@@ -67,7 +67,7 @@ export default function SuperuserOrganizations() {
       <h2 id="delete-org-title" className="font-semibold">Delete {target.name}?</h2>
       <p className="my-2 text-sm">{target.school} · {target.member_count} members</p>
       <p className="my-2 text-sm">This permanently deletes this organization, its memberships, cycles, rankings, notes, and pairings. Members’ accounts are kept. This cannot be undone.</p>
-      <label className="flex flex-col gap-2 text-sm">Type delete to confirm<input autoFocus autoComplete="off" spellCheck={false} value={confirmation} disabled={remove.isPending} onChange={e => setConfirmation(e.target.value)} className="max-w-xs rounded-lg border px-3 py-2" /></label>
+      <label className="flex flex-col gap-2 text-sm">Type delete to confirm<input autoFocus autoComplete="off" spellCheck={false} value={confirmation} disabled={remove.isPending} onChange={e => setConfirmation(e.target.value)} className="max-w-xs rounded-control border px-3 py-2" /></label>
       <div className="mt-4 flex gap-3">
         <Button variant="danger-outline" disabled={confirmation !== 'delete' || remove.isPending} onClick={() => { if (confirmation === 'delete') remove.mutate({ groupId: target.id, confirmation }); }}>{remove.isPending ? 'Deleting…' : 'Permanently delete organization'}</Button>
         <Button variant="outline" disabled={remove.isPending} onClick={() => { setTarget(null); setConfirmation(''); remove.reset(); }}>Cancel</Button>
@@ -82,7 +82,7 @@ export default function SuperuserOrganizations() {
         <input autoFocus type="email" autoComplete="off" spellCheck={false} value={newOwnerEmail} disabled={transfer.isPending}
           onChange={e => setNewOwnerEmail(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && newOwnerEmail.trim()) transfer.mutate({ groupId: transferTarget.id, email: newOwnerEmail.trim() }); }}
-          className="max-w-sm rounded-lg border px-3 py-2" />
+          className="max-w-sm rounded-control border px-3 py-2" />
       </label>
       <div className="mt-4 flex gap-3">
         <Button disabled={!newOwnerEmail.trim() || transfer.isPending} onClick={() => transfer.mutate({ groupId: transferTarget.id, email: newOwnerEmail.trim() })}>{transfer.isPending ? 'Transferring…' : 'Transfer ownership'}</Button>

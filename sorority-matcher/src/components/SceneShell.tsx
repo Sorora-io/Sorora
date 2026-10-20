@@ -16,6 +16,7 @@ interface SceneShellProps {
   /** Optional wider max-width for content-heavy pages (dashboard, FAQ). */
   wide?: boolean;
   centered?: boolean;
+  stable?: boolean;
 }
 
 // Every screen in the sorora-story canvas shares the same frame: a soft
@@ -32,6 +33,7 @@ const SceneShell = ({
   footer,
   wide = false,
   centered = false,
+  stable = false,
 }: SceneShellProps) => {
   const navigate = useNavigate();
   const handleTopRight = onTopRight ?? (() => navigate('/'));
@@ -39,9 +41,9 @@ const SceneShell = ({
   return (
     <div className={`flex-1 w-full flex flex-col items-center px-5 md:px-8 py-8 ${centered ? 'justify-center' : ''}`}>
       <section
-        className={`ss-frost w-full ${
+        className={`${stable ? 'ss-intro-frame ' : ''}ss-frost w-full ${
           wide ? 'max-w-4xl' : 'max-w-2xl'
-        } rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col`}
+        } rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col`}
       >
         <PageHeader className="flex items-center justify-between mb-8">
           <Link

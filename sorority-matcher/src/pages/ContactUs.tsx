@@ -54,7 +54,7 @@ const ContactUs = () => {
         </Button>
       </PageHeader>
 
-      <section className="ss-frost w-full max-w-xl rounded-[24px] px-6 py-10 md:px-10 md:py-12 shadow-card">
+      <section className="ss-frost w-full max-w-xl rounded-panel px-6 py-10 md:px-10 md:py-12 shadow-card">
         <div className="ss-kicker">Contact</div>
         <h1 className="font-display text-[32px] md:text-[38px] leading-[1.1] font-semibold text-[color:var(--ss-ink-1)] mb-2">
           Question, bug, or feedback?

@@ -139,7 +139,7 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+      <section className="ss-frost w-full max-w-3xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -163,7 +163,7 @@ const FAQ = () => {
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="inline-flex items-center justify-center rounded-pill border border-[color:var(--ss-jade-line)] bg-white/60 px-6 py-2.5 text-sm font-medium text-[color:var(--ss-ink-2)] transition-colors hover:bg-[color:var(--ss-jade-deep)] hover:text-white hover:border-transparent"
+              className="inline-flex items-center justify-center rounded-control border border-[color:var(--ss-jade-line)] bg-white/60 px-6 py-2.5 text-sm font-medium text-[color:var(--ss-ink-2)] transition-colors hover:bg-[color:var(--ss-jade-deep)] hover:text-white hover:border-transparent"
             >
               {s.label}
             </a>

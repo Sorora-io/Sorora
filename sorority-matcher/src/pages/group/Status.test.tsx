@@ -129,9 +129,11 @@ test('matching has an animated busy state and prevents a second run while pendin
   (runMatching as jest.Mock).mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
   mount();await screen.findByText('Sample member');
   fireEvent.click(screen.getByRole('button',{name:'Run matching'}));
-  const busy=screen.getByRole('button',{name:'Finding matches…'});
-  expect(busy).toBeDisabled();expect(busy).toHaveAttribute('aria-busy','true');expect(busy).toHaveClass('motion-safe:animate-pulse');
-  fireEvent.click(busy);expect(runMatching).toHaveBeenCalledTimes(1);
+  const busy=screen.getByRole('progressbar',{name:'Matching in progress'});
+  expect(busy).not.toHaveAttribute('aria-valuenow');
+  expect(screen.getByRole('region',{name:'Matching in progress'})).toHaveAttribute('aria-busy','true');
+  expect(screen.queryByRole('button',{name:'Run matching'})).not.toBeInTheDocument();
+  expect(runMatching).toHaveBeenCalledTimes(1);
   finish({error:'Please review eligibility.'});
   expect(await screen.findByRole('alert')).toHaveTextContent('Please review eligibility.');
   expect(screen.getByRole('button',{name:'Run matching'})).toBeEnabled();

@@ -58,13 +58,15 @@ const Status = () => {
   const allSubmitted = rows.length > 0 && rows.every(r => r.submitted);
 
   const handleRun = async () => {
-    if (!group || !cycleId) return;
+    if (!group || !cycleId || running) return;
     setRunning(true);
+    window.scrollTo({ top: 0, behavior: 'auto' });
     setRunError('');
     try {
       const { error: runFailure } = await runMatching(group.id, cycleId);
       if (runFailure) { setRunError(runFailure); return; }
       trackEvent('matching_completed');
+      window.scrollTo({ top: 0, behavior: 'auto' });
       navigate('/group/pairings');
     } catch {
       setRunError('Could not confirm whether matching finished. Check Pairings before running matching again.');
@@ -107,6 +109,13 @@ const Status = () => {
   };
 
   if (!group) return null;
+  if (running) return <section className="m-auto w-full max-w-xl px-6 py-16" aria-label="Matching in progress" aria-busy="true">
+    <LoadingLogo size={36} />
+    <h1 className="ss-page-heading mt-6">Finding your chapter’s matches</h1>
+    <p role="status" className="mt-4 text-sm leading-relaxed">Comparing submitted preferences and chapter rules to find the best available pairings, including 1:1 matches and groups where allowed.</p>
+    <div role="progressbar" aria-label="Matching in progress" aria-valuetext="Waiting for the matching service" className="ss-matching-progress mt-6"><span /></div>
+    <p className="ss-caption mt-4">Keep this page open. Your results will appear when matching finishes.</p>
+  </section>;
 
   const visibleMembers = (list: SubmissionStatusRow[]) => list.filter(member => submissionFilter === 'all' || member.submitted === (submissionFilter === 'submitted'));
 
@@ -145,7 +154,7 @@ const Status = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+      <section className="ss-frost w-full max-w-3xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -245,7 +254,7 @@ const Status = () => {
 
         {cycleId && (
           <div className="mt-8">
-            <Button size="lg" fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0} aria-busy={running} aria-label={running ? 'Finding matches…' : 'Run matching'} className={running ? 'motion-safe:animate-pulse' : ''}>
+            <Button data-tour="run-matching" size="lg" fullWidth onClick={handleRun} disabled={running || loading || rows.length === 0} aria-busy={running} aria-label={running ? 'Finding matches…' : 'Run matching'} className={running ? 'motion-safe:animate-pulse' : ''}>
               {running && <LoadingLogo size={20} />}
               {running ? 'Finding matches…' : 'Run matching'}
             </Button>

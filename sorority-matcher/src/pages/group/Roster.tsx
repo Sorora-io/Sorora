@@ -124,22 +124,16 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
       .filter(Boolean)
       .join(' · ');
     return (
-      <div
-        key={r.userId}
-        className="flex items-center gap-3 py-3"
-      >
-        {avatar(r)}
-        <div className="min-w-0 flex-1">
-          <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}${embedded ? '?from=dashboard' : ''}`)}><span className="truncate">{displayName(r)}</span></Button>
-          {details ? (
-            <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{details}</p>
-          ) : (
-            <p className="text-xs text-[color:var(--ss-ink-6)] truncate">
-              {r.email !== displayName(r) ? r.email : 'No details added yet.'}
-            </p>
-          )}
+      <div key={r.userId} className="ss-roster-row">
+        <div className="ss-roster-member">
+          {avatar(r)}
+          <div className="min-w-0">
+            <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}${embedded ? '?from=dashboard' : ''}`)}><span className="truncate">{displayName(r)}</span></Button>
+            {r.email !== displayName(r) && <p className="ss-caption truncate">{r.email}</p>}
+          </div>
         </div>
-        {rolePill(r)}
+        <div className="ss-roster-details">{details || 'No details added yet'}</div>
+        <div className="ss-roster-role">{rolePill(r)}</div>
       </div>
     );
   };
@@ -172,17 +166,16 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
     <div>
       <div className="ss-kicker flex items-center gap-2">
         {label}
-        <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-md border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tracking-normal tabular-nums">{list.length}</span>
+        <span className="inline-flex h-6 min-w-[24px] items-center justify-center rounded-badge border border-[color:var(--ss-surface-border)] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tracking-normal tabular-nums">{list.length}</span>
       </div>
       {list.length === 0 ? (
         <p className="ss-caption">No one here yet.</p>
       ) : view === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{list.map(renderCard)}</div>
       ) : (
-        <div className="ss-surface">
-          <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-            {list.map(renderRow)}
-          </div>
+        <div className="ss-roster-list">
+          <div className="ss-roster-columns" aria-hidden="true"><span>Member</span><span>Details</span><span>Role</span></div>
+          {list.map(renderRow)}
         </div>
       )}
     </div>
@@ -190,7 +183,7 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
 
   return (
     <div className={embedded ? 'w-full' : 'min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8'}>
-      <section className={embedded ? 'w-full' : 'ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col'}>
+      <section className={embedded ? 'w-full' : 'ss-frost w-full max-w-4xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col'}>
         {!embedded && <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -223,7 +216,7 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
             aria-label="Sort roster"
             value={sortMode}
             onChange={e => changeSort(e.target.value as SortMode)}
-            className="appearance-none text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill pl-4 pr-10 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
+            className="appearance-none text-sm bg-white/60 border border-[color:var(--ss-input-border)] rounded-control pl-4 pr-10 py-2 text-[color:var(--ss-ink-3)] focus:outline-none focus:border-[color:var(--ss-jade)]"
           >
             <option value="role">By member type</option>
             <option value="az">Name (A–Z)</option>
@@ -231,12 +224,12 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
           </select>
           <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[color:var(--ss-ink-3)]"><ChevronDown size={16} aria-hidden="true" /></span>
           </div>
-          <div className="inline-flex items-center gap-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill p-1">
+          <div className="inline-flex items-center gap-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-control p-1">
             <Button variant="ghost" size="sm"
               onClick={() => changeView('list')}
               aria-label="List view"
               aria-pressed={view === 'list'}
-              className={`!p-2 min-w-[36px] rounded-pill transition-colors ${
+              className={`!p-2 min-w-[36px] rounded-control transition-colors ${
                 view === 'list'
                   ? '!bg-[color:var(--ss-selection-bg)] !text-[color:var(--ss-selection-text)]'
                   : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
@@ -248,7 +241,7 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
               onClick={() => changeView('card')}
               aria-label="Card view"
               aria-pressed={view === 'card'}
-              className={`!p-2 min-w-[36px] rounded-pill transition-colors ${
+              className={`!p-2 min-w-[36px] rounded-control transition-colors ${
                 view === 'card'
                   ? '!bg-[color:var(--ss-selection-bg)] !text-[color:var(--ss-selection-text)]'
                   : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
@@ -264,6 +257,7 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
           <Button variant="quiet" size="sm" className="mt-2" onClick={() => void refetch()}>Try again</Button>
         </div>}
 
+        {!loading && !error && <p className="ss-caption mt-4" role="status">{matchingRoster.length === roster.length ? `${roster.length} members` : `${matchingRoster.length} of ${roster.length} members`}</p>}
         <div className="mt-6">
           {loading ? (
             <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
@@ -284,10 +278,9 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
               {sortedRoster.map(renderCard)}
             </div>
           ) : (
-            <div className="ss-surface">
-              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-                {sortedRoster.map(renderRow)}
-              </div>
+            <div className="ss-roster-list">
+              <div className="ss-roster-columns" aria-hidden="true"><span>Member</span><span>Details</span><span>Role</span></div>
+              {sortedRoster.map(renderRow)}
             </div>
           )}
         </div>

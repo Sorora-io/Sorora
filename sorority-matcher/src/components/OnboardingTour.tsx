@@ -107,7 +107,7 @@ const OnboardingTour = ({
     left: rect.left - PAD,
     width: rect.width + PAD * 2,
     height: rect.height + PAD * 2,
-    borderRadius: 14,
+    borderRadius: 'var(--ss-radius-panel)',
     boxShadow: '0 0 0 9999px rgba(15, 23, 20, 0.6)',
     outline: '2px solid #296F62',
     pointerEvents: 'none',

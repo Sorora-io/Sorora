@@ -4,7 +4,7 @@ jest.mock('./components/MatchingReview',()=>()=>null);
 jest.mock('./components/ClearPairings',()=>()=>null);
 jest.mock('./lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
 jest.mock('./components/PairingChanges', () => () => null);
-import { act, render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useGroup } from './contexts/GroupContext';
 import SubmitRanking from './pages/group/SubmitRanking';
@@ -40,12 +40,12 @@ test('ranking load errors block saving; retry restores the saved ranking before 
  (getMyRanking as jest.Mock).mockResolvedValueOnce({rankedIds:[],error:'Connection lost'}).mockResolvedValue({rankedIds:['big'],error:null});
  mount(<SubmitRanking/>);
  expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t load');
- expect(screen.getByRole('button',{name:'Save ranking'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Submit rankings'})).toBeDisabled();
  expect(submitRanking).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole('button',{name:'Try again'}));
- await waitFor(()=>expect(screen.getByRole('button',{name:'Save ranking'})).toBeEnabled());
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Submit rankings'})).toBeEnabled());
  expect(screen.getByText('Your ranking (1)')).toBeInTheDocument();
- fireEvent.click(screen.getByRole('button',{name:'Save ranking'}));
+ fireEvent.click(screen.getByRole('button',{name:'Submit rankings'}));
  await waitFor(()=>expect(submitRanking).toHaveBeenCalledWith('g','c',['big']));
 });
 test('roster failure cannot seed an empty draft over existing rankings',async()=>{
@@ -53,10 +53,10 @@ test('roster failure cannot seed an empty draft over existing rankings',async()=
  (getRoster as jest.Mock).mockResolvedValueOnce({roster:[],error:'Unavailable'}).mockResolvedValue({roster:[{userId:'big',name:'Test Big',email:'test@example.com'}],error:null});
  mount(<SubmitRanking/>);
  await screen.findByRole('alert');
- expect(screen.getByRole('button',{name:'Save ranking'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Submit rankings'})).toBeDisabled();
  fireEvent.click(screen.getByRole('button',{name:'Try again'}));
  await waitFor(()=>expect(screen.getByText('Your ranking (1)')).toBeInTheDocument());
- expect(screen.getByRole('button',{name:'Save ranking'})).toBeEnabled();
+ expect(screen.getByRole('button',{name:'Submit rankings'})).toBeEnabled();
  expect(trackEvent).not.toHaveBeenCalled();
 });
 test('failed reveal stays visible after mounting a fresh page, without sending again',async()=>{
@@ -76,32 +76,11 @@ test('a failure warning is visible even without loaded pairings',async()=>{
  mount(<Pairings/>);
  expect(await screen.findByRole('alert')).toHaveTextContent('Reveal could not finish');
 });
-test('manual email failure does not claim all Bigs were notified',async()=>{
- (sendPairingReveal as jest.Mock).mockResolvedValue({result:{sent:0,total:1,bigs:0,unsent:1,failures:['SMTP failed']},error:null});
+test('pairing email actions are absent even when the legacy email-tools flag is enabled',async()=>{
  mount(<Pairings/>);
- fireEvent.click(await screen.findByRole('button',{name:'Reveal to Bigs now'}));
- fireEvent.click(screen.getByRole('button',{name:'Send now'}));
- expect(await screen.findByRole('alert')).toHaveTextContent('could not be confirmed');
- expect(screen.queryByText('All Bigs have already been notified.')).not.toBeInTheDocument();
-});
-
-test('scheduled outcome refreshes after a claimed send without retrying or replacing schedule edits',async()=>{
- jest.useFakeTimers();
- try {
-  const status={total:1,sent:0,scheduledAt:'2026-09-26T10:00:00Z',completedAt:null,failureMessage:null};
-  (getPairingRevealStatus as jest.Mock).mockResolvedValue({status,error:null});
-  mount(<Pairings/>);
-  const input=await screen.findByLabelText('Or schedule a reveal');
-  fireEvent.change(input,{target:{value:'2026-09-28T12:00'}});
-  (getPairingRevealStatus as jest.Mock).mockResolvedValue({status:{...status,completedAt:'2026-09-26T10:00:01Z',failureMessage:'Delivery is not yet confirmed.'},error:null});
-  await act(async()=>{jest.advanceTimersByTime(30_000)});
-  expect(screen.getByRole('alert')).toHaveTextContent('not yet confirmed');
-  (getPairingRevealStatus as jest.Mock).mockResolvedValue({status:{...status,sent:1,completedAt:'2026-09-26T10:00:01Z'},error:null});
-  await act(async()=>{jest.advanceTimersByTime(30_000)});
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  expect(input).toHaveValue('2026-09-28T12:00');
-  expect(sendPairingReveal).not.toHaveBeenCalled();
- } finally { cleanup(); jest.useRealTimers(); }
+ await screen.findByRole('button',{name:'Export pairings CSV'});
+ expect(screen.queryByRole('button',{name:/Reveal to Bigs|Send now|Schedule|Send to/})).not.toBeInTheDocument();
+ expect(sendPairingReveal).not.toHaveBeenCalled();
 });
 
 test('past deadline makes the saved ranking read-only', async()=>{
@@ -109,8 +88,8 @@ test('past deadline makes the saved ranking read-only', async()=>{
  (getMyRanking as jest.Mock).mockResolvedValue({rankedIds:['big'],error:null});
  mount(<SubmitRanking/>);
  await screen.findByText('Your ranking (1)');
- expect(screen.getByRole('status')).toHaveTextContent('submissions are closed');
- expect(screen.getByRole('button',{name:'Save ranking'})).toBeDisabled();
+ expect(screen.getByRole('status',{name:'Ranking availability'})).toHaveTextContent('submissions are closed');
+ expect(screen.getByRole('button',{name:'Submit rankings'})).toBeDisabled();
  expect(screen.getByRole('button',{name:'Remove Test Big from ranking'})).toBeDisabled();
  expect(submitRanking).not.toHaveBeenCalled();
 });
@@ -127,12 +106,32 @@ test('ranking network failure preserves choices and enables a deliberate retry',
  (submitRanking as jest.Mock).mockRejectedValueOnce(new Error('Network offline')).mockResolvedValue({error:null});
  mount(<SubmitRanking/>);
  await screen.findByText('Your ranking (1)');
- fireEvent.click(screen.getByRole('button',{name:'Save ranking'}));
+ fireEvent.click(screen.getByRole('button',{name:'Submit rankings'}));
  expect(await screen.findByText(/Could not confirm all ranking changes were saved/)).toBeInTheDocument();
  expect(screen.getByText('Your ranking (1)')).toBeInTheDocument();
- expect(screen.getByRole('button',{name:'Save ranking'})).toBeEnabled();
- fireEvent.click(screen.getByRole('button',{name:'Save ranking'}));
+ expect(screen.getByRole('button',{name:'Submit rankings'})).toBeEnabled();
+ fireEvent.click(screen.getByRole('button',{name:'Submit rankings'}));
  await waitFor(()=>expect(submitRanking).toHaveBeenCalledTimes(2));
  await waitFor(()=>expect(trackEvent).toHaveBeenCalledWith('ranking_submitted'));
  expect(trackEvent).toHaveBeenCalledTimes(1);
+});
+
+test('ranking progress and save state follow edits, failures and confirmed saves', async () => {
+ (getRoster as jest.Mock).mockResolvedValue({roster:[{userId:'big',name:'Test Big',email:'test@example.com'},{userId:'second',name:'Second Big',email:'second@example.com'}],error:null});
+ (getMyRanking as jest.Mock).mockResolvedValue({rankedIds:['big'],error:null});
+ (submitRanking as jest.Mock).mockResolvedValueOnce({error:'Sample save failure'}).mockResolvedValue({error:null});
+ mount(<SubmitRanking/>);
+ await screen.findByText('Your ranking (1)');
+ expect(screen.getByRole('status',{name:'Ranking submission status'})).toHaveTextContent('Rankings submitted');
+ fireEvent.click(screen.getByRole('button',{name:'Second Big'}));
+ expect(screen.getByRole('status',{name:'Ranking submission status'})).toHaveTextContent('Unsaved changes');
+ expect(screen.getByText('2 ranked · Minimum of 1 met')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Submit rankings'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Sample save failure');
+ expect(screen.getByRole('status',{name:'Ranking submission status'})).toHaveTextContent('Unsaved changes');
+ fireEvent.click(screen.getByRole('button',{name:'Submit rankings'}));
+ await waitFor(()=>expect(screen.getByRole('status',{name:'Ranking submission status'})).toHaveTextContent('Rankings submitted. You can edit and resubmit before the deadline.'));
+ fireEvent.click(screen.getByRole('button',{name:'Remove Second Big from ranking'}));
+ expect(screen.getByRole('status',{name:'Ranking submission status'})).toHaveTextContent('Unsaved changes');
+ expect(screen.queryByText('Rankings submitted. You can edit and resubmit before the deadline.')).not.toBeInTheDocument();
 });

@@ -1,6 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Footer from './Footer';
-jest.mock('./AnalyticsConsent', () => ({ __esModule: true, default: ({ children }: any) => <div>{children}<button>Analytics preferences</button></div> }));
 const mockNavigate = jest.fn();
 let mockMembership: any;
 jest.mock('react-router-dom', () => ({

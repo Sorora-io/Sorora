@@ -1,12 +1,8 @@
 import mixpanel from 'mixpanel-browser';
 
-export type Consent = 'accepted' | 'declined' | null;
-export const CONSENT_KEY = 'sorora.analytics-consent.v1';
-export const CONSENT_EVENT = 'sorora:analytics-consent';
 const events = ['sign_up_completed', 'login_completed', 'ranking_submitted', 'matching_completed', 'pairings_updated', 'reveal_requested', 'reveal_scheduled', 'reveal_cancelled', 'page_viewed'] as const;
 type AnalyticsEvent = typeof events[number];
 let initialized = false;
-let storageFailed = false;
 let lastPage: string | null = null;
 let identifiedUserId: string | null = null;
 let lastPropertiesKey = '';
@@ -14,15 +10,8 @@ let lastPropertiesKey = '';
 const allowedUserProperties = ['$name', '$email', 'role', 'is_admin', 'chapter'] as const;
 export type UserProperties = { name?: string | null; email?: string | null; role?: string | null; is_admin?: boolean | null; chapter?: string | null };
 
-export function getConsent(): Consent {
-  if (storageFailed) return null;
-  try {
-    const value = window.localStorage.getItem(CONSENT_KEY);
-    return value === 'accepted' || value === 'declined' ? value : null;
-  } catch { return null; }
-}
-// Analytics default to on; an explicit decline or a storage failure disables them.
-export function isAnalyticsEnabled(): boolean { return !storageFailed && getConsent() !== 'declined'; }
+// Analytics are enabled by the product configuration, with no preferences control.
+export function isAnalyticsEnabled(): boolean { return true; }
 
 // Allowlist SDK defaults too: no URLs, referrers, account IDs or profile data.
 const allowedProperties = new Set(['token', 'distinct_id', '$device_id', '$insert_id', 'time', 'mp_lib', '$lib_version', 'platform', 'page']);
@@ -45,7 +34,7 @@ export function initializeAnalytics() {
       };
       mixpanel.init(token, config);
       initialized = true;
-      // A fresh anonymous journey on each app load; never identify a Sorora account.
+      // Start anonymous; AnalyticsIdentity identifies authenticated accounts afterward.
       mixpanel.reset();
     }
     if (mixpanel.has_opted_out_tracking()) {
@@ -83,27 +72,6 @@ export function setUserProperties(props: UserProperties) {
   if (key === lastPropertiesKey || key === '{}') return;
   lastPropertiesKey = key;
   try { mixpanel.people.set(payload); } catch { /* Analytics must not interrupt auth. */ }
-}
-export function setConsent(choice: Exclude<Consent, null>): boolean {
-  try { window.localStorage.setItem(CONSENT_KEY, choice); }
-  catch {
-    storageFailed = true;
-    syncConsent();
-    window.dispatchEvent(new Event(CONSENT_EVENT));
-    return false;
-  }
-  storageFailed = false;
-  syncConsent();
-  window.dispatchEvent(new Event(CONSENT_EVENT));
-  return true;
-}
-export function syncConsent() {
-  if (isAnalyticsEnabled() || !initialized) return;
-  identifiedUserId = null; lastPropertiesKey = '';
-  // clear_persistence defaults to true in the SDK. No profile deletion request.
-  try { mixpanel.opt_out_tracking({ delete_user: false }); }
-  catch { /* Every track also checks consent. */ }
-  lastPage = null;
 }
 export function trackEvent(event: AnalyticsEvent) {
   if (!initialized || !isAnalyticsEnabled()) return;

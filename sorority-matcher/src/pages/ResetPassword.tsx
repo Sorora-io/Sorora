@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput';
 import PageHeader from '../components/PageHeader';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -104,7 +105,7 @@ const ResetPassword = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label htmlFor="new-password" className="block text-sm font-medium mb-1">New password</label>
-              <input
+              <PasswordInput
                 id="new-password"
                 type="password"
                 autoComplete="new-password"
@@ -118,7 +119,7 @@ const ResetPassword = () => {
             </div>
             <div>
               <label htmlFor="confirm-password" className="block text-sm font-medium mb-1">Confirm new password</label>
-              <input
+              <PasswordInput
                 id="confirm-password"
                 type="password"
                 autoComplete="new-password"

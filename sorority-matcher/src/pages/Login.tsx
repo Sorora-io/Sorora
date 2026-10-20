@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput';
 import { useEffect, useState, useRef, ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -358,8 +359,9 @@ const Login = () => {
           </div>
           <div>
             <label className="ss-label" htmlFor="signin-password">Password</label>
-            <input
+            <PasswordInput
               id="signin-password"
+              autoComplete="current-password"
               type="password"
               className="ss-input"
               value={password}
@@ -555,7 +557,7 @@ const Login = () => {
               type="button"
               onClick={() => setRole(r)}
               aria-pressed={role === r}
-              className={`px-8 py-3 rounded-pill text-[15px] font-medium border transition-colors min-h-[48px] ${
+              className={`px-8 py-3 rounded-control text-[15px] font-medium border transition-colors min-h-[48px] ${
                 role === r
                   ? 'bg-[color:var(--ss-jade-deep)] text-white border-transparent'
                   : 'bg-transparent text-[color:var(--ss-ink-2)] border-[color:var(--ss-jade-line)] hover:bg-[color:var(--ss-button-hover)]'
@@ -634,8 +636,9 @@ const Login = () => {
         </div>
         <div>
           <label className="ss-label" htmlFor="signup-password">Password</label>
-          <input
+          <PasswordInput
             id="signup-password"
+            autoComplete="new-password"
             type="password"
             className="ss-input"
             value={password}

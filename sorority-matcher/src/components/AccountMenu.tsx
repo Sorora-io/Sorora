@@ -72,7 +72,7 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
       <div ref={accountContainer} className="relative">
         <button ref={accountTrigger} type="button" onClick={() => setOpen(value => !value)}
           aria-label={`Account options for ${displayName || 'you'}`} aria-expanded={open}
-          className="flex min-w-0 items-center gap-2 rounded-full px-2 py-1 hover:bg-[color:var(--ss-button-hover)] transition-colors">
+          className="flex min-w-0 items-center gap-2 rounded-control px-2 py-1 hover:bg-[color:var(--ss-button-hover)] transition-colors">
           {profilePending ? (
             <span aria-hidden="true" className="h-8 w-8 shrink-0 rounded-full bg-[color:var(--ss-pill-bg)] motion-safe:animate-pulse" />
           ) : <Avatar src={profile?.avatar_url} name={displayName} email={user?.email} size="sm" />}
@@ -84,9 +84,9 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
         {open && (
           <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] rounded-2xl border border-[color:var(--ss-input-border)] bg-white p-2 shadow-lg" onClick={event => { if ((event.target as HTMLElement).closest('a')) setOpen(false); }}>
             {superuserMode ? (
-              <a href="/dashboard" className="block rounded-xl px-3 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-stone-100">Main app</a>
+              <a href="/dashboard" className="block rounded-control px-3 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-stone-100">Main app</a>
             ) : <>
-            <Button variant="ghost" size="sm" className="!w-full !justify-start !rounded-xl !px-3 !text-sm" onClick={() => { setOpen(false); window.location.assign('/profile'); }}>My profile</Button>
+            <Button variant="ghost" size="sm" className="!w-full !justify-start !rounded-control !px-3 !text-sm" onClick={() => { setOpen(false); window.location.assign('/profile'); }}>My profile</Button>
             <SuperuserLink />
             </>}
       <Button
@@ -95,7 +95,7 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
         onClick={handleClick}
         disabled={busy}
         aria-live="polite"
-        className="!w-full !justify-start !rounded-xl !px-3 !text-sm"
+        className="!w-full !justify-start !rounded-control !px-3 !text-sm"
       >
         {busy ? 'Signing out…' : armed ? 'Click again to confirm' : 'Sign out'}
       </Button>

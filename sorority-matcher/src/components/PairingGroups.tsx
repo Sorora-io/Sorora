@@ -13,7 +13,6 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
 }) {
   const {user}=useAuth();
   const queryClient=useQueryClient();
-  const [showConfirmed,setShowConfirmed]=useState(false);
   const [saving,setSaving]=useState<string|null>(null);
   const [saveError,setSaveError]=useState('');
   const signature=pairings.map(p=>`${p.bigId}:${p.littleId}`).sort().join(',');
@@ -45,18 +44,21 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
     }
   };
   if(!confirmations.data || confirmations.error)return <section className="ss-surface" aria-label="Saved pairings">
-    <h2 className="flex items-center gap-2 font-medium">Saved pairings <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{pairings.length}</span></h2>
+    <h2 className="flex items-center gap-2 font-medium">Saved pairings <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-badge bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{pairings.length}</span></h2>
     <p className="ss-caption mt-2">{confirmations.error ? 'Could not load saved confirmations. Refresh before reviewing these pairs.' : 'Loading saved confirmations…'}</p>
     {confirmations.error && <Button variant="quiet" size="sm" className="mt-2" onClick={()=>void confirmations.refetch()}>Retry confirmations</Button>}
     <ul className="mt-3 space-y-3">{pairings.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="text-sm break-words">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</li>)}</ul>
   </section>;
   const visibleRankings=!blind && !rankings.error ? rankings.data : undefined;
   const reviewed=reviewPairings(pairings,visibleRankings ?? {members:[]},confirmations.data.decisions);
-  const confirmed=reviewed.filter(pair=>pair.confirmed);
-  const needsReview=reviewed.filter(pair=>!pair.confirmed);
+  const counts = new Map<string, number>();
+  pairings.forEach(pair => counts.set(pair.bigId, (counts.get(pair.bigId) || 0) + 1));
+  const sizes = Array.from(new Set(counts.values())).sort((a,b) => a-b);
+  const familyCount = (size: number) => Array.from(counts.values()).filter(count => count === size).length;
   const rows=(pairs:typeof reviewed)=><ul className="mt-3 divide-y divide-[color:var(--ss-surface-border)]">{pairs.map(pair=><li key={`${pair.bigId}:${pair.littleId}`} className="flex items-start justify-between gap-3 py-3 text-sm">
     <div className="min-w-0 break-words">
     <p className="font-medium">{pair.bigName || 'Unknown Big'} → {pair.littleName || 'Unknown Little'}</p>
+    <p className="ss-caption mt-1">{pair.confirmed ? 'Confirmed' : 'Needs review'}</p>
     {visibleRankings && <p className="ss-caption mt-1">
       Big {typeof pair.bigRank==='number' ? `#${pair.bigRank}` : pair.bigRank==='Not ranked' ? '—' : pair.bigRank} · Little {typeof pair.littleRank==='number' ? `#${pair.littleRank}` : pair.littleRank==='Not ranked' ? '—' : pair.littleRank}
       {!pair.mutualFirst && <span> · {pair.matchType}</span>}
@@ -92,13 +94,10 @@ export default function PairingGroups({groupId,cycleId,blind,pairings,onRefresh}
       : rankings.isPending && <p role="status" className="ss-caption">Checking mutual first choices…</p>}
     {saveError && <p role="alert" className="text-sm text-brick">{saveError}</p>}
     {confirmations.data.lockReason && <p className="ss-caption">{confirmations.data.lockReason}</p>}
-    <section className="ss-surface" aria-label="Confirmed pairings">
-      <h2 className="flex items-center gap-2 font-medium">Confirmed <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{confirmed.length}</span></h2>
-      {confirmed.length>0 ? <><Button variant="quiet" size="sm" className="mt-3" aria-expanded={showConfirmed} aria-controls="confirmed-pairs" onClick={()=>setShowConfirmed(!showConfirmed)}>{showConfirmed?'Hide confirmed pairs':'Show confirmed pairs'}</Button>{showConfirmed && <div id="confirmed-pairs">{rows(confirmed)}</div>}</> : <p className="ss-caption mt-3">No confirmed pairs yet.</p>}
-    </section>
-    <section className="ss-surface" aria-label="Pairings needing review">
-      <h2 className="flex items-center gap-2 font-medium">Needs review <span className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center rounded-[4px] bg-[color:var(--ss-pill-bg)] px-1 text-xs font-semibold tabular-nums">{needsReview.length}</span></h2>
-      {needsReview.length ? rows(needsReview) : <p className="ss-caption mt-3">All saved pairs are confirmed.</p>}
-    </section>
+    {sizes.map(size => <section key={size} className="ss-surface" aria-label={`1:${size} matchings`}>
+      <h2 className="font-medium">1:{size} matchings</h2>
+      <p className="ss-caption mt-1">One Big with {size === 1 ? 'one Little' : `${size} Littles`} · {familyCount(size)} {size === 1 ? 'pair' : 'group'}{familyCount(size) === 1 ? '' : 's'}</p>
+      {rows(reviewed.filter(pair => counts.get(pair.bigId) === size).sort((a,b) => (a.bigName || '').localeCompare(b.bigName || '')))}
+    </section>)}
   </div>;
 }

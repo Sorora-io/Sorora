@@ -1,7 +1,7 @@
 import { SHOW_MATCHING_EMAIL_TOOLS } from '../lib/features';
 import Settings from './group/Settings';
 import { RosterContent } from './group/Roster';
-import { formatRankingDeadline } from '../lib/rankingDeadline';
+import { formatRankingDeadline, groupRankingDeadline, useRankingDeadline } from '../lib/rankingDeadline';
 import { useCycleParticipation } from '../lib/cycleParticipation';
 import { revealDeliveryWarning } from '../lib/revealStatus';
 import PageHeader from '../components/PageHeader';
@@ -13,13 +13,10 @@ import { useGroup } from '../contexts/GroupContext';
 import Button from '../components/Button';
 import Avatar from '../components/Avatar';
 import ChooseMatchingRole from '../components/ChooseMatchingRole';
-import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import MemberHeader, { MemberTab as TabId } from '../components/MemberHeader';
 import { isEffectiveAdmin, MembershipWithGroup, getPendingMemberships } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
 import { getPairingRevealStatus } from '../lib/pairings';
-import { useMyProfile } from '../hooks/useMyProfile';
-import { hasTourSeen, markTourSeen } from '../lib/tour';
 import { queryKeys, STALE } from '../lib/queryKeys';
 
 const roleLabel = (m: MembershipWithGroup) => {
@@ -31,23 +28,9 @@ const roleLabel = (m: MembershipWithGroup) => {
 const opposite = (role: string) => (role === 'big' ? 'little' : 'big');
 const percent = (a: number, b: number) => (b === 0 ? 0 : Math.round((a / b) * 100));
 
-// Design canvas deliberately drops the Georgia serif once the visitor is
-// past onboarding — the dashboard headings are Arial-family sans, 30px,
-// -0.9px tracking, 600 weight. Same content, quieter voice; the switch
-// is what makes the intro scenes feel like a moment and the dashboard
-// feel like work you're already doing.
+// Shared, restrained heading scale for member workspace screens.
 const Heading = ({ text }: { text: string }) => (
-  <h1
-    className="font-sans text-[color:var(--ss-ink-1)] whitespace-pre-line"
-    style={{
-      fontSize: 30,
-      fontWeight: 600,
-      lineHeight: 1.2,
-      letterSpacing: '-0.9px',
-    }}
-  >
-    {text}
-  </h1>
+  <h1 className="ss-page-heading font-sans text-[color:var(--ss-ink-1)] whitespace-pre-line">{text}</h1>
 );
 
 const Sub = ({ text }: { text: string }) => (
@@ -69,7 +52,7 @@ const SectionHeading = ({ children }: { children: React.ReactNode }) => (
 );
 
 // ---------------------------------------------------------------------------
-// Dashboard tab (two-card layout from the design)
+// Dashboard overview: admin tasks first, personal ranking status second.
 // ---------------------------------------------------------------------------
 
 export const DashboardTab = ({
@@ -85,29 +68,31 @@ export const DashboardTab = ({
   const cycleId = membership.group.active_cycle_id;
   const participation = useCycleParticipation(user?.id ?? '', membership.group_id, cycleId);
   const excluded = participation.data?.excludedIds.includes(user?.id ?? '') ?? false;
-  const targetPlural = opposite(membership.role) === 'big' ? 'Bigs' : 'littles';
+  const targetPlural = opposite(membership.role) === 'big' ? 'bigs' : 'littles';
+  const minimum = membership.role === 'big' ? membership.group.min_big_rankings ?? 1 : membership.group.min_little_rankings ?? 1;
+  const deadlineClosed = useRankingDeadline(groupRankingDeadline(membership.group));
 
-  const { data: rankedIds } = useQuery({
+  const { data: rankedIds, isPending: rankingPending, error: rankingError, refetch: retryRanking } = useQuery({
     queryKey: queryKeys.myRanking(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getMyRanking(cycleId).then(({ rankedIds: ids, error }) => { if (error) throw new Error(error); return ids; }),
     enabled: isRanker && !!cycleId,
   });
 
-  const { data: statusRows, error: statusError, refetch: retryStatus } = useQuery({
+  const { data: statusRows, isPending: statusPending, error: statusError, refetch: retryStatus } = useQuery({
     queryKey: queryKeys.submissionStatus(user?.id ?? '', cycleId ?? ''),
     queryFn: () =>
       getSubmissionStatus(membership.group_id, cycleId).then(({ rows, error }) => { if (error) throw new Error(error); return rows; }),
     enabled: isAdmin && !!cycleId,
   });
 
-  const { data: pendingCount = 0 } = useQuery({
+  const { data: pendingCount = 0, isPending: pendingPending, error: pendingError, refetch: retryPending } = useQuery({
     queryKey: queryKeys.pendingCount(user?.id ?? '', membership.group_id),
     queryFn: () => getPendingMemberships(membership.group_id).then(({ memberships: m, error }) => { if (error) throw new Error(error); return m.length; }),
     enabled: isAdmin,
     staleTime: STALE.short,
   });
 
-  const { data: reveal } = useQuery({
+  const { data: reveal, isPending: revealPending, isSuccess: revealReady, error: revealError, refetch: retryReveal } = useQuery({
     queryKey: queryKeys.revealStatus(user?.id ?? '', cycleId ?? ''),
     queryFn: () => getPairingRevealStatus(membership.group_id, cycleId!).then(({ status, error }) => { if (error) throw new Error(error); return status; }),
     refetchInterval: 30_000,
@@ -115,6 +100,7 @@ export const DashboardTab = ({
     staleTime: STALE.short,
   });
 
+  const chapterLoading = pendingPending || (!!cycleId && (statusPending || revealPending));
   const submitted = (rankedIds?.length ?? 0) > 0;
   const bigs = (statusRows ?? []).filter(r => r.role === 'big');
   const littles = (statusRows ?? []).filter(r => r.role === 'little');
@@ -131,12 +117,15 @@ export const DashboardTab = ({
   const recipientUnit = reveal?.unnotifiedBigs === undefined ? 'pairing' : 'Big';
 
   const attention: { tone: 'urgent' | 'waiting' | 'ready'; title: string; detail: string; action: string; to: string }[] = [];
+  if (isAdmin && !cycleId) {
+    attention.push({ tone: 'ready', title: 'No active matching cycle', detail: 'Start a cycle before members can submit rankings.', action: 'Open cycle settings', to: '/group/settings' });
+  }
   if (pendingCount > 0) {
     attention.push({
       tone: 'urgent',
       title: `${pendingCount} join request${pendingCount === 1 ? '' : 's'} waiting`,
       detail: `${pendingCount === 1 ? 'Someone' : 'They'} can't rank until you approve ${pendingCount === 1 ? 'them' : 'them'}.`,
-      action: 'Review',
+      action: `Approve ${pendingCount} ${pendingCount === 1 ? 'member' : 'members'}`,
       to: '/group/approvals',
     });
   }
@@ -149,7 +138,7 @@ export const DashboardTab = ({
       to: '/group/status',
     });
   }
-  if (rosterSize > 0 && outstanding === 0 && !pairingsRun) {
+  if (rosterSize > 0 && outstanding === 0 && !pairingsRun && revealReady) {
     attention.push({
       tone: 'ready',
       title: 'Everyone has submitted',
@@ -180,61 +169,35 @@ export const DashboardTab = ({
 
   return (
     <div>
-      <Heading text="Your chapter dashboard" />
-      {!isRanker && <Sub text="Here's what needs you. Approvals first, then follow preference collection." />}
-
-      {membership.role === 'admin' && <ChooseMatchingRole />}
-      <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {(isRanker || isAdmin) && (
-          <section className="ss-surface flex flex-col gap-3">
-            <SectionHeading>
-              {isRanker ? `My ${targetPlural} rankings` : 'My rankings'}
-            </SectionHeading>
-            <p className="ss-caption">
-              {excluded ? "You’re not participating in this cycle. Your chapter membership and saved rankings are unchanged." : submitted
-                ? `You've submitted ${rankedIds!.length} ${
-                    rankedIds!.length === 1 ? 'ranking' : 'rankings'
-                  }.`
-                : "You haven't started a list yet."}
-            </p>
-            <span className="ss-pill w-fit">
-              Deadline: {formatRankingDeadline(membership.group)}
-            </span>
-            <div className="mt-2">
-              <Button disabled={excluded} onClick={() => onNavigate('/group/submit-ranking')}>
-                {submitted ? 'Update rankings' : 'Start ranking'}
-              </Button>
-            </div>
-          </section>
-        )}
-
+      <Heading text="Overview" />
+      <div className="ss-overview-sections">
         {isAdmin && (
-          <section className="ss-surface flex flex-col gap-3">
+          <section className="ss-admin-attention flex flex-col gap-3" aria-label="Chapter tasks">
             <div className="flex items-center justify-between gap-3">
-              <div className="ss-kicker" style={{ marginBottom: 0 }}>
-                01 · Needs attention
-              </div>
+              <SectionHeading>Needs attention</SectionHeading>
               {attention.length > 0 && (
-                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brick-500 px-1.5 text-[11px] font-semibold text-white tabular-nums">
+                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-badge bg-brick-500 px-1.5 text-[11px] font-semibold text-white tabular-nums">
                   {attention.length}
                 </span>
               )}
             </div>
-            <SectionHeading>
-              {statusError && attention.length === 0
+            {attention.length === 0 && <SectionHeading>
+              {chapterLoading ? 'Loading chapter status…' : (statusError || pendingError || revealError) && attention.length === 0
                 ? 'Chapter status unavailable'
                 : rosterSize === 0 && attention.length === 0
                 ? 'Nothing here yet'
                 : attention.length === 0
                   ? 'You’re all caught up'
                   : 'What needs you'}
-            </SectionHeading>
+            </SectionHeading>}
 
+            {!!revealError && <div role="alert"><p className="ss-caption">Pairing status is unavailable.</p><Button variant="quiet" size="sm" className="mt-2" onClick={() => void retryReveal()}>Retry pairing status</Button></div>}
+            {!!pendingError && <div role="alert"><p className="ss-caption">Join request counts are unavailable.</p><Button variant="quiet" size="sm" className="mt-2" onClick={() => void retryPending()}>Retry join requests</Button></div>}
             {!!statusError && <div role="alert">
               <p className="ss-caption">Could not load chapter submissions. Submission counts are unavailable until this loads.</p>
               <Button variant="quiet" size="sm" className="mt-2" onClick={() => void retryStatus()}>Retry submissions</Button>
             </div>}
-            {statusError && attention.length === 0 ? null : rosterSize === 0 && attention.length === 0 ? (
+            {chapterLoading && attention.length === 0 ? <p role="status" className="ss-caption">Checking join requests, submissions, and pairings…</p> : (statusError || pendingError || revealError) && attention.length === 0 ? null : rosterSize === 0 && attention.length === 0 ? (
               <p className="ss-caption">
                 No Bigs or Littles approved yet — once people join with your chapter code, their
                 requests show up here.
@@ -247,7 +210,7 @@ export const DashboardTab = ({
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-                {attention.map(item => (
+                {attention.map((item, index) => (
                   // Stacked, not title-beside-button: this card sits in a
                   // half-width dashboard column (~390px), where a side-by-side
                   // action squeezes the copy to one word per line.
@@ -261,7 +224,7 @@ export const DashboardTab = ({
                       <p className="ss-caption mt-0.5">{item.detail}</p>
                       <Button
                         size="sm"
-                        variant="quiet"
+                        variant={index === 0 ? 'primary' : 'outline'}
                         className="mt-2"
                         onClick={() => onNavigate(item.to)}
                       >
@@ -307,8 +270,25 @@ export const DashboardTab = ({
             </div>
           </section>
         )}
-
-
+        {isRanker && (
+          <section className={`ss-ranking-overview ${isAdmin ? 'ss-ranking-overview-secondary' : ''}`} aria-label="Your ranking status">
+            <div>
+              <SectionHeading>{excluded ? 'Not participating this cycle' : !cycleId ? 'Rankings not open yet' : rankingError ? 'Ranking status unavailable' : rankingPending ? 'Loading your ranking…' : deadlineClosed ? 'Rankings closed' : submitted ? 'Rankings submitted' : 'Rankings open'}</SectionHeading>
+              <p className="ss-caption mt-2">
+                {excluded ? 'Your chapter membership and saved rankings are unchanged.' : !cycleId ? 'Your admin hasn’t started a matching cycle yet.' : rankingError ? 'Your saved choices have not been changed.' : rankingPending ? 'Checking your saved choices.' : submitted
+                  ? `You’ve submitted ${rankedIds!.length} ${rankedIds!.length === 1 ? 'choice' : 'choices'}. ${deadlineClosed ? 'Your list is now read-only.' : 'You can edit and resubmit until the deadline.'}`
+                  : deadlineClosed ? 'The deadline has passed. You can still view your list.' : `Rank at least ${minimum} ${targetPlural}, most preferred first.`}
+              </p>
+              <span className="ss-pill w-fit mt-4">Deadline: {formatRankingDeadline(membership.group)}</span>
+            </div>
+            <div className="ss-ranking-overview-action">
+              {rankingError ? <Button variant="outline" onClick={() => void retryRanking()}>Retry ranking status</Button> : <Button variant={isAdmin ? 'outline' : 'primary'} disabled={excluded || !cycleId || rankingPending} onClick={() => onNavigate('/group/submit-ranking')}>
+                {deadlineClosed ? 'View ranking' : submitted ? 'Edit ranking' : 'Start ranking'}
+              </Button>}
+            </div>
+          </section>
+        )}
+        {membership.role === 'admin' && <ChooseMatchingRole />}
       </div>
 
     </div>
@@ -472,13 +452,13 @@ const FaqTab = () => (
     <div className="mt-6 flex flex-wrap gap-3">
       <Link
         to="/faq"
-        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
+        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-control bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors"
       >
         Open the full FAQ
       </Link>
       <Link
         to="/contact"
-        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-pill border border-[color:var(--ss-jade-line)] text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors"
+        className="inline-flex items-center justify-center gap-2 px-7 py-3 text-[15px] font-medium min-h-[48px] rounded-control border border-[color:var(--ss-jade-line)] text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors"
       >
         Contact us
       </Link>
@@ -552,7 +532,7 @@ export const OrganizationTab = ({ membership, onNavigate }: {
       <div>
         <div className="flex items-center gap-2">
           <SectionHeading>Approvals</SectionHeading>
-          {pendingCount !== undefined && !isError && <span className="rounded-full bg-white/60 px-2 py-0.5 text-sm" aria-label={`${pendingCount} pending approvals`}>{pendingCount}</span>}
+          {pendingCount !== undefined && !isError && <span className="rounded-badge bg-white/60 px-2 py-0.5 text-sm" aria-label={`${pendingCount} pending approvals`}>{pendingCount}</span>}
         </div>
         <p className="mt-2 text-sm text-[color:var(--ss-ink-3)]">{isError ? 'Count unavailable. Open approvals to review requests.' : pendingCount === undefined ? 'Loading pending requests…' : pendingCount === 0 ? 'No requests waiting for review.' : 'Review requests so members can start ranking.'}</p>
       </div>
@@ -571,7 +551,6 @@ const Dashboard = () => {
 
   const tabFromUrl = (searchParams.get('tab') as TabId) || 'dashboard';
   const [tab, setTab] = useState<TabId>(tabFromUrl);
-  const [tourActive, setTourActive] = useState(false);
 
   useEffect(() => {
     if (tab !== tabFromUrl) setTab(tabFromUrl);
@@ -585,37 +564,6 @@ const Dashboard = () => {
       next.set('tab', id);
       return next;
     }, { replace: true });
-  };
-
-  const { data: profile } = useMyProfile();
-
-  // First-time approved member sees the welcome + tour. Also flipped on
-  // manually by "Replay the tour".
-  useEffect(() => {
-    if (
-      membership?.status === 'approved' &&
-      !hasTourSeen(WELCOME_TOUR_KEY) &&
-      searchParams.get('tour') !== '1'
-    ) {
-      setTourActive(true);
-    }
-  }, [membership?.status, searchParams]);
-
-  useEffect(() => {
-    if (searchParams.get('tour') === '1' && membership) {
-      setTourActive(true);
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev);
-        next.delete('tour');
-        return next;
-      }, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, membership?.id]);
-
-  const finishTour = () => {
-    markTourSeen(WELCOME_TOUR_KEY);
-    setTourActive(false);
   };
 
   const onNavigate = (path: string) => {
@@ -650,7 +598,7 @@ const Dashboard = () => {
   if (memberships.length === 0 || !membership) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-        <section className="ss-frost w-full max-w-2xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 text-center">
+        <section className="ss-frost w-full max-w-2xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 text-center">
           <PageHeader className="flex items-center justify-between mb-10">
             <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
               sorora
@@ -684,7 +632,6 @@ const Dashboard = () => {
   const headerContext = isEffectiveAdmin(membership)
     ? `${membership.group.name} · ${roleLabel(membership)}`
     : membership.group.name;
-  const firstName = (profile?.name ?? '').split(' ')[0] ?? '';
 
   const renderTab = () => {
     switch (tab) {
@@ -713,20 +660,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <MemberHeader contextLabel={headerContext} activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} showNavigation={!tourActive} isAdmin={isEffectiveAdmin(membership)} />
+      <section className="ss-frost w-full max-w-4xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+        <MemberHeader contextLabel={headerContext} activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} isAdmin={isEffectiveAdmin(membership)} />
 
-        {tourActive ? (
-          <WelcomeTour
-            membership={membership}
-            firstName={firstName}
-            onFinish={finishTour}
-          />
-        ) : (
-          <>
-            <div className="text-left">{renderTab()}</div>
-          </>
-        )}
+        <div className="text-left">{renderTab()}</div>
       </section>
     </div>
   );

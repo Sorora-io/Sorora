@@ -16,8 +16,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-// Pill buttons matching the sorora-story canvas. `primary` is the deep-jade
-// CTA ("Continue", "Show me around"). `outline` is the ink-outline pill
+// Shared buttons use the control corner token. `primary` is the deep-jade
+// CTA ("Continue", "Show me around"). `outline` is the outlined action
 // ("Join a chapter", "I'm a Big" unselected, "Edit my profile"). `quiet`
 // is the softer sage-tinted secondary. `link` is the underlined shortcut
 // ("Use sample profile", "Replay the tour"). Danger variants keep their
@@ -48,7 +48,7 @@ const SIZE_CLASSES: Record<ButtonSize, { padded: string; full: string }> = {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', fullWidth = false, className = '', type = 'button', ...props }, ref) => {
     const sizeClass = fullWidth ? SIZE_CLASSES[size].full : SIZE_CLASSES[size].padded;
-    const shape = variant === 'link' ? '' : 'rounded-pill';
+    const shape = variant === 'link' ? '' : 'rounded-control';
     const classes = [
       fullWidth ? 'w-full' : '',
       'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-200 ease-out motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ss-jade-soft)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap',

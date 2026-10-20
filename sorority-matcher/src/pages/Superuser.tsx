@@ -94,7 +94,7 @@ export default function Superuser() {
       </nav>
       {view === 'organizations' ? <SuperuserOrganizations /> : <>
       <form className="my-6 flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); setSearch(draft.trim()); setOffset(0); }}>
-        <label className="flex flex-col gap-1 text-sm">Search name or email<input className="rounded-lg border bg-white/70 px-3 py-2" value={draft} onChange={e => setDraft(e.target.value)} /></label>
+        <label className="flex flex-col gap-1 text-sm">Search name or email<input className="rounded-control border bg-white/70 px-3 py-2" value={draft} onChange={e => setDraft(e.target.value)} /></label>
         <Button type="submit">Search</Button>
         <Button type="button" variant="outline" onClick={() => void accounts.refetch()}>Refresh</Button>
       </form>
@@ -117,7 +117,7 @@ export default function Superuser() {
         <p className="my-2 text-sm">This permanently removes the account and its profile, memberships, submitted rankings, notes, and pairings. This cannot be undone. Chapter owners must transfer ownership first.</p>
         <label className="flex flex-col gap-2 text-sm">Type delete to confirm
           <input autoFocus autoComplete="off" spellCheck={false} value={confirmation} disabled={removeAccount.isPending}
-            onChange={e => setConfirmation(e.target.value)} className="max-w-xs rounded-lg border px-3 py-2" />
+            onChange={e => setConfirmation(e.target.value)} className="max-w-xs rounded-control border px-3 py-2" />
         </label>
         <div className="mt-4 flex gap-3">
           <Button variant="danger-outline" disabled={confirmation !== 'delete' || removeAccount.isPending}

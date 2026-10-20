@@ -1,7 +1,7 @@
 let mockEmailTools=true;
 jest.mock('../lib/features',()=>({get SHOW_MATCHING_EMAIL_TOOLS(){return mockEmailTools;}}));
 jest.mock('../lib/cycleParticipation', () => ({ useCycleParticipation: () => ({ data: { excludedIds: [] }, isSuccess: true, refetch: () => Promise.resolve() }) }));
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardTab, OrganizationTab, RosterTab } from './Dashboard';
 import { getPendingMemberships } from '../lib/groups';
@@ -49,7 +49,7 @@ beforeEach(() => {jest.clearAllMocks();mockEmailTools=true;});
 test('pending join requests surface first, as the blocking item', async () => {
   setup({ pending: 2, status: [row('big', true, 1), row('little', true, 1)] });
   expect(await screen.findByText('2 join requests waiting')).toBeInTheDocument();
-  expect(screen.getByText('What needs you')).toBeInTheDocument();
+  expect(screen.getByRole('heading',{name:'Needs attention'})).toBeInTheDocument();
 });
 
 test('outstanding rankings are counted against the whole roster', async () => {
@@ -200,4 +200,21 @@ test('roster fetch failure is recoverable and never claims there are no members'
   expect(screen.queryByText('No members yet.')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button',{name:'Try again'}));
   expect(await screen.findByRole('button',{name:'Returned Member'})).toBeInTheDocument();
+});
+
+test('admin chapter tasks precede personal rankings and the first action is explicit', async () => {
+ setup({pending:3,status:[row('big',false,1),row('little',false,1)]},{...membership,role:'big'});
+ const approve = await screen.findByRole('button',{name:'Approve 3 members'});
+ const tasks = screen.getByRole('region',{name:'Chapter tasks'});
+ const personal = screen.getByRole('region',{name:'Your ranking status'});
+ expect(tasks.compareDocumentPosition(personal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+ expect(within(tasks).getByRole('button',{name:'Approve 3 members'})).toBe(approve);
+});
+test('a member sees saved status and a single edit action, without admin tasks', async () => {
+ (getMyRanking as jest.Mock).mockResolvedValue({rankedIds:['one','two'],error:null});
+ render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><DashboardTab membership={{...membership,role:'little',is_admin:false}} onNavigate={jest.fn()} /></QueryClientProvider>);
+ expect(await screen.findByText('Rankings submitted')).toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Edit ranking'})).toBeEnabled();
+ expect(screen.getByText(/You’ve submitted 2 choices/)).toBeInTheDocument();
+ expect(screen.queryByRole('region',{name:'Chapter tasks'})).not.toBeInTheDocument();
 });

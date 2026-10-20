@@ -1,3 +1,4 @@
+import PasswordInput from '../components/PasswordInput';
 import { toast } from 'sonner';
 import MemberHeader from '../components/MemberHeader';
 import { useMyProfile } from '../hooks/useMyProfile';
@@ -301,7 +302,7 @@ export const ProfileContent = () => {
             <div className="bg-white rounded-lg shadow-sm p-5">
               <h3 className="text-sm font-semibold mb-2">Change password</h3>
               <div className="flex flex-col gap-2">
-                <input
+                <PasswordInput
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
@@ -310,7 +311,7 @@ export const ProfileContent = () => {
                   autoComplete="current-password"
                   className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
-                <input
+                <PasswordInput
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -320,7 +321,7 @@ export const ProfileContent = () => {
                   autoComplete="new-password"
                   className="w-full p-3 border border-jade-300 rounded-md focus:border-jade-500 focus:outline-none focus:ring-2 focus:ring-jade-100"
                 />
-                <input
+                <PasswordInput
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -432,7 +433,7 @@ const Profile = () => {
   const { membership } = useGroup();
   return (
   <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-    <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+    <section className="ss-frost w-full max-w-4xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
       <MemberHeader isAdmin={!!membership && (membership.is_admin || membership.role === 'admin')} />
       <main><ProfileContent /></main>
     </section>

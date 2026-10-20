@@ -36,7 +36,7 @@ export default function MemberRankingPicker({ members, value, onChange }: {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }}>
     <label htmlFor={`${id}-trigger`} className="block text-sm font-medium mb-2">Member</label>
-    <Button ref={trigger} id={`${id}-trigger`} variant="outline" className="w-full sm:w-auto max-w-full !justify-between !gap-2 !rounded-xl !px-3" aria-haspopup="listbox" aria-expanded={open} aria-controls={`${id}-list`}
+    <Button ref={trigger} id={`${id}-trigger`} variant="outline" className="w-full sm:w-auto max-w-full !justify-between !gap-2 !rounded-control !px-3" aria-haspopup="listbox" aria-expanded={open} aria-controls={`${id}-list`}
       title={selected ? label(selected) : 'Choose a member'} onClick={() => open ? close() : show()}
       onKeyDown={event => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); show(event.key === 'ArrowUp'); }
@@ -50,7 +50,7 @@ export default function MemberRankingPicker({ members, value, onChange }: {
         <Search size={16} className="shrink-0" aria-hidden="true" />
         <input ref={searchInput} type="search" role="combobox" aria-label="Search members" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`}
           aria-activedescendant={filtered.length ? `${id}-option-${activeIndex}` : undefined}
-          value={search} autoComplete="off" placeholder="Search name, email or role" className="min-w-0 w-full rounded-lg p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ss-jade-soft)]"
+          value={search} autoComplete="off" placeholder="Search name, email or role" className="min-w-0 w-full rounded-control p-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ss-jade-soft)]"
           onChange={event => { setSearch(event.target.value); setActive(0); }}
           onKeyDown={event => {
             if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(true); }
@@ -65,7 +65,7 @@ export default function MemberRankingPicker({ members, value, onChange }: {
       </div>
       <div id={`${id}-list`} role="listbox" aria-label="Members" className="mt-1 max-h-60 overflow-y-auto overscroll-contain">
         {filtered.map((member, index) => <Button key={member.userId} id={`${id}-option-${index}`} role="option" aria-selected={member.userId === value} tabIndex={-1} variant="ghost" fullWidth
-          className={`!justify-start !rounded-lg !px-3 !py-2 !whitespace-normal text-left ${index === activeIndex ? '!bg-[color:var(--ss-button-hover)]' : ''}`}
+          className={`!justify-start !rounded-control !px-3 !py-2 !whitespace-normal text-left ${index === activeIndex ? '!bg-[color:var(--ss-button-hover)]' : ''}`}
           onMouseEnter={() => setActive(index)} onMouseDown={event => event.preventDefault()} onClick={() => choose(member)}>
           <span className="min-w-0 break-words [overflow-wrap:anywhere]"><span className="block font-medium">{member.name || member.email} · {role(member)}</span><span className="block text-xs">{member.email}</span></span>
         </Button>)}

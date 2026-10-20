@@ -120,17 +120,17 @@ const Approvals = () => {
   const rowClass =
     'flex items-center justify-between gap-3 border-b border-[color:var(--ss-surface-border)] last:border-b-0 py-3';
   const primaryBtn =
-    'px-4 py-2 rounded-pill text-sm bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors';
+    'px-4 py-2 rounded-control text-sm bg-[color:var(--ss-jade-deep)] text-white hover:bg-[color:var(--ss-jade)] transition-colors';
   const quietBtn =
-    'px-4 py-2 rounded-pill text-sm border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors';
+    'px-4 py-2 rounded-control text-sm border border-[color:var(--ss-jade-line)] bg-transparent text-[color:var(--ss-ink-2)] hover:bg-[color:var(--ss-button-hover)] transition-colors';
   const dangerBtn =
-    'px-4 py-2 rounded-pill text-sm bg-brick text-white hover:bg-brick-600 transition-colors disabled:opacity-50';
+    'px-4 py-2 rounded-control text-sm bg-brick text-white hover:bg-brick-600 transition-colors disabled:opacity-50';
   const dangerOutlineBtn =
-    'px-4 py-2 rounded-pill text-sm border border-brick text-brick bg-transparent hover:bg-brick-50 transition-colors';
+    'px-4 py-2 rounded-control text-sm border border-brick text-brick bg-transparent hover:bg-brick-50 transition-colors';
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+      <section className="ss-frost w-full max-w-3xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -152,7 +152,7 @@ const Approvals = () => {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-[color:var(--ss-ink-5)] w-20">Chapter code</span>
-              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg px-3 py-2 font-mono tracking-widest text-[color:var(--ss-ink-1)]">
+              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-control px-3 py-2 font-mono tracking-widest text-[color:var(--ss-ink-1)]">
                 {group.join_code}
               </code>
               <button onClick={() => copy(group.join_code, 'code')} className={quietBtn}>
@@ -161,7 +161,7 @@ const Approvals = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-[color:var(--ss-ink-5)] w-20">Join link</span>
-              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg px-3 py-2 text-sm truncate text-[color:var(--ss-ink-3)]">
+              <code className="flex-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-control px-3 py-2 text-sm truncate text-[color:var(--ss-ink-3)]">
                 {joinLink}
               </code>
               <button onClick={() => copy(joinLink, 'link')} className={quietBtn}>

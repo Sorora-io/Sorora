@@ -57,7 +57,7 @@ export default function DirectoryPagination({ offset, pageSize = 50, total, item
       <label htmlFor={id}>Go to page</label>
       <input id={id} type="number" inputMode="numeric" min={1} max={pages} step={1} value={jump} disabled={updating}
         onChange={event => { setJump(event.target.value); setError(''); }} aria-describedby={error ? `${id}-error` : undefined}
-        className="w-20 rounded-lg border bg-white/70 px-2 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ss-jade-soft)]" />
+        className="w-20 rounded-control border bg-white/70 px-2 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--ss-jade-soft)]" />
       <Button type="submit" size="sm" variant="quiet" disabled={updating || !jump.trim()}>Go</Button>
       <span className="text-[color:var(--ss-ink-5)]">of {pages}</span>
       {error && <p id={`${id}-error`} role="alert" className="w-full text-[color:var(--ss-error)]">{error}</p>}

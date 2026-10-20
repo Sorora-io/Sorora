@@ -32,3 +32,16 @@ legacy shortcuts and is **not** the escape hatch from this rule — reach for
 much smaller tap target on mobile. If a row of buttons feels too heavy in a
 narrow column, use `size="sm"` with `variant="quiet"` — don't downgrade them
 to links.
+
+
+### Rectangle corner radii
+
+Use the shared tokens in `sorority-matcher/src/index.css` and their Tailwind utilities:
+
+| Element | Utility | Radius |
+|---|---|---|
+| Buttons, inputs, selects, menu items, selection controls | `rounded-control` | 6px |
+| Cards, outer panels, menus, dialogs, tour panels | `rounded-panel` | 8px |
+| Small status badges, counts, rank markers | `rounded-badge` | 4px |
+
+The shared `Button` defaults to the control radius. Avoid per-page pixel overrides and pill-shaped rectangular actions. Existing standard Tailwind radius utilities map to this scale for compatibility; prefer the semantic names for new UI. Unframed sections and underline navigation stay square. Avatars, dots, radio indicators, decorative circles, and switch tracks/thumbs retain their circular shapes. Preserve badge color semantics, especially the deadline badge's pale green background and dark green text.

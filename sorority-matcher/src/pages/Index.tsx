@@ -141,22 +141,21 @@ const Index = () => {
   return (
     <SceneShell
       centered
-      topRightLabel="Start over"
+      stable
+      topRightLabel={step > 1 ? "Start over" : null}
       onTopRight={() => setStep(0)}
       footer={
         <>
           {isLastSlide ? (
-            <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+            <div className="ss-intro-actions flex flex-wrap items-center justify-center gap-3 w-full">
               <Button
                 size="lg"
-                fullWidth
                 onClick={() => navigate('/login?mode=signup&path=join')}
               >
                 Join a chapter
               </Button>
               <Button
                 size="lg"
-                fullWidth
                 variant="outline"
                 onClick={() => navigate('/login?mode=signup&path=create')}
               >
@@ -165,13 +164,14 @@ const Index = () => {
               <Button
                 size="md"
                 variant="ghost"
+                className="basis-full"
                 onClick={() => setStep(step - 1)}
               >
                 <ArrowLeft size={16} /> Back
               </Button>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="ss-intro-actions flex flex-wrap items-center justify-center gap-3">
               <Button
                 size="lg"
                 variant="outline"

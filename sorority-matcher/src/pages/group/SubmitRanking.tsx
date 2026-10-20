@@ -56,6 +56,7 @@ const RankingEditor = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [savedDraft, setSavedDraft] = useState<{ ids: string[]; capacity: number } | null>(null);
 
   // Seed the editable draft from cached/fetched data exactly once — after
   // that, this is the user's own in-progress edit, and a background
@@ -64,14 +65,25 @@ const RankingEditor = () => {
   useEffect(() => {
     if (seeded || !existingRankedIds || !rosterReady || !rankingReady) return;
     const rosterIds = new Set(roster.map(m => m.userId));
-    setRankedIds(existingRankedIds.filter(id => rosterIds.has(id)));
+    const ids = existingRankedIds.filter(id => rosterIds.has(id));
+    setRankedIds(ids);
+    setSavedDraft({ ids, capacity: effectiveCapacity });
     setSeeded(true);
-  }, [existingRankedIds, roster, rosterReady, rankingReady, seeded]);
+  }, [existingRankedIds, roster, rosterReady, rankingReady, seeded, effectiveCapacity]);
 
   const loading = (rosterLoading || rankingLoading) && !seeded;
 
   const loadError = rosterError || rankingError || participation.error;
   const canSave = seeded && rosterReady && rankingReady && !loadError && !deadlineClosed && participation.isSuccess && !excluded;
+
+  const hasUnsavedChanges = !!savedDraft && (rankedIds.length !== savedDraft.ids.length
+    || rankedIds.some((id, index) => id !== savedDraft.ids[index])
+    || (role === 'big' && effectiveCapacity !== savedDraft.capacity));
+  const progressLabel = rankedIds.length >= minRequired
+    ? `${rankedIds.length} ranked · Minimum of ${minRequired} met`
+    : `${rankedIds.length} of ${minRequired} required`;
+  const saveStatus = saving ? 'Submitting…' : hasUnsavedChanges ? 'Unsaved changes'
+    : saved ? 'Rankings submitted. You can edit and resubmit before the deadline.' : savedDraft?.ids.length ? 'Rankings submitted' : 'Not submitted yet';
 
   const rosterById = new Map(roster.map(m => [m.userId, m]));
   const available = roster.filter(m => !rankedIds.includes(m.userId));
@@ -125,6 +137,7 @@ const RankingEditor = () => {
         queryClient.setQueryData(queryKeys.myRanking(user!.id, cycleId), [...rankedIds]);
         await invalidateChapter(queryClient, user!.id, group.id, cycleId);
         await refresh();
+        setSavedDraft({ ids: [...rankedIds], capacity: effectiveCapacity });
         setSaved(true);
       }
     } catch {
@@ -139,7 +152,7 @@ const RankingEditor = () => {
 
   return (
     <div className="ss-ranking-page min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-ranking-sheet ss-frost w-full max-w-4xl rounded-[28px] shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+      <section className="ss-ranking-sheet ss-frost w-full max-w-4xl rounded-panel shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -156,10 +169,11 @@ const RankingEditor = () => {
           {group.school || group.name} · rank at least <strong className="text-[color:var(--ss-ink-2)] font-bold">{minRequired}</strong>, most preferred first
         </p>
 
+        {seeded && <p className="ss-ranking-progress" aria-live="polite">{progressLabel}</p>}
         <p className="mt-3 ss-caption">{(group.blind_rankings ?? true) ? 'Your ranking order is hidden from chapter admins.' : 'Chapter admins can view your ranking order.'}</p>
 
         {groupRankingDeadline(group) && <p className="mt-3 ss-caption">Deadline: {formatRankingDeadline(group)}</p>}
-        {deadlineClosed && <p role="status" className="mt-3 ss-caption">The ranking deadline has passed. You can view your saved ranking, but submissions are closed.</p>}
+        {deadlineClosed && <p role="status" aria-label="Ranking availability" className="mt-3 ss-caption">The ranking deadline has passed. You can view your saved ranking, but submissions are closed.</p>}
 
         {excluded ? <p role="status" className="mt-8 ss-caption">You’re not participating in this cycle. Your chapter membership and saved rankings are unchanged. Contact your chapter admin with questions.</p> : !cycleId ? (
           <p className="mt-8 ss-caption">
@@ -186,7 +200,7 @@ const RankingEditor = () => {
                   <Button variant="quiet" size="sm" disabled={deadlineClosed || saving}
                     key={m.userId}
                     onClick={() => addToRanking(m.userId)}
-                    className="flex items-center gap-3 text-left px-3 py-2 bg-white/60 border border-[color:var(--ss-input-border)] rounded-lg hover:bg-[color:var(--ss-button-quiet-hover)] transition-colors text-[color:var(--ss-ink-2)]"
+                    className="ss-ranking-available flex items-center gap-3 text-left px-3 py-2 bg-white/60 border border-[color:var(--ss-input-border)] rounded-control hover:bg-[color:var(--ss-button-quiet-hover)] transition-colors text-[color:var(--ss-ink-2)]"
                   >
                     <Avatar src={m.avatarUrl} name={m.name} email={m.email} size="sm" />
                     <span>{m.name || m.email}</span>
@@ -201,7 +215,7 @@ const RankingEditor = () => {
               </div>
               <div className="flex flex-col gap-2 min-h-[120px]">
                 {rankedIds.length === 0 && (
-                  <p className="ss-caption">Click a name on the left to add them.</p>
+                  <p className="ss-caption">Choose a member to add them to your ranking.</p>
                 )}
                 {rankedIds.map((id, idx) => (
                   <div
@@ -250,15 +264,15 @@ const RankingEditor = () => {
         )}
 
         {role === 'big' && (
-          <fieldset className="mt-6 space-y-3 text-sm text-[color:var(--ss-ink-3)]" disabled={saving || deadlineClosed}>
+          <fieldset className="mt-6 space-y-3 text-sm text-[color:var(--ss-ink-3)]" disabled={saving || !canSave}>
             <legend className="font-medium mb-2">How many Littles are you open to taking?</legend>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {([1, 2, 3] as const).filter(count => count <= maximum).map(count => (
-                <label key={count} className={`relative cursor-pointer rounded-2xl border px-4 py-3 transition-colors ${effectiveCapacity === count ? 'border-[color:var(--ss-selection-border)] bg-[color:var(--ss-selection-bg)] text-[color:var(--ss-selection-text)]' : 'border-[color:var(--ss-input-border)] bg-white/60 hover:bg-[color:var(--ss-button-quiet-hover)]'}`}>
+                <label key={count} className={`relative cursor-pointer rounded-control border px-4 py-3 transition-colors ${effectiveCapacity === count ? 'border-[color:var(--ss-selection-border)] bg-[color:var(--ss-selection-bg)] text-[color:var(--ss-selection-text)]' : 'border-[color:var(--ss-input-border)] bg-white/60 hover:bg-[color:var(--ss-button-quiet-hover)]'}`}>
                   <input type="radio" name="littleCapacity" value={count}
                     checked={effectiveCapacity === count} onChange={() => setLittleCapacity(count)}
                     className="peer sr-only" />
-                  <span className="absolute inset-0 rounded-2xl peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--ss-jade-deep)] peer-focus-visible:ring-offset-2" />
+                  <span className="absolute inset-0 rounded-control peer-focus-visible:ring-2 peer-focus-visible:ring-[color:var(--ss-jade-deep)] peer-focus-visible:ring-offset-2" />
                   <span className="block font-medium">{count === 1 ? '1 Little' : `Up to ${count} Littles`}</span>
                 </label>
               ))}
@@ -267,13 +281,18 @@ const RankingEditor = () => {
           </fieldset>
         )}
 
-        {error && <p className="text-[color:var(--ss-error)] text-sm mt-4">{error}</p>}
-        {saved && <p className="text-[color:var(--ss-jade)] text-sm mt-4">Ranking saved.</p>}
-
-        <div className="mt-8">
-          <Button size="lg" fullWidth onClick={handleSave} disabled={saving || !canSave || !cycleId}>
-            {saving ? '…' : 'Save ranking'}
-          </Button>
+          <div className="ss-ranking-savebar" aria-label="Submit your rankings">
+          {error && <p role="alert" className="text-[color:var(--ss-error)] text-sm mb-2">{error}</p>}
+          <p className="ss-caption mt-6">Submitting sends this order to your chapter for matching. Changes stay on this page until you submit again.</p>
+          <div className="ss-ranking-savebar-main">
+            <div role="status" aria-label="Ranking submission status" aria-live="polite" className="ss-ranking-save-status">
+              <span className="font-medium text-[color:var(--ss-ink-2)]">{seeded ? rankedIds.length >= minRequired ? `${rankedIds.length} ranked` : `${rankedIds.length} of ${minRequired} required` : 'Your ranking'}</span>
+              <span className="ss-caption">{deadlineClosed ? 'Submissions closed' : excluded ? 'Not participating this cycle' : !cycleId ? 'No active cycle' : !seeded || loadError ? 'Waiting for your saved ranking' : saveStatus}</span>
+            </div>
+            <Button data-tour="ranking-submit" size="lg" fullWidth onClick={handleSave} disabled={saving || !canSave || !cycleId}>
+              {saving ? 'Submitting…' : 'Submit rankings'}
+            </Button>
+          </div>
         </div>
       </section>
     </div>

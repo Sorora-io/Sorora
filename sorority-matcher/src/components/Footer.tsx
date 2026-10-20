@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
 import Button from './Button';
-import AnalyticsConsent from './AnalyticsConsent';
 import { useGroup } from '../contexts/GroupContext';
 
 // Global site footer — rendered after every route in App.tsx so scene
@@ -34,15 +33,11 @@ const Footer = () => {
             <span>@sorora.app</span>
           </a>
         </div>
-        <div className="mt-4 border-t border-[color:var(--ss-surface-border)] pt-3">
-          <AnalyticsConsent>
-            {membership?.status === 'approved' && (
+        {membership?.status === 'approved' && <div className="mt-4 border-t border-[color:var(--ss-surface-border)] pt-3">
               <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard?tour=1')}>
                 Replay the tour
               </Button>
-            )}
-          </AnalyticsConsent>
-        </div>
+        </div>}
       </div>
     </footer>
   );
