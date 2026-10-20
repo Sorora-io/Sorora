@@ -484,3 +484,13 @@
 @media (prefers-reduced-motion: reduce) { .ss-matching-progress span { animation: none; width: 100%; opacity: .55; } }
 
 .ss-touring .ss-ranking-savebar { position: static; padding: 16px 0; box-shadow: none; }
+
+/* Match the workspace content edges to the shared header and footer. */
+.ss-workspace-frame {
+  width: 100%;
+  max-width: 72rem;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 768px) {
+  .ss-workspace-frame { padding-inline: 2rem; }
+}

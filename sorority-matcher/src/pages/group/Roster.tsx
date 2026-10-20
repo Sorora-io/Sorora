@@ -182,8 +182,8 @@ export const RosterContent = ({ membership, onNavigate: navigate, embedded = fal
   );
 
   return (
-    <div className={embedded ? 'w-full' : 'min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8'}>
-      <section className={embedded ? 'w-full' : 'ss-frost w-full max-w-4xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col'}>
+    <div className={embedded ? 'w-full' : 'min-h-screen w-full flex flex-col items-center py-8'}>
+      <section className={embedded ? 'w-full' : 'ss-workspace-frame pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col'}>
         {!embedded && <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora

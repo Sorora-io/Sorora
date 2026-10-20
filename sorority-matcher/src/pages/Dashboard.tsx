@@ -518,7 +518,7 @@ export const OrganizationTab = ({ membership, onNavigate }: {
       {copied && <p role="status" className="ss-caption mt-2">{copied === 'code' ? 'Join code copied.' : 'Join link copied.'}</p>}
       {copyError && <p role="alert" className="mt-2 text-sm text-[color:var(--ss-error)]">{copyError}</p>}
     </section>
-    <div className="grid gap-4 sm:grid-cols-2 mt-6">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-6">
       {[
         { title: 'Submissions', description: 'Track who has ranked and get your chapter ready to match.', action: 'View submissions', path: '/group/status' },
         { title: 'Member rankings', description: (membership.group.blind_rankings ?? true) ? 'Blind rankings are on. Open this page to review privacy settings and submission status.' : 'Review each Big or Little’s submitted preferences in order.', action: 'View member rankings', path: '/group/status?view=rankings' },
@@ -660,8 +660,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-4xl rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+    <div className="min-h-screen w-full flex flex-col items-center py-8">
+      <section className="ss-workspace-frame pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <MemberHeader contextLabel={headerContext} activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} isAdmin={isEffectiveAdmin(membership)} />
 
         <div className="text-left">{renderTab()}</div>

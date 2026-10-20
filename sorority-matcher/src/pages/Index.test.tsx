@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from './Index';
 import { getMyProfile } from '../lib/profile';
 import { queryKeys } from '../lib/queryKeys';
-jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn() }), { virtual: true });
+jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn(), Navigate: ({ to, replace }: any) => <div role="status">Redirect to {to} {replace ? 'with replacement' : ''}</div> }), { virtual: true });
 jest.mock('../components/SceneShell', () => ({ __esModule: true, default: ({ children, footer }: any) => <main>{children}{footer}</main>, SceneDots: () => null }));
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'member-1' } }) }));
 let mockGroup: any;
@@ -57,4 +57,24 @@ test('confirmed empty membership shows the onboarding message', () => {
   mockGroup = { memberships: [], initialized: true, error: null };
   mount();
   expect(screen.getByText(/haven't joined a chapter/)).toBeInTheDocument();
+});
+
+test('approved members enter the dashboard without adding a welcome screen to history', () => {
+  (getMyProfile as jest.Mock).mockReturnValue(new Promise(() => {}));
+  mockGroup = { memberships: [{ group_id: 'chapter-1' }], membership: { status: 'approved' }, initialized: true, error: null };
+  mount();
+  expect(screen.getByRole('status')).toHaveTextContent('Redirect to /dashboard with replacement');
+  expect(screen.queryByRole('heading', { name: /Welcome back/ })).not.toBeInTheDocument();
+});
+
+test.each([
+  { status: 'pending', initialized: true, error: null },
+  { status: 'approved', initialized: false, error: null },
+  { status: 'approved', initialized: true, error: 'Offline' },
+])('does not skip entry when membership is unresolved or unavailable: %j', ({ status, initialized, error }) => {
+  (getMyProfile as jest.Mock).mockReturnValue(new Promise(() => {}));
+  mockGroup = { memberships: [], membership: { status }, initialized, error };
+  mount();
+  expect(screen.queryByText(/Redirect to/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Go to my dashboard' })).toBeInTheDocument();
 });

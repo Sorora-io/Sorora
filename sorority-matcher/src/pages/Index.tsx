@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGroup } from '../contexts/GroupContext';
@@ -60,16 +60,19 @@ const OpeningWordmark = () => (
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { memberships, initialized, error: membershipError } = useGroup();
+  const { memberships, membership, initialized, error: membershipError } = useGroup();
   const [step, setStep] = useState(0);
 
   const { data: profile, isPending: profilePending } = useMyProfile();
 
   const signedIn = !!user;
 
-  // Signed-in visitors get a single "welcome back" scene that points them
-  // to their dashboard — the intro pitch would be a step backwards for
-  // someone who already has an account.
+  // Only confirmed chapter members skip the entry screen. Pending members and
+  // failed membership requests retain their onboarding or recovery path.
+  if (signedIn && initialized && !membershipError && membership?.status === 'approved') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (signedIn) {
     return (
       <SceneShell
