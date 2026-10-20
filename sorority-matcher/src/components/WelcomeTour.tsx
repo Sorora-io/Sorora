@@ -8,6 +8,12 @@ import Button from './Button';
 
 export const WELCOME_TOUR_KEY = 'workspace-walkthrough-v2';
 type Step = { path: string; title: string; body: string; target?: string };
+// Ignore incidental query parameters, but distinguish actual dashboard tabs.
+function tourPage(path: string) {
+  const [pathname, search] = path.split('?');
+  const tab = new URLSearchParams(search).get('tab');
+  return pathname === '/dashboard' && tab && tab !== 'dashboard' ? `${pathname}?tab=${tab}` : pathname;
+}
 
 export default function WelcomeTour() {
   const { user } = useAuth();
@@ -30,7 +36,7 @@ export default function WelcomeTour() {
       { path: '/dashboard?tab=settings', title: 'Set your chapter’s rules', body: 'Manage cycle dates, ranking privacy, and matching settings here. This tour does not change them.', target: 'settings' },
     ] : []),
     { path: '/profile', title: 'Your profile and account', body: 'Add your photo and profile details here. Account settings include your password and sign-out controls.' },
-    { path: '/faq', title: 'Help when you need it', body: 'Find answers here. The footer also links to About, Contact us, and Replay the tour.' },
+    { path: '/faq', title: 'Help when you need it', body: 'Find answers here, or use About and Contact us in the footer. Replay the tour anytime from your account menu.' },
   ], [admin]);
 
   useEffect(() => { setIndex(null); }, [identity, admin]);
@@ -43,8 +49,15 @@ export default function WelcomeTour() {
     }
   }, [identity, membership?.status, location.pathname, location.search, index, navigate]);
 
+  const currentPage = tourPage(location.pathname + location.search);
   useEffect(() => {
-    if (index === null || !steps[index]) return;
+    if (index === null) return;
+    const matchingStep = steps.findIndex(step => tourPage(step.path) === currentPage);
+    if (matchingStep !== index) setIndex(matchingStep < 0 ? null : matchingStep);
+  }, [currentPage, index, steps]);
+
+  useEffect(() => {
+    if (index === null || !steps[index] || tourPage(steps[index].path) !== currentPage) return;
     heading.current?.focus();
     let target: Element | null = null;
     document.body.classList.add('ss-touring');
@@ -59,9 +72,9 @@ export default function WelcomeTour() {
     const observer = new MutationObserver(() => { if (highlight()) observer.disconnect(); });
     if (!highlight() && steps[index].target) observer.observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
     return () => { observer.disconnect(); target?.classList.remove('ss-tour-highlight'); document.body.classList.remove('ss-touring'); };
-  }, [index, steps, location.pathname, location.search]);
+  }, [index, steps, currentPage]);
 
-  if (index === null || !steps[index] || !identity || membership?.status !== 'approved') return null;
+  if (index === null || !steps[index] || tourPage(steps[index].path) !== currentPage || !identity || membership?.status !== 'approved') return null;
   const finish = () => { markTourSeen(identity); setIndex(null); navigate('/dashboard'); };
   const go = (next: number) => { setIndex(next); navigate(steps[next].path); window.scrollTo({ top: 0, behavior: 'auto' }); };
   return <aside className="ss-guided-tour" aria-label="Site walkthrough" onKeyDown={event => { if (event.key === 'Escape') finish(); }}>

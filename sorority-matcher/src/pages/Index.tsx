@@ -74,6 +74,7 @@ const Index = () => {
     return (
       <SceneShell
         centered
+        showHeader={false}
         topRightLabel={null}
         footer={
           <Button size="lg" onClick={() => navigate('/dashboard')}>

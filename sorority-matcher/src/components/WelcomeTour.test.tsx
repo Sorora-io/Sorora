@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import WelcomeTour, { WELCOME_TOUR_KEY } from './WelcomeTour';
 let mockUser: any = { id: 'sample-user' };
 let mockMembership: any;
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: mockUser }) }));
 jest.mock('../contexts/GroupContext', () => ({ useGroup: () => ({ membership: mockMembership }) }));
 jest.mock('../lib/groups', () => ({ isEffectiveAdmin: (m: any) => m.is_admin || m.role === 'admin' }));
-function Location() { const location = useLocation(); return <p data-testid="route">{location.pathname}{location.search}</p>; }
+function Location() { const location = useLocation(); const navigate = useNavigate(); return <><p data-testid="route">{location.pathname}{location.search}</p><button onClick={() => navigate('/')}>Home</button><button onClick={() => navigate('/dashboard?tab=roster')}>Open roster</button></>; }
 function mount(path = '/dashboard') { return render(<MemoryRouter initialEntries={[path]}><nav><button data-tour="roster">Roster</button></nav><Location /><WelcomeTour /></MemoryRouter>); }
 beforeEach(() => { localStorage.clear(); mockUser = { id: 'sample-user' }; mockMembership = { id: 'sample-membership', status: 'approved', role: 'little', is_admin: false }; window.scrollTo = jest.fn(); });
 test('walks through actual member pages, highlights navigation, and remembers completion per membership', () => {
@@ -53,4 +53,21 @@ test('pending members do not start a tour, and another account does not inherit 
  mount(); expect(screen.getByRole('complementary', { name: 'Site walkthrough' })).toBeInTheDocument();
  fireEvent.keyDown(screen.getByRole('complementary'), { key: 'Escape' });
  expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+});
+
+test('leaving for the welcome page hides the dashboard tour without marking it complete or redirecting back', () => {
+ mount();
+ fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+ expect(screen.getByTestId('route')).toHaveTextContent('/');
+ expect(screen.queryByRole('complementary', { name: 'Site walkthrough' })).not.toBeInTheDocument();
+ expect(document.body).not.toHaveClass('ss-touring');
+ expect(localStorage.getItem(`sorora-tour-seen-${WELCOME_TOUR_KEY}:sample-user:sample-membership`)).toBeNull();
+});
+test('manual navigation to another tour page updates the guide to match the visible page', () => {
+ mount();
+ fireEvent.click(screen.getByRole('button', { name: 'Open roster' }));
+ expect(screen.getByRole('heading', { name: 'Meet your chapter' })).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+ expect(screen.getByTestId('route')).toHaveTextContent('/profile');
+ expect(screen.getByRole('heading', { name: 'Your profile and account' })).toBeInTheDocument();
 });

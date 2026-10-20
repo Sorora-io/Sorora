@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGroup } from '../contexts/GroupContext';
 import { ChevronDown } from 'lucide-react';
 import Button from './Button';
 import Avatar from './Avatar';
@@ -10,6 +12,8 @@ const ARM_MS = 3000;
 
 const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => {
   const { signOut, user } = useAuth();
+  const { membership } = useGroup();
+  const navigate = useNavigate();
   const { data: profile, isPending: profilePending } = useMyProfile();
   const [open, setOpen] = useState(false);
   const accountTrigger = useRef<HTMLButtonElement>(null);
@@ -87,6 +91,7 @@ const AccountMenu = ({ superuserMode = false }: { superuserMode?: boolean }) => 
               <a href="/dashboard" className="block rounded-control px-3 py-2 text-sm text-[color:var(--ss-ink-2)] hover:bg-stone-100">Main app</a>
             ) : <>
             <Button variant="ghost" size="sm" className="!w-full !justify-start !rounded-control !px-3 !text-sm" onClick={() => { setOpen(false); window.location.assign('/profile'); }}>My profile</Button>
+            {membership?.status === 'approved' && <Button variant="ghost" size="sm" className="!w-full !justify-start !rounded-control !px-3 !text-sm" onClick={() => { setOpen(false); navigate('/dashboard?tour=1'); }}>Replay the tour</Button>}
             <SuperuserLink />
             </>}
       <Button

@@ -1,4 +1,5 @@
 import Button from './components/Button';
+import HomeHeader from './components/HomeHeader';
 import WelcomeTour from './components/WelcomeTour';
 import AnalyticsPageviews from './components/AnalyticsPageviews';
 import { Suspense, lazy } from "react";
@@ -78,6 +79,7 @@ const AppShell = () => {
     <div className={`${workspace ? 'ss-workspace ' : ''}min-h-screen flex flex-col`}>
       <AnalyticsIdentity />
       <AnalyticsPageviews />
+      {user && pathname === '/' && <HomeHeader />}
       {user && groupError && (
         <div role="alert" className="mx-auto my-4 max-w-2xl rounded-xl border border-brick p-4 text-sm">
           <p>We couldn’t finish loading your chapter: {groupError}</p>

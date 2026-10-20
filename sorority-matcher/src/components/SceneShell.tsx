@@ -17,6 +17,8 @@ interface SceneShellProps {
   wide?: boolean;
   centered?: boolean;
   stable?: boolean;
+  /** Hide embedded branding when the page already has a main header. */
+  showHeader?: boolean;
 }
 
 // Every screen in the sorora-story canvas shares the same frame: a soft
@@ -34,6 +36,7 @@ const SceneShell = ({
   wide = false,
   centered = false,
   stable = false,
+  showHeader = true,
 }: SceneShellProps) => {
   const navigate = useNavigate();
   const handleTopRight = onTopRight ?? (() => navigate('/'));
@@ -45,7 +48,7 @@ const SceneShell = ({
           wide ? 'max-w-4xl' : 'max-w-2xl'
         } rounded-panel bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-14 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col`}
       >
-        <PageHeader className="flex items-center justify-between mb-8">
+        {showHeader && <PageHeader className="flex items-center justify-between mb-8">
           <Link
             to={markTo}
             className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]"
@@ -57,7 +60,7 @@ const SceneShell = ({
               {topRightLabel}
             </Button>
           ))}
-        </PageHeader>
+        </PageHeader>}
 
         <div className="flex-1 flex flex-col items-center text-center">
           {children}

@@ -29,10 +29,10 @@ export default function MemberHeader({ activeTab, onSelect, onPrefetch, showNavi
     </PageHeader>
     {showNavigation && <>
       <nav aria-label="Dashboard navigation" className="ss-member-nav">
-        {tabs.filter(tab => !['organization', 'settings'].includes(tab.id) || isAdmin).map(tab => <Button key={tab.id} data-tour={tab.id} variant="ghost" className="ss-member-nav-item"
+        {tabs.filter(tab => !['organization', 'settings'].includes(tab.id) || isAdmin).map(tab => <Button key={tab.id} data-label={tab.label} data-tour={tab.id} variant="ghost" className="ss-member-nav-item"
           onClick={() => onSelect ? onSelect(tab.id) : navigate(`/dashboard?tab=${tab.id}`)}
           onMouseEnter={() => onPrefetch?.(tab.id)} onFocus={() => onPrefetch?.(tab.id)}
-          aria-current={activeTab === tab.id ? 'page' : undefined}>{tab.label}</Button>)}
+          aria-current={activeTab === tab.id ? 'page' : undefined}><span className="ss-member-nav-label">{tab.label}</span></Button>)}
       </nav>
     </>}
   </>;

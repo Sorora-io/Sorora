@@ -3,9 +3,15 @@ import AccountMenu from './AccountMenu';
 jest.mock('../hooks/useMyProfile', () => ({ useMyProfile: () => ({ data: undefined }) }));
 jest.mock('./SuperuserLink', () => () => <a href="/superuser">Superuser</a>);
 const mockSignOut = jest.fn();
+const mockNavigate = jest.fn();
+let mockMembership: any;
+jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }));
+jest.mock('../contexts/GroupContext', () => ({ useGroup: () => ({ membership: mockMembership }) }));
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ signOut: mockSignOut }) }));
 beforeEach(() => {
   mockSignOut.mockReset();
+  mockNavigate.mockReset();
+  mockMembership = { status: 'approved' };
   jest.useFakeTimers();
 });
 afterEach(() => {
@@ -66,4 +72,18 @@ test('superuser mode offers only Main app and Sign out', () => {
   expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   expect(screen.queryByRole('link', { name: 'My profile' })).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: 'Superuser' })).not.toBeInTheDocument();
+});
+
+test('approved members can replay the tour from the account menu and the menu closes', () => {
+ render(<AccountMenu />);
+ fireEvent.click(screen.getByRole('button', { name: /Account options/ }));
+ fireEvent.click(screen.getByRole('button', { name: 'Replay the tour' }));
+ expect(mockNavigate).toHaveBeenCalledWith('/dashboard?tour=1');
+ expect(screen.queryByRole('button', { name: 'Replay the tour' })).not.toBeInTheDocument();
+});
+test.each([null, {status:'pending'}])('tour replay is absent without an approved membership (%p)', membership => {
+ mockMembership = membership;
+ render(<AccountMenu />);
+ fireEvent.click(screen.getByRole('button', { name: /Account options/ }));
+ expect(screen.queryByRole('button', { name: 'Replay the tour' })).not.toBeInTheDocument();
 });

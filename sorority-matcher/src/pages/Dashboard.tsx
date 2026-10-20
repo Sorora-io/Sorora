@@ -173,7 +173,7 @@ export const DashboardTab = ({
       <div className="ss-overview-sections">
         {isAdmin && (
           <section className="ss-admin-attention flex flex-col gap-3" aria-label="Chapter tasks">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <SectionHeading>Needs attention</SectionHeading>
               {attention.length > 0 && (
                 <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-badge bg-brick-500 px-1.5 text-[11px] font-semibold text-white tabular-nums">
@@ -264,7 +264,7 @@ export const DashboardTab = ({
               <Button size="sm" variant="outline" onClick={() => onNavigate('/group/status?view=rankings')}>
                 View member rankings
               </Button>
-              <Button size="sm" variant="quiet" onClick={() => onNavigate('/dashboard?tab=organization')}>
+              <Button size="sm" variant="outline" onClick={() => onNavigate('/dashboard?tab=organization')}>
                 Manage organization
               </Button>
             </div>
@@ -510,7 +510,7 @@ export const OrganizationTab = ({ membership, onNavigate }: {
       <code className="mt-2 block select-all break-all font-mono text-3xl sm:text-4xl tracking-widest text-[color:var(--ss-ink-1)]">{joinCode}</code>
       <div className="mt-4 flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={() => copyInvite('code')}>Copy join code</Button>
-        <Button variant="quiet" size="sm" onClick={() => copyInvite('link')}>Copy join link</Button>
+        <Button variant="outline" size="sm" onClick={() => copyInvite('link')}>Copy join link</Button>
       </div>
       <p className="ss-label mt-4">Join link</p>
       <p className="mt-1 break-all select-all text-sm text-[color:var(--ss-ink-3)]">{joinLink}</p>

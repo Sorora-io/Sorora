@@ -1,15 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Instagram } from 'lucide-react';
-import Button from './Button';
-import { useGroup } from '../contexts/GroupContext';
 
 // Global site footer — rendered after every route in App.tsx so scene
 // pages keep their full-viewport panel and it sits just below the fold,
 // while content pages that scroll (Dashboard, About, FAQ) land it at the
 // natural bottom. Instagram links out; the rest are in-app routes.
 const Footer = () => {
-  const navigate = useNavigate();
-  const { membership } = useGroup();
   return (
     <footer className="w-full border-t border-[color:var(--ss-surface-border)] mt-16 px-5 md:px-8 py-6">
       <div className="mx-auto max-w-4xl text-sm text-[color:var(--ss-ink-5)]">
@@ -33,11 +29,7 @@ const Footer = () => {
             <span>@sorora.app</span>
           </a>
         </div>
-        {membership?.status === 'approved' && <div className="mt-4 border-t border-[color:var(--ss-surface-border)] pt-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard?tour=1')}>
-                Replay the tour
-              </Button>
-        </div>}
+
       </div>
     </footer>
   );
