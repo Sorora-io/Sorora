@@ -1,5 +1,4 @@
 import { SHOW_MATCHING_EMAIL_TOOLS } from '../lib/features';
-import DuplicateNameWarnings from '../components/DuplicateNameWarnings';
 import Settings from './group/Settings';
 import { RosterContent } from './group/Roster';
 import { formatRankingDeadline } from '../lib/rankingDeadline';
@@ -16,7 +15,7 @@ import Avatar from '../components/Avatar';
 import ChooseMatchingRole from '../components/ChooseMatchingRole';
 import WelcomeTour, { WELCOME_TOUR_KEY } from '../components/WelcomeTour';
 import MemberHeader, { MemberTab as TabId } from '../components/MemberHeader';
-import { isEffectiveAdmin, MembershipWithGroup, groupLabel, getPendingMemberships } from '../lib/groups';
+import { isEffectiveAdmin, MembershipWithGroup, getPendingMemberships } from '../lib/groups';
 import { getSubmissionStatus, getMyRanking, getFullRoster, RosterEntry } from '../lib/rankings';
 import { getPairingRevealStatus } from '../lib/pairings';
 import { useMyProfile } from '../hooks/useMyProfile';

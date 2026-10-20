@@ -38,3 +38,7 @@ Temporary execution logs and sample screenshots are under `/tmp/sorora-bug-bash-
 ## Subsequent visual refinements in the same change set
 
 Centered both roster dropdown icons, simplified the roster title, and replaced the dashboard's centered navigation pills with left-aligned flat navigation. Chapter/role context now sits beside the Sorora wordmark (below it at phone width). Chapter labels use “Chapter at University,” falling back to the chapter name when no university is set. Header/navigation tests, the full 277-test suite, TypeScript check, and production build were re-run before pushing this change set.
+
+## Production build follow-up
+
+The automatic deployments of the roster/header release failed because two imports in Dashboard.tsx became unused during the roster consolidation. Local builds completed with lint warnings, while Vercel's `CI=true` setting promoted those warnings to errors. Production therefore continued serving the prior successful revision and still showed “Open full roster.” Removed the unused imports and validated the build with `CI=true` before pushing the correction. Production readiness and aliases must be checked after the automatic deployment, not inferred from Git push success.
