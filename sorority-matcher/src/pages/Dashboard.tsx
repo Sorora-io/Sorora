@@ -682,7 +682,9 @@ const Dashboard = () => {
   // -----------------------------------------------------------------------
   // Signed-in member scene
   // -----------------------------------------------------------------------
-  const headerContext = `${membership.group.name} · ${roleLabel(membership)}`;
+  const headerContext = isEffectiveAdmin(membership)
+    ? `${membership.group.name} · ${roleLabel(membership)}`
+    : membership.group.name;
   const firstName = (profile?.name ?? '').split(' ')[0] ?? '';
 
   const renderTab = () => {
