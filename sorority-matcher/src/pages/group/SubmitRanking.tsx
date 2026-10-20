@@ -7,9 +7,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
-import { setMyLittlePreference, groupLabel } from '../../lib/groups';
+import { setMyLittlePreference } from '../../lib/groups';
 import { getRoster, getMyRanking, submitRanking } from '../../lib/rankings';
 import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
@@ -138,8 +138,8 @@ const RankingEditor = () => {
   if (!group || !role) return null;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-3xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
+    <div className="ss-ranking-page min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
+      <section className="ss-ranking-sheet ss-frost w-full max-w-4xl rounded-[28px] shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
         <PageHeader className="flex items-center justify-between mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
@@ -149,15 +149,14 @@ const RankingEditor = () => {
           </Button>
         </PageHeader>
 
-        <span className="ss-kicker">Your rankings</span>
         <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
           Rank your {oppositeLabel.toLowerCase()}.
         </h1>
         <p className="mt-2 ss-caption">
-          {groupLabel(group)} · rank at least {minRequired}, most preferred first
+          {group.school || group.name} · rank at least <strong className="text-[color:var(--ss-ink-2)] font-bold">{minRequired}</strong>, most preferred first
         </p>
 
-        <p className="mt-3 ss-caption">{(group.blind_rankings ?? true) ? 'Blind rankings are on. Admins can see that you submitted, but cannot view your ranking order.' : 'Blind rankings are off. Chapter admins can access your ranked preferences.'}</p>
+        <p className="mt-3 ss-caption">{(group.blind_rankings ?? true) ? 'Your ranking order is hidden from chapter admins.' : 'Chapter admins can view your ranking order.'}</p>
 
         {groupRankingDeadline(group) && <p className="mt-3 ss-caption">Deadline: {formatRankingDeadline(group)}</p>}
         {deadlineClosed && <p role="status" className="mt-3 ss-caption">The ranking deadline has passed. You can view your saved ranking, but submissions are closed.</p>}
@@ -177,7 +176,7 @@ const RankingEditor = () => {
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="ss-surface">
+            <div className="ss-surface ss-ranking-panel">
               <div className="ss-kicker" style={{ marginBottom: 8 }}>Available</div>
               <div className="flex flex-col gap-2 min-h-[120px]">
                 {available.length === 0 && (
@@ -196,7 +195,7 @@ const RankingEditor = () => {
               </div>
             </div>
 
-            <div className="ss-surface">
+            <div className="ss-surface ss-ranking-panel">
               <div className="ss-kicker" style={{ marginBottom: 8 }}>
                 Your ranking ({rankedIds.length})
               </div>
@@ -207,37 +206,40 @@ const RankingEditor = () => {
                 {rankedIds.map((id, idx) => (
                   <div
                     key={id}
-                    className="flex items-center justify-between px-3 py-2 bg-white/75 border border-[color:var(--ss-input-border)] rounded-lg"
+                    className="ss-ranked-row flex items-center justify-between gap-2 px-3 py-2 border rounded-lg"
                   >
-                    <span className="flex min-w-0 items-center gap-2 text-[color:var(--ss-ink-2)]">
+                    <span className="flex flex-1 min-w-0 items-center gap-2 text-[color:var(--ss-ink-2)]">
+                      <span className="ss-ranking-number" data-first={idx === 0 || undefined}
+                        style={{ backgroundColor: idx === 0 ? 'var(--ss-jade-deep)' : `hsl(140, 22%, ${68 + 24 * (idx - 1) / Math.max(1, rankedIds.length - 2)}%)` }}>
+                        {idx + 1}
+                      </span>
                       <Avatar src={rosterById.get(id)?.avatarUrl} name={rosterById.get(id)?.name} email={rosterById.get(id)?.email} size="sm" />
-                      <span className="text-[color:var(--ss-ink-5)] mr-2 tabular-nums">{idx + 1}.</span>
-                      {rosterById.get(id)?.name || rosterById.get(id)?.email || 'Unknown'}
+                      <span className="ss-ranked-name">{rosterById.get(id)?.name || rosterById.get(id)?.email || 'Unknown'}</span>
                     </span>
-                    <span className="flex gap-1">
+                    <span className="ss-ranking-controls flex shrink-0 gap-1">
                       <Button variant="ghost" size="sm"
                         onClick={() => moveUp(idx)}
                         aria-label={`Move ${rosterById.get(id)?.name || rosterById.get(id)?.email || "member"} up`}
                         disabled={deadlineClosed || saving || idx === 0}
-                        className="!px-2 min-w-[36px] text-[color:var(--ss-ink-4)] disabled:opacity-30"
+                        className="ss-ranking-reorder !px-2 min-w-[36px] disabled:opacity-30"
                       >
-                        ↑
+                        <ArrowUp size={18} strokeWidth={3} aria-hidden="true" />
                       </Button>
                       <Button variant="ghost" size="sm"
                         onClick={() => moveDown(idx)}
                         aria-label={`Move ${rosterById.get(id)?.name || rosterById.get(id)?.email || "member"} down`}
                         disabled={deadlineClosed || saving || idx === rankedIds.length - 1}
-                        className="!px-2 min-w-[36px] text-[color:var(--ss-ink-4)] disabled:opacity-30"
+                        className="ss-ranking-reorder !px-2 min-w-[36px] disabled:opacity-30"
                       >
-                        ↓
+                        <ArrowDown size={18} strokeWidth={3} aria-hidden="true" />
                       </Button>
                       <Button variant="ghost" size="sm"
                         onClick={() => removeFromRanking(id)}
                         aria-label={`Remove ${rosterById.get(id)?.name || rosterById.get(id)?.email || "member"} from ranking`}
                         disabled={deadlineClosed || saving}
-                        className="!px-2 min-w-[36px] text-brick"
+                        className="ss-ranking-remove !px-2 min-w-[36px]"
                       >
-                        ×
+                        <X size={18} strokeWidth={3} aria-hidden="true" />
                       </Button>
                     </span>
                   </div>
@@ -252,7 +254,7 @@ const RankingEditor = () => {
             <legend className="font-medium mb-2">How many Littles are you open to taking?</legend>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {([1, 2, 3] as const).filter(count => count <= maximum).map(count => (
-                <label key={count} className={`relative cursor-pointer rounded-2xl border px-4 py-3 transition-colors ${effectiveCapacity === count ? 'border-[color:var(--ss-jade-deep)] bg-[color:var(--ss-jade-deep)] text-white shadow-sm' : 'border-[color:var(--ss-input-border)] bg-white/60 hover:bg-[color:var(--ss-button-quiet-hover)]'}`}>
+                <label key={count} className={`relative cursor-pointer rounded-2xl border px-4 py-3 transition-colors ${effectiveCapacity === count ? 'border-[color:var(--ss-selection-border)] bg-[color:var(--ss-selection-bg)] text-[color:var(--ss-selection-text)]' : 'border-[color:var(--ss-input-border)] bg-white/60 hover:bg-[color:var(--ss-button-quiet-hover)]'}`}>
                   <input type="radio" name="littleCapacity" value={count}
                     checked={effectiveCapacity === count} onChange={() => setLittleCapacity(count)}
                     className="peer sr-only" />

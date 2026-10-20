@@ -46,6 +46,11 @@
     --ss-button-quiet-hover: #e8f0e5;
     --ss-button-primary-hover: #123422;
 
+    /* Selection is softer than a primary action; deadline pill tokens stay separate. */
+    --ss-selection-bg: #d6e7d8;
+    --ss-selection-border: #82a58d;
+    --ss-selection-text: #214b35;
+
     /* Surfaces (inner cards, tour previews, dashboard cards). */
     --ss-surface: #f3f7f2;
     --ss-surface-hi: #f7faf6;
@@ -268,7 +273,7 @@
   }
 
   /* 5-tab pill nav — used on the member dashboard (Dashboard/Profile/
-     Rankings/Roster/FAQ). Active tab gets the jade-deep pill, inactive
+     Rankings/Roster/FAQ). Active tab gets a soft sage pill, inactive
      tabs are transparent with ink-3 text. */
   .ss-tab {
     display: inline-flex;
@@ -292,8 +297,10 @@
   .ss-tab.is-active,
   .ss-tab[aria-current='page']:hover:not(:disabled),
   .ss-tab.is-active:hover:not(:disabled) {
-    background: var(--ss-jade-deep);
-    color: #fff;
+    background: var(--ss-selection-bg);
+    color: var(--ss-selection-text);
+    box-shadow: inset 0 0 0 1px var(--ss-selection-border);
+    font-weight: 600;
   }
   .ss-tab-underline {
     border-bottom: 1px solid var(--ss-surface-border);
@@ -338,4 +345,21 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ss-wordmark { transition: none; }
+}
+
+/* Ranking surfaces are quiet so the deep-green Save ranking remains the anchor. */
+.ss-ranking-sheet { background: #f9fbf7; border: 1px solid #d6e3d4; }
+.ss-ranking-sheet .ss-ranking-panel { background: #edf4e9; border-color: #ccddc9; padding: 18px 16px; min-width: 0; }
+.ss-ranked-row { background: #fff; border-color: #d5e2d2; }
+.ss-ranking-number { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 28px; height: 28px; border-radius: 9px; color: #173e2a; font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.ss-ranking-number[data-first] { color: #fff; }
+.ss-ranked-name { overflow-wrap: anywhere; font-size: 14px; line-height: 1.4; }
+.ss-ranking-controls .ss-ranking-reorder { color: #244e39; background: #e9f1e5; }
+.ss-ranking-controls .ss-ranking-reorder:enabled:hover { color: #173e2a; background: #d6e7d8; }
+.ss-ranking-controls .ss-ranking-remove { color: #b52d30; }
+.ss-ranking-controls .ss-ranking-remove:enabled:hover { color: #962024; background: #fceced; }
+@media (min-width: 768px) and (max-width: 900px), (max-width: 420px) {
+  .ss-ranked-row { flex-wrap: wrap; }
+  .ss-ranked-row > span:first-child { flex-basis: 100%; }
+  .ss-ranking-controls { margin-left: auto; }
 }
