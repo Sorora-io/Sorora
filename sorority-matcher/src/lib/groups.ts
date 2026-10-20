@@ -83,10 +83,9 @@ export function isEffectiveAdmin(membership: { role: MembershipRole; is_admin: b
 }
 
 // Groups created before the school column existed default to an empty
-// string there, so blindly interpolating "(school)" everywhere would show
-// empty parens for them.
+// string there, so include the university only when it is available.
 export function groupLabel(group: { name: string; school: string }): string {
-  return group.school ? `${group.name} (${group.school})` : group.name;
+  return group.school ? `${group.name} at ${group.school}` : group.name;
 }
 
 const MAX_JOIN_CODE_ATTEMPTS = 5;

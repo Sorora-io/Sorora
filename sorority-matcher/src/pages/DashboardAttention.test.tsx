@@ -11,6 +11,7 @@ import { getPairingRevealStatus } from '../lib/pairings';
 jest.mock('react-router-dom', () => ({ Link: ({ to, children }: any) => <a href={to}>{children}</a> }), { virtual: true });
 jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'admin-user' } }) }));
 jest.mock('../hooks/useMyProfile', () => ({ useMyProfile: () => ({ profile: null }) }));
+jest.mock('../components/CycleParticipationControls', () => () => <section aria-label="Cycle participation" />);
 jest.mock('../components/ChooseMatchingRole', () => ({ __esModule: true, default: () => <div>Become a Big invitation</div> }));
 jest.mock('../components/WelcomeTour', () => ({ __esModule: true, default: () => null, WELCOME_TOUR_KEY: 'k' }));
 jest.mock('./Profile', () => ({ ProfileContent: () => null }));
@@ -179,4 +180,24 @@ test('hidden email tools do not prompt admins to send reveal emails',async()=>{
   await screen.findByText('Chapter progress');
   expect(screen.queryByRole('button',{name:'Reveal'})).not.toBeInTheDocument();
   expect(screen.queryByText(/not notified yet/)).not.toBeInTheDocument();
+});
+
+test('roster tab includes every member, search and views without a separate full-roster page', async () => {
+  (getFullRoster as jest.Mock).mockResolvedValue({ roster: Array.from({length: 20}, (_, i) => ({userId: String(i), name: `Sample Member ${i}`, email: `sample${i}@example.com`, role: i % 2 ? 'big' : 'little'})), error: null });
+  render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><RosterTab membership={membership} onNavigate={jest.fn()} /></QueryClientProvider>);
+  expect(await screen.findByRole('button',{name:'Sample Member 19'})).toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Sample Member 0'})).toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Open full roster'})).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole('searchbox',{name:'Search roster'}),{target:{value:'Sample Member 19'}});
+  expect(screen.queryByRole('button',{name:'Sample Member 0'})).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Card view'}));
+  expect(screen.getByRole('button',{name:'Sample Member 19'})).toBeInTheDocument();
+});
+test('roster fetch failure is recoverable and never claims there are no members', async () => {
+  (getFullRoster as jest.Mock).mockResolvedValueOnce({roster:[],error:'Offline'}).mockResolvedValue({roster:[{userId:'m',name:'Returned Member',email:'sample@example.com',role:'big'}],error:null});
+  render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><RosterTab membership={membership} onNavigate={jest.fn()} /></QueryClientProvider>);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load');
+  expect(screen.queryByText('No members yet.')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Try again'}));
+  expect(await screen.findByRole('button',{name:'Returned Member'})).toBeInTheDocument();
 });

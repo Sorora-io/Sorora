@@ -18,20 +18,26 @@ const ContactUs = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sending) return;
     if (!name.trim() || !email.trim() || !message.trim()) {
       setError('Please fill in your name, email, and message.');
       return;
     }
     setSending(true);
     setError('');
-    const { error: sendError } = await sendContactMessage(name.trim(), email.trim(), message.trim(), website);
-    if (sendError) {
-      setError(sendError);
-    } else {
-      setSent(true);
-      setMessage('');
+    try {
+      const { error: sendError } = await sendContactMessage(name.trim(), email.trim(), message.trim(), website);
+      if (sendError) {
+        setError(sendError);
+      } else {
+        setSent(true);
+        setMessage('');
+      }
+    } catch {
+      setError('Could not send your message. Check your connection and try again.');
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   return (
@@ -111,7 +117,7 @@ const ContactUs = () => {
               className="hidden"
             />
 
-            {error && <p className="text-[color:var(--ss-error)] text-sm">{error}</p>}
+            {error && <p role="alert" className="text-[color:var(--ss-error)] text-sm">{error}</p>}
 
             <Button type="submit" disabled={sending} fullWidth>
               {sending ? '...' : 'Send message'}

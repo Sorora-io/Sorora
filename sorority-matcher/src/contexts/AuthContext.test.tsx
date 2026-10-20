@@ -79,3 +79,17 @@ test('tracks only confirmed signup creation and successful explicit login, witho
   act(() => mockListener('TOKEN_REFRESHED',{user:{id:'private'}}));
   expect(mockTrack).toHaveBeenCalledTimes(2);
 });
+
+test('rejected session initialization releases loading without erasing a newer sign-in', async () => {
+  let reject: (reason: Error) => void = () => {};
+  mockGetSession.mockReturnValue(new Promise((_, fail) => { reject = fail; }));
+  const Status = () => { const {user, loading} = useAuth(); return <div>{loading ? 'loading' : user?.id || 'signed-out'}</div>; };
+  const view = render(<QueryClientProvider client={new QueryClient()}><AuthProvider><Status /></AuthProvider></QueryClientProvider>);
+  await act(async () => reject(new Error('offline')));
+  expect(screen.getByText('signed-out')).toBeInTheDocument();
+  view.unmount();
+  render(<QueryClientProvider client={new QueryClient()}><AuthProvider><Status /></AuthProvider></QueryClientProvider>);
+  act(() => mockListener('SIGNED_IN',{user:{id:'newer'}}));
+  await act(async () => reject(new Error('late failure')));
+  expect(screen.getByText('newer')).toBeInTheDocument();
+});

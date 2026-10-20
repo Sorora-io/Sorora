@@ -56,6 +56,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     supabase.auth.getSession().then(({ data: { session: initial } }) => {
       if (!authEventReceived) applySession(initial);
+    }).catch(() => {
+      // Release the loading screen on storage/network failures. A newer
+      // auth event remains authoritative even if initialization fails late.
+      if (!authEventReceived) applySession(null);
     });
     return () => { active = false; subscription.unsubscribe(); };
   }, [queryClient]);

@@ -1,6 +1,7 @@
 import { SHOW_MATCHING_EMAIL_TOOLS } from '../lib/features';
 import DuplicateNameWarnings from '../components/DuplicateNameWarnings';
 import Settings from './group/Settings';
+import { RosterContent } from './group/Roster';
 import { formatRankingDeadline } from '../lib/rankingDeadline';
 import { useCycleParticipation } from '../lib/cycleParticipation';
 import { revealDeliveryWarning } from '../lib/revealStatus';
@@ -436,179 +437,10 @@ const RankingsTab = ({
 // Roster tab — real member list with role pills
 // ---------------------------------------------------------------------------
 
-type RosterFilter = 'all' | 'big' | 'little' | 'admin';
-type RosterSort = 'az' | 'za';
-
-// A roster entry counts as an "admin" for filtering when they have the
-// dedicated admin role OR when they hold the isAdmin flag alongside a
-// big/little role — matches how the row's role pill labels them.
-const isRosterAdmin = (m: RosterEntry) => m.role === 'admin' || m.isAdmin;
-
-export const RosterTab = ({
-  membership,
-  onNavigate,
-}: {
+export const RosterTab = ({ membership, onNavigate }: {
   membership: MembershipWithGroup;
-  onNavigate: (p: string) => void;
-}) => {
-  const [filter, setFilter] = useState<RosterFilter>('all');
-  const [sort, setSort] = useState<RosterSort>('az');
-
-  const { user } = useAuth();
-  const { data: roster, isLoading } = useQuery({
-    queryKey: queryKeys.fullRoster(user?.id ?? '', membership.group_id),
-    queryFn: () => getFullRoster(membership.group_id).then(({ roster: r, error }) => { if (error) throw new Error(error); return r; }),
-    staleTime: STALE.medium,
-  });
-
-  const filtered = useMemo(() => {
-    const list = roster ?? [];
-    const matched = list.filter(m => {
-      if (filter === 'all') return true;
-      if (filter === 'admin') return isRosterAdmin(m);
-      return m.role === filter;
-    });
-    const cmp = (a: RosterEntry, b: RosterEntry) =>
-      (a.name ?? a.email).localeCompare(b.name ?? b.email);
-    return [...matched].sort((a, b) => (sort === 'az' ? cmp(a, b) : -cmp(a, b)));
-  }, [roster, filter, sort]);
-
-  const counts = useMemo(() => {
-    const list = roster ?? [];
-    return {
-      all: list.length,
-      big: list.filter(m => m.role === 'big').length,
-      little: list.filter(m => m.role === 'little').length,
-      admin: list.filter(isRosterAdmin).length,
-    };
-  }, [roster]);
-
-  const filterOptions: { id: RosterFilter; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'big', label: 'Bigs' },
-    { id: 'little', label: 'Littles' },
-    { id: 'admin', label: 'Admins' },
-  ];
-
-  return (
-    <div>
-      <Heading text="Your chapter roster" />
-      <Sub text={groupLabel(membership.group)} />
-      <DuplicateNameWarnings groupId={membership.group_id} isAdmin={isEffectiveAdmin(membership)} accounts={(roster ?? []).map(member=>({
-        userId:member.userId,groupId:membership.group_id,name:member.name,email:member.email,status:'approved',
-      }))} />
-
-      <div className="mt-8 ss-surface">
-        {isLoading ? (
-          <p className="ss-caption">Loading your chapter…</p>
-        ) : (roster?.length ?? 0) === 0 ? (
-          <>
-            <SectionHeading>
-              No members yet.
-            </SectionHeading>
-            <p className="ss-caption mt-2">
-              Share your chapter code so members can request to join.
-            </p>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mb-4">
-              <div
-                className="flex flex-wrap gap-1"
-                role="group"
-                aria-label="Filter roster by role"
-              >
-                {filterOptions.map(opt => {
-                  const active = filter === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setFilter(opt.id)}
-                      aria-pressed={active}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-[13px] font-medium transition-colors ${
-                        active
-                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'bg-transparent text-[color:var(--ss-ink-3)] hover:bg-[color:var(--ss-button-hover)]'
-                      }`}
-                    >
-                      {opt.label}
-                      <span
-                        className={`tabular-nums text-[11px] ${
-                          active ? 'text-white/70' : 'text-[color:var(--ss-ink-5)]'
-                        }`}
-                      >
-                        {counts[opt.id]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div
-                className="flex gap-1 ml-auto"
-                role="group"
-                aria-label="Sort roster by name"
-              >
-                {(['az', 'za'] as RosterSort[]).map(id => {
-                  const active = sort === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setSort(id)}
-                      aria-pressed={active}
-                      className={`inline-flex items-center px-2.5 py-1.5 rounded-pill text-[12px] font-medium tracking-wide transition-colors ${
-                        active
-                          ? 'bg-[color:var(--ss-jade-deep)] text-white'
-                          : 'bg-transparent text-[color:var(--ss-ink-4)] hover:bg-[color:var(--ss-button-hover)]'
-                      }`}
-                    >
-                      {id === 'az' ? 'A → Z' : 'Z → A'}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {filtered.length === 0 ? (
-              <p className="ss-caption">
-                No {filter === 'admin' ? 'admins' : `${filter}s`} in your chapter yet.
-              </p>
-            ) : (
-              <div className="flex flex-col divide-y divide-[color:var(--ss-surface-border)]">
-                {filtered.map(m => (
-                  <div key={m.userId} className="flex items-center gap-3 py-3">
-                    <Avatar src={m.avatarUrl} name={m.name} email={m.email} size="md" />
-                    <div className="min-w-0 flex-1">
-                      <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={m.name || m.email} onClick={() => onNavigate(`/group/roster/${encodeURIComponent(m.userId)}?from=dashboard`)}><span className="truncate">{m.name || m.email}</span></Button>
-                      {m.major && (
-                        <div className="text-xs text-[color:var(--ss-ink-5)] truncate">{m.major}</div>
-                      )}
-                    </div>
-                    <span className="ss-pill">
-                      {m.role === 'admin'
-                        ? 'Admin'
-                        : m.role === 'big'
-                        ? 'Big'
-                        : 'Little'}
-                      {m.isAdmin && m.role !== 'admin' && ' · Admin'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <Button variant="outline" onClick={() => onNavigate('/group/roster')}>
-          Open full roster
-        </Button>
-      </div>
-    </div>
-  );
-};
+  onNavigate: (path: string) => void;
+}) => <RosterContent membership={membership} onNavigate={onNavigate} embedded />;
 
 // ---------------------------------------------------------------------------
 // FAQ tab — the design's summarized preview; full FAQ lives at /faq
@@ -850,7 +682,7 @@ const Dashboard = () => {
   // -----------------------------------------------------------------------
   // Signed-in member scene
   // -----------------------------------------------------------------------
-  const kicker = `${membership.group.name.toUpperCase()} · ${roleLabel(membership).toUpperCase()}`;
+  const headerContext = `${membership.group.name} · ${roleLabel(membership)}`;
   const firstName = (profile?.name ?? '').split(' ')[0] ?? '';
 
   const renderTab = () => {
@@ -881,7 +713,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
       <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <MemberHeader activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} showNavigation={!tourActive} isAdmin={isEffectiveAdmin(membership)} />
+        <MemberHeader contextLabel={headerContext} activeTab={tab} onSelect={setActiveTab} onPrefetch={prefetchTab} showNavigation={!tourActive} isAdmin={isEffectiveAdmin(membership)} />
 
         {tourActive ? (
           <WelcomeTour
@@ -891,8 +723,6 @@ const Dashboard = () => {
           />
         ) : (
           <>
-            <div className="ss-kicker text-center md:text-left">{kicker}</div>
-
             <div className="text-left">{renderTab()}</div>
           </>
         )}

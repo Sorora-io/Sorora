@@ -10,7 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LayoutGrid, List, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useGroup } from '../../contexts/GroupContext';
 import { getFullRoster, RosterEntry } from '../../lib/rankings';
-import { groupLabel, MembershipRole, isEffectiveAdmin } from '../../lib/groups';
+import { groupLabel, MembershipRole, MembershipWithGroup, isEffectiveAdmin } from '../../lib/groups';
 import { queryKeys, STALE } from '../../lib/queryKeys';
 import LoadingLogo from '../../components/LoadingLogo';
 
@@ -28,15 +28,19 @@ const displayName = (r: RosterEntry) => r.name || r.email;
 
 const roleWord: Record<MembershipRole, string> = { admin: 'Admin', big: 'Big', little: 'Little' };
 
-const Roster = () => {
-  const navigate = useNavigate();
+export const RosterContent = ({ membership, onNavigate: navigate, embedded = false }: {
+  membership: MembershipWithGroup | null;
+  onNavigate: (path: string) => void;
+  embedded?: boolean;
+}) => {
   const { user } = useAuth();
-  const { membership } = useGroup();
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
   const group = membership?.group;
 
   const [view, setView] = useState<View>(() => {
     try {
-      return (localStorage.getItem(VIEW_KEY) as View) || 'list';
+      return localStorage.getItem(VIEW_KEY) === 'card' ? 'card' : 'list';
     } catch {
       return 'list';
     }
@@ -53,7 +57,8 @@ const Roster = () => {
 
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     try {
-      return (localStorage.getItem(SORT_KEY) as SortMode) || 'role';
+      const saved = localStorage.getItem(SORT_KEY);
+      return saved === 'az' || saved === 'za' ? saved : 'role';
     } catch {
       return 'role';
     }
@@ -72,6 +77,7 @@ const Roster = () => {
     data: roster = [] as RosterEntry[],
     isLoading: loading,
     error: queryError,
+    refetch,
   } = useQuery({
     queryKey: queryKeys.fullRoster(user?.id ?? '', group?.id ?? ''),
     queryFn: () =>
@@ -86,11 +92,16 @@ const Roster = () => {
 
   if (!group) return null;
 
-  const admins = roster.filter(r => r.role === 'admin');
-  const bigs = roster.filter(r => r.role === 'big');
-  const littles = roster.filter(r => r.role === 'little');
+  const matchingRoster = roster.filter(r => {
+    const matchesRole = roleFilter === 'all' || (roleFilter === 'admin' ? r.role === 'admin' || r.isAdmin : r.role === roleFilter);
+    const term = search.trim().toLocaleLowerCase();
+    return matchesRole && [r.name, r.email, r.major, r.college, r.year, r.hometown].filter(Boolean).join(' ').toLocaleLowerCase().includes(term);
+  });
+  const admins = matchingRoster.filter(r => r.role === 'admin');
+  const bigs = matchingRoster.filter(r => r.role === 'big');
+  const littles = matchingRoster.filter(r => r.role === 'little');
 
-  const sortedRoster = [...roster].sort((a, b) =>
+  const sortedRoster = [...matchingRoster].sort((a, b) =>
     sortMode === 'za'
       ? displayName(b).localeCompare(displayName(a))
       : displayName(a).localeCompare(displayName(b))
@@ -119,7 +130,7 @@ const Roster = () => {
       >
         {avatar(r)}
         <div className="min-w-0 flex-1">
-          <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}`)}><span className="truncate">{displayName(r)}</span></Button>
+          <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}${embedded ? '?from=dashboard' : ''}`)}><span className="truncate">{displayName(r)}</span></Button>
           {details ? (
             <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{details}</p>
           ) : (
@@ -145,7 +156,7 @@ const Roster = () => {
         <div className="flex items-center gap-3">
           {avatar(r, 'md')}
           <div className="min-w-0 flex-1">
-            <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}`)}><span className="truncate">{displayName(r)}</span></Button>
+            <Button variant="ghost" size="sm" className="!justify-start !px-2 -ml-2 max-w-full" title={displayName(r)} onClick={() => navigate(`/group/roster/${encodeURIComponent(r.userId)}${embedded ? '?from=dashboard' : ''}`)}><span className="truncate">{displayName(r)}</span></Button>
             <p className="text-xs text-[color:var(--ss-ink-5)] truncate">{r.email}</p>
           </div>
           {rolePill(r)}
@@ -178,19 +189,19 @@ const Roster = () => {
   );
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8">
-      <section className="ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col">
-        <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
+    <div className={embedded ? 'w-full' : 'min-h-screen w-full flex flex-col items-center px-5 md:px-8 py-8'}>
+      <section className={embedded ? 'w-full' : 'ss-frost w-full max-w-4xl rounded-[28px] bg-white/25 shadow-[0_20px_60px_-40px_rgba(15,45,32,0.35)] px-6 md:px-12 pt-8 pb-10 md:pt-10 md:pb-14 flex flex-col'}>
+        {!embedded && <PageHeader className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <Link to="/" className="font-display italic text-2xl font-medium text-[color:var(--ss-ink-1)]">
             sorora
           </Link>
           <Button variant="quiet" size="sm" onClick={() => navigate('/dashboard')}>
             <ArrowLeft size={14} aria-hidden="true" /> Back to dashboard
           </Button>
-        </PageHeader>
+        </PageHeader>}
 
-        <h1 className="font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]">
-          Your chapter roster
+        <h1 className={embedded ? 'font-sans text-[26px] leading-tight font-medium tracking-[-0.02em] text-[color:var(--ss-ink-1)]' : 'font-display text-[34px] md:text-[46px] leading-[1.1] font-medium text-[color:var(--ss-ink-1)]'}>
+          Chapter roster
         </h1>
         <p className="mt-2 ss-caption">{groupLabel(group)}</p>
 
@@ -200,7 +211,14 @@ const Roster = () => {
 
         {membership && isEffectiveAdmin(membership) && group.active_cycle_id && <CycleParticipationControls userId={user?.id ?? ''} groupId={group.id} cycleId={group.active_cycle_id} roster={roster} />}
         <div className="mt-6 flex items-center justify-end gap-2 flex-wrap">
-          <div className="relative">
+          <label className="flex-1 min-w-[160px]">
+            <span className="sr-only">Search roster</span>
+            <input type="search" className="ss-input" placeholder="Search members…" value={search} onChange={event => setSearch(event.target.value)} />
+          </label>
+          <label className="relative inline-flex items-center"><span className="sr-only">Filter roster by role</span><select aria-label="Filter roster by role" className="ss-input appearance-none block !pr-10" value={roleFilter} onChange={event => setRoleFilter(event.target.value)}>
+            <option value="all">All members</option><option value="big">Bigs</option><option value="little">Littles</option><option value="admin">Admins</option>
+          </select><span className="pointer-events-none absolute inset-y-0 right-3 flex items-center"><ChevronDown size={16} aria-hidden="true" /></span></label>
+          <div className="relative inline-flex items-center">
           <select
             aria-label="Sort roster"
             value={sortMode}
@@ -211,47 +229,48 @@ const Roster = () => {
             <option value="az">Name (A–Z)</option>
             <option value="za">Name (Z–A)</option>
           </select>
-          <ChevronDown size={16} aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--ss-ink-3)]" />
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[color:var(--ss-ink-3)]"><ChevronDown size={16} aria-hidden="true" /></span>
           </div>
           <div className="inline-flex items-center gap-1 bg-white/60 border border-[color:var(--ss-input-border)] rounded-pill p-1">
-            <button
-              type="button"
+            <Button variant="ghost" size="sm"
               onClick={() => changeView('list')}
               aria-label="List view"
               aria-pressed={view === 'list'}
-              className={`p-1.5 rounded-pill transition-colors ${
+              className={`!p-2 min-w-[36px] rounded-pill transition-colors ${
                 view === 'list'
-                  ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                  ? '!bg-[color:var(--ss-selection-bg)] !text-[color:var(--ss-selection-text)]'
                   : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
               }`}
             >
               <List size={16} />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button variant="ghost" size="sm"
               onClick={() => changeView('card')}
               aria-label="Card view"
               aria-pressed={view === 'card'}
-              className={`p-1.5 rounded-pill transition-colors ${
+              className={`!p-2 min-w-[36px] rounded-pill transition-colors ${
                 view === 'card'
-                  ? 'bg-[color:var(--ss-jade-deep)] text-white'
+                  ? '!bg-[color:var(--ss-selection-bg)] !text-[color:var(--ss-selection-text)]'
                   : 'text-[color:var(--ss-ink-5)] hover:text-[color:var(--ss-ink-2)]'
               }`}
             >
               <LayoutGrid size={16} />
-            </button>
+            </Button>
           </div>
         </div>
 
-        {error && (
-          <p className="mt-4 text-[color:var(--ss-error)] text-sm">{error}</p>
-        )}
+        {error && <div role="alert" className="mt-4 text-[color:var(--ss-error)] text-sm">
+          <p>Could not load your chapter roster. Try again.</p>
+          <Button variant="quiet" size="sm" className="mt-2" onClick={() => void refetch()}>Try again</Button>
+        </div>}
 
         <div className="mt-6">
           {loading ? (
             <div className="flex items-center gap-2 text-[color:var(--ss-ink-5)]">
               <LoadingLogo size={20} /> Loading…
             </div>
+          ) : error ? null : matchingRoster.length === 0 ? (
+            <p className="ss-caption">{roster.length === 0 ? 'No members yet.' : 'No members match your search or filter.'}</p>
           ) : sortMode === 'role' ? (
             <div className="flex flex-col gap-6">
               {renderSection('Bigs', bigs)}
@@ -277,4 +296,9 @@ const Roster = () => {
   );
 };
 
+const Roster = () => {
+  const { membership } = useGroup();
+  const navigate = useNavigate();
+  return <RosterContent membership={membership} onNavigate={navigate} />;
+};
 export default Roster;

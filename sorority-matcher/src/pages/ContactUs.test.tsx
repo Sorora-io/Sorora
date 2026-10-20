@@ -1,0 +1,22 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import ContactUs from './ContactUs';
+import { sendContactMessage } from '../lib/contact';
+jest.mock('../lib/contact', () => ({ sendContactMessage: jest.fn() }));
+jest.mock('../contexts/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
+jest.mock('../components/PageHeader', () => ({ children }: any) => <header>{children}</header>);
+jest.mock('react-router-dom', () => ({ Link: ({children}: any) => <span>{children}</span>, useNavigate: () => jest.fn() }));
+test('a rejected contact request keeps the draft and permits retry without claiming success', async () => {
+  (sendContactMessage as jest.Mock).mockRejectedValueOnce(new Error('offline'));
+  render(<ContactUs />);
+  fireEvent.change(screen.getByLabelText('Name'), {target:{value:'Sample Member'}});
+  fireEvent.change(screen.getByLabelText('Email'), {target:{value:'sample@example.com'}});
+  fireEvent.change(screen.getByLabelText('Message'), {target:{value:'Sample question'}});
+  fireEvent.click(screen.getByRole('button',{name:'Send message'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not send');
+  expect(screen.getByRole('button',{name:'Send message'})).toBeEnabled();
+  expect(screen.getByLabelText('Message')).toHaveValue('Sample question');
+  expect(screen.queryByText('Message sent.')).not.toBeInTheDocument();
+  (sendContactMessage as jest.Mock).mockResolvedValueOnce({error:null});
+  fireEvent.click(screen.getByRole('button',{name:'Send message'}));
+  expect(await screen.findByText('Message sent.')).toBeInTheDocument();
+});
