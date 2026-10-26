@@ -1,6 +1,6 @@
 import PageHeader from '../components/PageHeader';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, Sparkles, Scale, Ruler, Users } from 'lucide-react';
+import { ArrowLeft, Check, Sparkles, Scale, Ruler } from 'lucide-react';
 
 const missionItems = [
   {
@@ -86,8 +86,8 @@ const About = () => {
           {/* Our mission */}
           <section className="relative rounded-panel bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--ss-jade-soft)]" />
-              <div className="ss-kicker">Our mission</div>
+              <span aria-hidden="true" className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ss-jade-soft)]" />
+              <div className="ss-kicker !mb-0">Our mission</div>
             </div>
             <h2 className="font-display text-[26px] md:text-[28px] font-medium text-[color:var(--ss-ink-1)]">
               What we're building for.
@@ -117,8 +117,8 @@ const About = () => {
           {/* How it works — timeline */}
           <section className="relative rounded-panel bg-white/60 border border-[color:var(--ss-surface-border)] p-6 md:p-8 shadow-[0_10px_30px_-25px_rgba(15,45,32,0.4)]">
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--ss-jade-soft)]" />
-              <div className="ss-kicker">How it works</div>
+              <span aria-hidden="true" className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--ss-jade-soft)]" />
+              <div className="ss-kicker !mb-0">How it works</div>
             </div>
             <h2 className="font-display text-[26px] md:text-[28px] font-medium text-[color:var(--ss-ink-1)]">
               Three passes over your preferences.
@@ -158,8 +158,8 @@ const About = () => {
               className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/5 blur-2xl"
             />
             <div className="relative flex items-center gap-2 mb-1">
-              <Users size={14} className="text-white/70" />
-              <div className="ss-kicker text-white/80">Why it works</div>
+              <span aria-hidden="true" className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-white/70" />
+              <div className="ss-kicker !mb-0 text-white/80">Why it works</div>
             </div>
             <h2 className="relative font-display text-[26px] md:text-[28px] font-medium">
               Stable in theory, fair in practice.
